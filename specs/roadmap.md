@@ -10,7 +10,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
 2. Python reference
    - The goal is to set up the toolbox on the laptop as the reference the C port must match.
    - It covers steps 1 and 2 and the Test data and Repo layout sections. It moves the scripts from context/ into reference/, pins the requirements, confirms that compare.py still matches, and counts how often the toolbox fires on each PADS task in each group.
-   - The status is planned.
+   - The status is in progress.
 
 3. Generated tables
    - The goal is to write the detector's fixed numbers into a committed C header.

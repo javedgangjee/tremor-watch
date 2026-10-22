@@ -1,0 +1,73 @@
+# Feature 2 validation: Python reference
+
+Every command runs from the repo root.
+
+## Automated checks
+
+1. The venv builds from the pinned requirements.
+   - The command is `rm -rf reference/.venv && python3.13 -m venv reference/.venv && reference/.venv/bin/pip install -r reference/requirements.txt && reference/.venv/bin/python -c "import sys, importlib.metadata as m; print(sys.version.split()[0], m.version('paradigma'), m.version('scikit-learn'))"`.
+   - The expected result is exit code 0 and a line that starts with 3.13 and ends with 1.1.2 1.6.0.
+
+2. The installed model file is the published one.
+   - The command is `shasum -a 256 "$(reference/.venv/bin/python -c 'import paradigma, pathlib; print(pathlib.Path(paradigma.__file__).parent / "assets/tremor_detection_clf_package.pkl")')"`.
+   - The expected hash is 4be2ac2b511c501257ea8186068f06a94d0084d653840e907be72cd103dc5b0e, which is the hash of the file in the ParaDigMa 1.1.2 wheel on PyPI.
+
+3. The plain rebuild still matches the toolbox.
+   - The command is `reference/.venv/bin/python reference/compare.py`.
+   - The first line says True and 12, with a threshold of about 0.0296.
+   - The second line says 37 numbers plus the threshold.
+   - The third line says 200 toolbox windows and 200 plain windows.
+   - The float64 line gives a largest mfcc difference and a largest prob difference of 1e-12 or less, and the tremor label agrees on 200 of 200 windows.
+   - The float32 line gives a largest mfcc difference of 1.5e-06 or less and a largest prob difference of 7e-07 or less, and the tremor label agrees on 200 of 200 windows. These limits come from the plan's Measured so far section.
+
+4. The count script handles PADS files correctly.
+   - The command is `reference/.venv/bin/python -m pytest tests/reference -q`.
+   - The test cases are below. Each made-up file has the seven PADS columns, which are time, three accelerometer axes in g, and three gyroscope axes in radians per second.
+     1. The name 001_RelaxedTask_LeftWrist.txt gives subject 001, task RelaxedTask, and wrist left.
+     2. Label 0 gives healthy, label 1 gives Parkinson's, label 2 gives other movement disorder, and label 3 raises ValueError.
+     3. A gyroscope row of 1.0, -0.5, and 0.0 radians per second becomes 57.29578, -28.64789, and 0.0 degrees per second, within 0.0001.
+     4. A file of 1024 rows keeps 974 rows after the cut, and the first kept row is row 50 of the file.
+     5. A still file of 1024 rows gives 2 windows, and a still file of 2048 rows gives 4 windows. A still file is seeded noise of 1 degree per second on each axis plus a 0.3 Hz drift.
+     6. A file of 1024 rows with a 5 Hz shake of 200, 70, and 40 degrees per second on the three axes, written in radians per second, gives 2 windows that both fire. This comes from the "firm 5 Hz" case in reference/latency_test.py and the 5 Hz result in the plan's Measured so far section.
+     7. The still file from case 5 gives 2 windows that do not fire, and both say the arm is at rest.
+     8. A made-up window table for healthy Relaxed has 4 left windows with 1 fired and 4 right windows with none fired. The counts give 0.25 for left, 0.0 for right, and 0.125 for both.
+     9. A file list that names a subject with no files gives a missing count of 22 and does not stop the run.
+   - The expected result is 9 passed.
+
+5. The other four scripts still run and give the measured results.
+   - The commands are `reference/.venv/bin/python reference/rate_test.py`, `reference/.venv/bin/python reference/latency_test.py`, `reference/.venv/bin/python reference/spline_test.py`, and `reference/.venv/bin/python reference/demo_test.py`.
+   - Each command exits with code 0.
+   - In rate_test.py, the line for 112.1 Hz run at 112 Hz says the tremor label agrees on 98.0% of windows, because 2 of 100 windows differ.
+   - In latency_test.py, the 50, 200, 600, and 1500 degrees per second shakes at 5 Hz each give tremor 20/20.
+   - In spline_test.py, the line for margin 16 in float32 gives a largest value gap of 3.2e-06 or less, 149 windows, a largest probability gap of 5e-07 or less, and agreement of 100.0%.
+   - In demo_test.py, each of the five cases with the forearm resting shows Tremor in 10/10 runs and stays on Tremor for 100% of the shake.
+
+6. The count script runs on all of PADS.
+   - The command is `reference/.venv/bin/python reference/pads_counts.py`.
+   - The expected result is exit code 0 and the three files reference/results/pads_windows.csv, reference/results/pads_counts.csv, and reference/results/pads_counts.md.
+   - pads_counts.md gives files read plus files missing as 10318, which is 469 people times 11 tasks times 2 wrists.
+   - pads_counts.csv has 99 rows, which is 11 tasks times 3 groups times 3 wrist views.
+   - The number of rows in pads_windows.csv equals the number the command below prints. It adds up the whole 4 second windows left in each file after the cut, using the row counts in the observation files.
+   - The command is `reference/.venv/bin/python -c "import json, pathlib; print(sum((s['rows'] - 50) // 400 * len(s['records']) for p in pathlib.Path('data/pads/movement').glob('observation_*.json') for s in json.loads(p.read_text())['session']))"`.
+
+7. The repo holds the right files.
+   - The command is `git add -A -n . | grep -E '^add .(data/|reference/\.venv/)'; git diff main -M --stat; git diff main -M -- reference/`.
+   - The first command prints nothing.
+   - The stat shows six renames from context/ to reference/.
+   - The diff of reference/ changes exactly one line in each of compare.py, rate_test.py, latency_test.py, spline_test.py, and demo_test.py, and it changes no line in plain_detector.py.
+
+## Manual checks
+
+8. The count report is complete.
+   - Open reference/results/pads_counts.md.
+   - The expected result is that it states the ParaDigMa version 1.1.2, the scikit-learn version 1.6.0, PADS version 1.0.0, the model file's hash from check 2, the files read and missing, and the date of the run.
+   - The expected result is that it states that the patient columns are not a hit rate.
+   - The expected result is that its table has a row for each task, group, and wrist view, with the windows, the windows that fired, and the share.
+
+9. The README is complete.
+   - Open reference/README.md.
+   - The expected result is that it gives the commands to make the venv, download and check PADS, and run each script, and that it gives the ParaDigMa and PADS credit lines with the citation the PhysioNet page asks for.
+
+## Requirement coverage
+
+Requirements 1, 2, 3, and 17 are covered by check 1. Requirement 4 is covered by check 7. Requirement 5 is covered by checks 2 and 3. Requirements 6, 7, 11, 16, and 22 are covered by checks 4, 6, and 8. Requirement 8 is covered by check 4 cases 3 and 6. Requirement 9 is covered by check 4 case 4. Requirement 10 is covered by check 4 case 5. Requirement 12 is covered by check 9. Requirement 13 is covered by checks 5 and 7. Requirement 14 is covered by checks 6 and 7. Requirement 15 is covered by checks 6 and 7. Requirement 18 is covered by check 9. Requirement 19 is covered by check 4 case 2. Requirement 20 is covered by check 4 case 1 and check 6. Requirement 21 is covered by check 4 cases 5 to 7. Requirement 23 is covered by check 6. Requirement 24 is covered by check 8. Requirement 25 is covered by check 4.
