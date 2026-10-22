@@ -5,7 +5,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
 1. Hardware bring-up
    - The goal is to prove the board works and to learn the real sensor rate before any code is written.
    - It covers the work before step 1. It flashes Waveshare's ESP-IDF demo, confirms the screen and touch, and measures the 112.1 Hz rate and its drift over twenty minutes. It does not check how long the battery runs the screen, by the user's decision, although the plan asks for that check. It also records the ESP-IDF and LVGL versions in specs/tech-stack.md.
-   - The status is in progress.
+   - The status is done.
 
 2. Python reference
    - The goal is to set up the toolbox on the laptop as the reference the C port must match.
@@ -24,7 +24,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
 
 5. Reading times and converter
    - The goal is to give each reading its time and convert the readings to 100 a second as the toolbox does.
-   - It covers steps 7 and 8 and the Sensor and converter section. It saves converter cases, and the C converter must agree within 0.001 degrees per second outside window 0.
+   - It covers steps 7 and 8 and the Sensor and converter section. It saves converter cases, and the C converter must agree within 0.001 degrees per second outside window 0. Feature 1 measured 114.33 readings a second on this board, so no code or test may assume 112.1, and each stretch takes its rate from the reading times as the plan says.
    - The status is planned.
 
 6. Windows, share, and state rules

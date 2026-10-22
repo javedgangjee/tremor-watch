@@ -4,7 +4,7 @@
 
 - The watch is the Waveshare ESP32-S3-Touch-AMOLED-2.06.
 - The screen is a 410 by 502 AMOLED touch screen, and it stays on for the whole session.
-- The IMU is the QMI8658. It runs at 112.1 readings a second with the gyroscope and the accelerometer both on, and the gyroscope range is ±1024 degrees per second.
+- The IMU is the QMI8658. It uses rate code 0x06 with the gyroscope and the accelerometer both on, and the gyroscope range is ±1024 degrees per second. The datasheet gives 112.1 readings a second for this code, but feature 1 measured 114.33 on this board over twenty minutes, with a drift of -80.8 parts per million.
 - The board has a clock chip, a battery gauge, and an audio codec. It has no vibration motor and no Bluetooth in use.
 
 ## Watch firmware
