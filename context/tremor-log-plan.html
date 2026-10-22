@@ -1,0 +1,659 @@
+<title>Tremor log project plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Libre+Franklin:ital,wght@0,400;0,600;1,400&family=Red+Hat+Display:wght@600;700&display=swap">
+<style>
+  /* Layout: one reading column about 70 characters wide, broken by figure rows (the data flow, the detector numbers, the watch states). */
+  :root {
+    --bg: #f5f7f6;
+    --surface: #ffffff;
+    --ink: #1a2325;
+    --muted: #536268;
+    --rule: #d6dddd;
+    --accent: #0c676a;
+    --accent-soft: #e1eded;
+    --tremor: #1b2e42;
+    --calm: #2a7242;
+    --dose: #3f2559;
+    --display: "Red Hat Display", "Segoe UI", system-ui, sans-serif;
+    --body: "Libre Franklin", "Helvetica Neue", Arial, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121a1b;
+      --surface: #1a2426;
+      --ink: #e5ebeb;
+      --muted: #9dafb3;
+      --rule: #2d3b3d;
+      --accent: #6cc4c7;
+      --accent-soft: #1b3132;
+      --tremor: #8fb1f2;
+      --calm: #7ccd95;
+      --dose: #c6a2ec;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121a1b;
+    --surface: #1a2426;
+    --ink: #e5ebeb;
+    --muted: #9dafb3;
+    --rule: #2d3b3d;
+    --accent: #6cc4c7;
+    --accent-soft: #1b3132;
+    --tremor: #8fb1f2;
+    --calm: #7ccd95;
+    --dose: #c6a2ec;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 1.0625rem/1.65 var(--body);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 44rem;
+    margin: 0 auto;
+    padding-block: 3rem 4.5rem;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  h1, h2 { font-family: var(--display); text-wrap: balance; line-height: 1.15; margin: 0; }
+  h1 { font-size: clamp(2.2rem, 6vw, 2.9rem); font-weight: 700; letter-spacing: -0.01em; }
+  h2 { font-size: 1.6rem; font-weight: 700; }
+  h3 { font-size: 1.05rem; font-weight: 600; margin: 2rem 0 0.6rem; text-wrap: balance; }
+  h4 {
+    font: 500 0.75rem/1.3 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 1.75rem 0 0.75rem;
+  }
+  p { margin: 0 0 0.9rem; }
+  ul { margin: 0 0 1rem; padding-left: 1.2rem; display: grid; gap: 0.55rem; }
+  li::marker { color: var(--accent); }
+  strong, b { font-weight: 600; }
+  a { color: var(--accent); text-underline-offset: 0.18em; }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+  code {
+    font: 400 0.88em/1.4 var(--mono);
+    background: var(--accent-soft);
+    padding: 0.05em 0.3em;
+    border-radius: 4px;
+    overflow-wrap: anywhere;
+  }
+
+  /* Header */
+  .lead { font-size: 1.2rem; line-height: 1.55; margin: 0.9rem 0 1.75rem; max-width: 36rem; }
+  .spec {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+    gap: 1rem 1.75rem;
+    margin: 0 0 1.75rem;
+    padding: 1.25rem 0;
+    border-block: 1px solid var(--rule);
+  }
+  .spec div { min-width: 0; }
+  .spec dt {
+    font: 500 0.72rem/1.3 var(--mono);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 0.25rem;
+  }
+  .spec dd { margin: 0; font-size: 0.98rem; }
+  .note {
+    background: var(--accent-soft);
+    border-radius: 12px;
+    padding: 1rem 1.2rem;
+    margin: 1.25rem 0;
+  }
+  .note p:last-child, .note ul:last-child { margin-bottom: 0; }
+  .note code { background: var(--surface); }
+  nav.toc {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.1rem;
+    font-size: 0.95rem;
+    margin: 1.5rem 0 0;
+  }
+  nav.toc a { text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+
+  section { margin-top: 3.5rem; }
+  section > h2 { padding-top: 1.25rem; border-top: 2px solid var(--ink); margin-bottom: 1rem; }
+
+  /* Data flow */
+  .flow {
+    list-style: none;
+    padding: 0;
+    margin: 0.5rem 0 0.6rem;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.6rem;
+  }
+  .flow li {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--rule);
+    border-radius: 10px;
+    padding: 0.85rem 0.9rem;
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+  .flow li b { display: block; font-family: var(--display); font-size: 1rem; margin-bottom: 0.25rem; }
+  .flow li:not(:last-child)::after {
+    content: "\2192";
+    position: absolute;
+    right: -1.3rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--accent);
+    font-size: 1.1rem;
+  }
+  .flow-back { font: 400 0.85rem/1.5 var(--mono); color: var(--muted); margin-bottom: 1.25rem; }
+  @media (max-width: 40rem) {
+    .flow { grid-template-columns: 1fr; gap: 1.5rem; }
+    .flow li:not(:last-child)::after { content: "\2193"; right: auto; left: 1.2rem; top: auto; bottom: -1.45rem; transform: none; }
+  }
+
+  /* Detector figures */
+  .figs {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+    gap: 1rem;
+    margin: 1.25rem 0 1.5rem;
+  }
+  .fig { min-width: 0; }
+  .fig b {
+    display: block;
+    font: 500 1.75rem/1.1 var(--mono);
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+    margin-bottom: 0.3rem;
+  }
+  .fig span { font-size: 0.9rem; color: var(--muted); line-height: 1.45; display: block; }
+
+  /* Numbered lists. Build steps count straight through all groups in a section. */
+  .numbered { counter-reset: step; }
+  .steps { list-style: none; padding: 0; margin: 0; display: grid; gap: 0.8rem; }
+  .steps > li { counter-increment: step; display: grid; grid-template-columns: 2.1rem minmax(0, 1fr); align-items: baseline; }
+  .steps > li::before {
+    content: counter(step, decimal-leading-zero);
+    font: 500 0.85rem/1 var(--mono);
+    color: var(--accent);
+  }
+  .steps > li > span { min-width: 0; }
+
+  /* Screens lists */
+  .screens { list-style: none; padding: 0; gap: 0.9rem; }
+  .screens b { color: var(--accent); }
+
+  /* Repo layout */
+  .tree { list-style: none; padding: 0; gap: 0.5rem; }
+  .tree li { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr); gap: 1rem; align-items: baseline; }
+  .tree li code { justify-self: start; }
+  @media (max-width: 34rem) { .tree li { grid-template-columns: 1fr; gap: 0.2rem; } }
+
+  /* Wearer needs */
+  .needs { display: grid; margin: 0.5rem 0 1rem; border-top: 1px solid var(--rule); }
+  .needs .row {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 1.25rem;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .needs .row p { margin: 0; font-size: 0.97rem; }
+  .needs .head p { font: 500 0.72rem/1.3 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .needs .row p:first-child { color: var(--muted); }
+  @media (max-width: 34rem) {
+    .needs .row { grid-template-columns: 1fr; gap: 0.3rem; }
+    .needs .head { display: none; }
+  }
+
+  /* Watch states */
+  .states {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0 0.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(12.5rem, 1fr));
+    gap: 1rem 1.25rem;
+  }
+  .states li { display: grid; grid-template-columns: 3.25rem minmax(0, 1fr); gap: 0.8rem; align-items: center; }
+  .dot {
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 50%;
+    display: grid;
+    place-items: center;
+    border: 3px solid var(--muted);
+    color: var(--muted);
+  }
+  .dot svg { width: 1.6rem; height: 1.6rem; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .dot.tremor { background: var(--tremor); border-color: var(--tremor); color: var(--surface); }
+  .dot.calm { background: var(--calm); border-color: var(--calm); color: var(--surface); }
+  .dot.dose { background: var(--dose); border-color: var(--dose); color: var(--surface); }
+  .states b { display: block; font-family: var(--display); font-size: 1rem; }
+  .states span { font-size: 0.88rem; color: var(--muted); line-height: 1.45; display: block; }
+  .caption { font-size: 0.85rem; color: var(--muted); margin: 0.5rem 0 1rem; }
+
+  /* Messages */
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr)); gap: 0.5rem 2rem; }
+  .two > div { min-width: 0; }
+  .two h3 { margin-top: 0.75rem; }
+
+  footer { margin-top: 3.5rem; padding-top: 1rem; border-top: 1px solid var(--rule); font-size: 0.85rem; color: var(--muted); }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Tremor log</h1>
+    <p class="lead">A watch runs a published Parkinson's tremor detector on its own sensor data and shows the result on its face. Everything runs on the watch.</p>
+
+    <dl class="spec">
+      <div><dt>Watch</dt><dd>The Waveshare ESP32-S3-Touch-AMOLED-2.06 runs firmware written in C with ESP-IDF.</dd></div>
+      <div><dt>Sensor</dt><dd>The QMI8658 gyroscope runs at about 112 readings a second, and the watch converts them to 100.</dd></div>
+      <div><dt>Detector</dt><dd>A C port of the ParaDigMa 1.1.2 tremor detector runs on the watch and is checked against the Python toolbox.</dd></div>
+      <div><dt>Recording</dt><dd>When a laptop is plugged in over USB, the watch writes every reading and every answer to it as text.</dd></div>
+    </dl>
+
+    <div class="note">
+      <ul>
+        <li><strong>This page is the build spec.</strong> Where the Claude Design file and this page differ, this page wins.</li>
+        <li><strong>The build targets a recorded demo on the watch alone.</strong> A session lasts one to two hours. There is no Mac app and no Bluetooth. The laptop is used to build the code, to check it, and to set the watch's clock and dose times over USB.</li>
+        <li><strong>The Python toolbox is the reference.</strong> The C detector must follow <code>reference/plain_detector.py</code> step for step, and it counts as correct only while it matches the toolbox.</li>
+        <li><strong>The detector is used as published.</strong> Nobody retrains it or changes its stored numbers.</li>
+      </ul>
+    </div>
+
+    <nav class="toc" aria-label="Sections">
+      <a href="#how">How it works</a>
+      <a href="#detector">The detector</a>
+      <a href="#recipe">Detector recipe</a>
+      <a href="#sensor">Sensor and converter</a>
+      <a href="#windows">Windows</a>
+      <a href="#timing">Response time</a>
+      <a href="#firmware">Firmware design</a>
+      <a href="#core">Shared C library</a>
+      <a href="#usb">USB recording</a>
+      <a href="#doses">Dose schedule</a>
+      <a href="#measured">Measured so far</a>
+      <a href="#data">Test data</a>
+      <a href="#repo">Repo layout</a>
+      <a href="#build">Build order</a>
+      <a href="#face">Watch face</a>
+      <a href="#deliver">What you deliver</a>
+    </nav>
+  </header>
+
+  <section id="how">
+    <h2>How it works</h2>
+    <ol class="flow">
+      <li><b>Sensor</b>The gyroscope and accelerometer run at about 112 readings a second and hand over readings in bursts.</li>
+      <li><b>Converter</b>The watch converts the readings to 100 a second with the same curve the toolbox uses.</li>
+      <li><b>Detector</b>The watch runs the C detector every second on the last 4 seconds.</li>
+      <li><b>Watch face</b>The face shows the state and keeps the session's share of still time with tremor.</li>
+    </ol>
+    <p class="flow-back">With a laptop on USB, the watch also writes every reading and answer, so each window can be checked afterwards.</p>
+    <p>Clinicians use the share of still time with tremor to see how tremor tracks against doses. Dose decisions would need the paper's validated weekly number and a real patient, and this project has neither.</p>
+  </section>
+
+  <section id="detector">
+    <h2>The detector</h2>
+    <p>The project uses the tremor detector from the ParaDigMa toolbox by the Radboud Parkinson's group. The watch runs a C port of it, and the Python toolbox stays on the laptop as the reference. Its Apache 2.0 licence needs a credit line, and the source paper is Timmermans and colleagues, npj Parkinson's Disease, 2025.</p>
+
+    <div class="figs">
+      <div class="fig"><b>61%</b><span>of tremor time was caught in validation, with a 20 point spread between people.</span></div>
+      <div class="fig"><b>97%</b><span>of time without tremor was correctly left quiet.</span></div>
+      <div class="fig"><b>37</b><span>stored numbers make up the model, plus one cut-off.</span></div>
+      <div class="fig"><b>3 to 7 Hz</b><span>is where the shake's strongest frequency must sit.</span></div>
+    </div>
+
+    <p>The model was trained on video-labelled wrist data from 24 patients and 24 controls at home, then checked on 517 more patients and 50 controls over two weeks. The authors brought every recording to 100 readings a second before they ran it. It is tuned against false alarms, so it will undercount.</p>
+
+    <div class="note">
+      <ul>
+        <li><strong>The project reports one number, the share of still time with tremor.</strong> Still time is time when the arm is not moving with purpose, which the detector's arm at rest answer marks. The paper validated this number over a week. Over a one to two hour session it shows how the measure works, and the write-up says so. There are no episodes, because no episode rule has been validated.</li>
+        <li><strong>The watch goes on the more affected wrist.</strong> The detector was validated on one wrist only, and tremor is often worse on one side.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="recipe" class="numbered">
+    <h2>Detector recipe</h2>
+    <p>These are the steps the toolbox takes for one window, read from its code. The plain rebuild in <code>reference/plain_detector.py</code> does the same steps and matches the toolbox exactly. The fixed tables come from <code>tools/gen_tables.py</code>, so the C code never rebuilds them.</p>
+    <ol class="steps">
+      <li><span><strong>Take one window.</strong> A window holds 400 readings for each of the three gyroscope axes, at 100 readings a second, in degrees per second.</span></li>
+      <li><span><strong>Build the fine spectrum.</strong> Cut the window into two 3 second slices of 300 readings that start 60 readings apart. Multiply each slice by a symmetric Hann window, which is scipy <code>get_window("hann", 300, fftbins=False)</code>. Run a 400 point FFT, which gives steps of 0.25 Hz. Square the magnitude of each value and multiply it by <code>1 / (100 × sum of the window squared)</code>. Double every value except the first and the last. Average the two slices, then add the three axes together. This matches scipy <code>welch</code> with <code>scaling="density"</code>.</span></li>
+      <li><span><strong>Build the coarse spectrum.</strong> Cut the window into six 2 second slices of 200 readings that start 40 readings apart. Multiply each slice by a periodic Hann window, which is scipy <code>get_window("hann", 200)</code>. Run a 200 point FFT, which gives steps of 0.5 Hz. Take the magnitude of each value, divide it by the sum of the window, and multiply it by 100. Add the three axes together and keep the six slices apart. This matches scipy <code>stft</code> with its default scaling.</span></li>
+      <li><span><strong>Group the coarse spectrum into 15 bands.</strong> The bands are 15 triangle filters over the 101 coarse steps, from 0 to 25 Hz. Their 17 edge points are spaced evenly on the scale <code>64.875 × log10(1 + f / 17.5)</code>, converted back to Hz, and turned into step numbers with <code>round(2 × f) + 1</code>. Filter j is scipy <code>triang(p[j+2] − p[j])</code> placed from step <code>p[j]</code> up to step <code>p[j+2]</code>, and each filter is divided by 0.5 times its own sum.</span></li>
+      <li><span><strong>Turn the bands into 12 numbers.</strong> For each slice, apply the 15 filters, take <code>log10(value + 1e-10)</code>, and multiply by the 12 by 15 cosine table. Row 0 of the table is <code>1 / sqrt(15)</code> everywhere, and row i at column k is <code>cos(i × (2k + 1) × π / 30) × sqrt(2 / 15)</code>. Average the six slices. The toolbox calls these 12 numbers <code>mfcc_1</code> to <code>mfcc_12</code>.</span></li>
+      <li><span><strong>Score the window.</strong> Subtract the stored mean from each number and divide by the stored spread. Multiply by the stored weights, add the results, and add the stored offset. Turn the total into a probability with <code>1 / (1 + exp(−total))</code>. The model says yes when the probability is at least the stored cut-off, which is about 0.0296.</span></li>
+      <li><span><strong>Check the peak.</strong> Find the fine spectrum step with the most power between 1 and 25 Hz, with both ends included. Its frequency must be between 3 and 7 Hz, with both ends included.</span></li>
+      <li><span><strong>Check that the arm is at rest.</strong> Add up the fine spectrum steps from 0.5 Hz up to 3 Hz, leaving out 3 Hz itself, and multiply by 0.25. The arm is at rest when this low-frequency sum is 50 or less.</span></li>
+      <li><span><strong>Give the answer.</strong> The window is tremor only when the model says yes, the peak check passes, and the arm is at rest. Keep the arm at rest answer as its own output, because the share counts still time from it.</span></li>
+    </ol>
+    <div class="note">
+      <ul>
+        <li><strong>Follow the toolbox's code where its comments disagree.</strong> The band power function's comment says it takes a log, and the code does not. The total power function's comment says it adds up frequencies, and the code adds up the three axes.</li>
+        <li><strong>Use KISS FFT on both the laptop and the watch.</strong> Espressif's DSP library only handles FFT sizes that are powers of two, such as 256 and 512, so it cannot do 400 or 200. Padding to 512 changes the frequency steps and breaks the match. KISS FFT has a BSD licence and handles both sizes.</li>
+        <li><strong>Use 32-bit floats.</strong> The watch chip has hardware for them, and the measured error from 32-bit floats is about one millionth.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="sensor">
+    <h2>Sensor and converter</h2>
+    <p>The QMI8658 cannot run its gyroscope at 100 readings a second. With the gyroscope on, its two rates nearest to 100 are 112.1 and 56.05. The datasheet says the rate comes from the gyroscope's own vibrating part, so the real rate can sit slightly off 112.1. The authors brought all their data to 100 readings a second, so the watch converts to 100 as well.</p>
+
+    <h3>Reading the sensor</h3>
+    <ul>
+      <li>Run the sensor at 112.1 readings a second with both the gyroscope and the accelerometer on. The accelerometer then runs at the same rate.</li>
+      <li>Set the gyroscope range to ±1024 degrees per second, because the toolbox needs at least ±1000.</li>
+      <li>Let the sensor collect about 11 readings in its buffer, which is about 100 milliseconds, and raise an interrupt. Stamp the burst with the watch's 64-bit microsecond timer inside that interrupt.</li>
+    </ul>
+
+    <h3>Giving each reading a time</h3>
+    <ul>
+      <li>The readings arrive as an unbroken stretch until a gap. Within a stretch, reading n has the time <code>t0 + n / r</code>, where t0 is the first burst's stamp and r is one fixed rate for the whole stretch. Fixed spacing keeps the uneven timing of the bus out of the readings.</li>
+      <li>The first stretch after power-on takes its rate from its first 10 seconds of burst stamps. Every later stretch takes its rate from the whole stretch before it, which is minutes long and so far more exact.</li>
+      <li>After each burst, compare its stamp with the time the stretch predicts for it. If the two differ by more than half a reading period, or the sensor's buffer overflowed, the stretch ends and a new one starts.</li>
+      <li>Keep time as whole reading counts and 64-bit microsecond stamps. Never keep time as 32-bit seconds, because after two hours a 32-bit count of seconds steps in 0.49 millisecond jumps, which is about a twentieth of a reading.</li>
+      <li>The time rule lives in the shared C library, so the laptop gives every reading the same time the watch gave it.</li>
+    </ul>
+
+    <h3>Converting to 100 readings a second</h3>
+    <p>The toolbox converts with scipy <code>interp1d(kind="cubic")</code>, which fits one smooth curve through the whole recording. The watch cannot wait for the whole recording, so it fits the same kind of curve one block at a time.</p>
+    <ul>
+      <li>Take each block of about one second of readings, plus 16 extra readings on each side. Fit a natural cubic spline through them, which takes one small equation solve per axis. Read the curve at each 100 Hz moment inside the block, and throw away the extra readings.</li>
+      <li>A reading's pull on the curve shrinks about 3.7 times for each reading of distance, so 16 extra readings make the block fit match the whole-recording fit. In 32-bit floats it matched to about 3 millionths of a degree per second.</li>
+      <li>The 100 Hz grid starts at t0 of each stretch, as the toolbox's grid does. After a gap, the curve and the grid start again.</li>
+      <li>The converter adds no filter. The fake movement that converting down can create lands between 44 and 50 Hz, where the detector does not look, and the toolbox adds no filter either.</li>
+    </ul>
+  </section>
+
+  <section id="windows">
+    <h2>Windows</h2>
+    <ul>
+      <li>Window n of a stretch holds the 100 Hz readings numbered 100n to 100n + 399. The detector runs on window n as soon as reading 100n + 399 exists, so the runs follow the readings and never a timer.</li>
+      <li>The face uses every window, so it gets a new answer every second.</li>
+      <li>The session share uses only the windows whose number divides by 4. These are the same windows the toolbox cuts, so the share matches the toolbox's.</li>
+      <li>Window 0 of each stretch is warming up. The toolbox treats the very start of a recording in its own way, so this window can differ slightly, and it is left out of the share and the checks.</li>
+    </ul>
+  </section>
+
+  <section id="timing">
+    <h2>Response time</h2>
+    <p>These numbers come from a simulated demo with a soft start and stop, a shake that wanders between 4 and 6 times a second, and the full converter and detector.</p>
+    <ul>
+      <li>The face changes only when two answers in a row agree, and a single odd answer never shows. Without this rule the face flashed Arm moving for one second on the way back in most 4 Hz runs, and a hard shake sometimes flickered back to Tremor.</li>
+      <li>With the rule, the face showed Tremor about 2½ to 3½ seconds after the shake started, and at most about 5 seconds at 4 shakes a second.</li>
+      <li>It held Tremor for the whole of a 20 second shake.</li>
+      <li>It went back to No tremor about 4½ to 5½ seconds after the shake stopped.</li>
+      <li>The rule changes only what the face shows. Every answer still goes into the share and the recording unchanged.</li>
+    </ul>
+
+    <h3>Making the Tremor screen appear</h3>
+    <ul>
+      <li>Rest your forearm on a table, and shake the hand from the wrist only. If the forearm sways by more than about 8 degrees per second, the arm at rest check fails and the face shows Arm moving.</li>
+      <li>Shake 4 to 6 times a second. A shake slower than 3 times a second shows Arm moving, and one faster than 7 times a second shows No tremor.</li>
+      <li>Keep the shake going for at least 5 seconds. The size of the shake matters little, because gentle, firm, and hard shakes all passed.</li>
+    </ul>
+  </section>
+
+  <section id="firmware">
+    <h2>Firmware design</h2>
+    <p>Each part of the watch has one owning task, and the tasks talk through queues. LVGL breaks when two tasks use it, and detector runs must never hold up the screen.</p>
+    <ul>
+      <li><strong>The sensor task reads the IMU.</strong> It stamps the bursts, gives each reading its time, and starts a new stretch after a gap. The touch, clock, and power chips share the same I2C bus, and ESP-IDF's I2C driver already handles the sharing.</li>
+      <li><strong>The pipeline task runs the converter and the detector.</strong> It sends each answer to the state task.</li>
+      <li><strong>The state task owns the current state.</strong> It holds the face state, the session share, the dose schedule, and the doses taken. Its rules live in the shared C library and have unit tests on the laptop.</li>
+      <li><strong>The screen task owns LVGL.</strong> It only draws what the state task gives it.</li>
+      <li><strong>The USB task writes the recording and reads commands.</strong> When no laptop is plugged in, it drops the recording lines.</li>
+    </ul>
+    <p>Answers and doses stay in memory for the session. The watch writes no results to flash. The dose schedule and the tone setting live in the chip's small settings store, so they survive a restart. A restart starts a new session, and the watch writes a boot line with a random boot ID and the reset cause to the recording.</p>
+    <p>Every answer carries one result code from a single list in the shared library. The codes are tremor, no tremor, arm moving, warming up, and sensor fault. Only tremor, no tremor, and arm moving count toward the share. There is no idle code, because the watch stays on the wrist for the demo.</p>
+  </section>
+
+  <section id="core">
+    <h2>Shared C library</h2>
+    <p>The library in <code>core/</code> is the single source for everything the watch computes, and the laptop runs the same code to check it.</p>
+    <ul>
+      <li>It holds the reading time rule, the converter, the detector, the window rule, the session share, the face state rules, and the recording line format.</li>
+      <li>It includes no ESP-IDF headers and allocates no memory at run time. Every buffer has a fixed size.</li>
+      <li>It builds as an ESP-IDF component for the watch and as a plain C library for the laptop.</li>
+      <li>It builds with <code>-ffp-contract=off</code> on both sides, so the compilers do not merge multiplies and adds differently.</li>
+      <li>The laptop build includes <code>replay</code>, a command-line program that reads a recording or a PADS file and prints its own answer for every window.</li>
+      <li>The generated tables are committed together with the SHA-256 hash of the toolbox's model file. The boot line carries the table hash and the firmware version.</li>
+    </ul>
+  </section>
+
+  <section id="usb">
+    <h2>USB recording</h2>
+    <p>The watch writes one line of comma-separated text per record over its built-in USB port. Text keeps the format readable and lets Python read it with no decoder. Every value is a whole number except the three detector numbers.</p>
+    <ul>
+      <li>A <code>B</code> line marks a boot. It holds the random boot ID, the reset cause, the firmware version, and the table hash.</li>
+      <li>An <code>S</code> line starts a stretch. It holds the stretch number, the first reading's number, t0 in microseconds, the rate in readings per second, and the gyroscope range.</li>
+      <li>A <code>T</code> line records a burst. It holds the first reading's number, the number of readings, and the burst stamp in microseconds.</li>
+      <li>An <code>R</code> line records one reading. It holds the reading's number and the raw counts for the three gyroscope axes and the three accelerometer axes.</li>
+      <li>A <code>W</code> line records one answer. It holds the stretch number, the window number, the result code, the probability, the low-frequency sum, and the peak frequency.</li>
+      <li>An <code>F</code> line records a face change. It holds the time in microseconds and the new state.</li>
+      <li>A <code>D</code> line records a dose taken. It holds the time in microseconds and the scheduled dose time it answers.</li>
+    </ul>
+    <p>The laptop sends commands over the same port. One command sets the clock with the time in UTC and the local offset. Another sets the dose schedule, another starts a new session, and another turns the tone on or off. <code>tools/watch_cli.py</code> sends these commands and saves the recording to a file.</p>
+    <p>Until the clock is set, the face shows dashes for the time and the dose schedule stays off.</p>
+  </section>
+
+  <section id="doses">
+    <h2>Dose schedule</h2>
+    <ul>
+      <li>The schedule has one medicine name and up to six local clock times a day.</li>
+      <li>A dose time becomes due at that clock time unless a dose was logged in the hour before it.</li>
+      <li>When a dose becomes due, the circle shows Dose due and the tone plays three times.</li>
+      <li>The due state ends when "Took it" is tapped or fifteen minutes pass, and the watch does not remind again.</li>
+      <li>A dose logged by mistake stays in the recording. For the demo it is simply noted.</li>
+    </ul>
+  </section>
+
+  <section id="measured">
+    <h2>Measured so far</h2>
+    <p>These results come from the scripts in <code>reference/</code>, run against ParaDigMa 1.1.2 on made-up test signals. Real shakes on the real watch still need testing.</p>
+    <ul>
+      <li>The plain rebuild matched the toolbox to about 15 decimal places on 200 windows of rest, clear tremor, faint tremor, walking, and walking with tremor.</li>
+      <li>With 32-bit floats, the 12 numbers differed by at most 0.0000015 and the probability by at most 0.0000007. The tremor answer agreed on all 200 windows.</li>
+      <li>When the toolbox ran 112.1 Hz data without converting it, 2 of 100 windows gave a different answer from the 100 Hz version. Left to its defaults, the toolbox works at the rate it is given, so every comparison must set its conversion to 100.</li>
+      <li>The block-by-block curve fit with 16 extra readings matched the toolbox's conversion to within 0.0000032 degrees per second in 32-bit floats. The probability differed by at most 0.0000005, and all 149 windows agreed.</li>
+      <li>A steady 5 Hz shake gave tremor on every window, from 50 up to 1500 degrees per second. At 1500 the reading clips at the ±1024 limit, and the answer was still tremor.</li>
+      <li>Forearm sway of 5 degrees per second still gave tremor. At 8 degrees per second a quarter of windows said Arm moving, and at 12 all of them did.</li>
+      <li>In the simulated 20 second demo with the forearm resting, the face showed Tremor in every run and held it for the whole shake. With the forearm lifted, it showed Arm moving for most of the shake.</li>
+      <li>The toolbox's model file is 1.5 kB and needs scikit-learn below 1.6.1 to load. Python 3.13 with scikit-learn 1.6.0 worked.</li>
+    </ul>
+  </section>
+
+  <section id="data">
+    <h2>Test data</h2>
+    <p>PADS on PhysioNet is free and needs no data agreement. It holds 100 Hz gyroscope recordings from both wrists of 469 people doing 11 scripted tasks. Each person is labelled Parkinson's, other movement disorder, or healthy, and each 10 second task gives two full 4 second windows. Cite Varghese and colleagues, npj Parkinson's Disease, 2024, and the citation the PhysioNet page asks for.</p>
+
+    <h3>Before you run anything</h3>
+    <ul>
+      <li><strong>Convert the units with the toolbox's own function.</strong> PADS stores rotation in radians per second and the toolbox expects degrees per second. A wrong unit makes the arm at rest check fire on everything or on nothing.</li>
+      <li><strong>Cut the first half second of each recording.</strong> It holds the watch's start vibration.</li>
+      <li><strong>Pin ParaDigMa 1.1.2 in its own venv.</strong> The C port must match that exact version. The install is about 565 MB with its libraries.</li>
+    </ul>
+
+    <h3>What PADS can tell you</h3>
+    <p>PADS labels whole tasks and does not say who shook when, so it cannot measure how much tremor the detector catches. It can measure false alarms, because healthy people have no tremor and the nine moving tasks are not rest tremor for anyone. Many patients were likely on medication, and the tremor dominant label is a free text comment on only some of them. The licence is non-commercial, which covers a portfolio. PADS is already at 100 Hz, so the detector match test needs no conversion.</p>
+  </section>
+
+  <section id="repo">
+    <h2>Repo layout</h2>
+    <ul class="tree">
+      <li><code>reference/</code><span>This folder holds <code>plain_detector.py</code>, <code>compare.py</code>, <code>rate_test.py</code>, <code>latency_test.py</code>, <code>spline_test.py</code>, <code>demo_test.py</code>, and the pinned Python requirements.</span></li>
+      <li><code>tools/</code><span>This folder holds <code>gen_tables.py</code>, <code>watch_cli.py</code>, and <code>compare_session.py</code>.</span></li>
+      <li><code>core/</code><span>This folder holds the shared C library, KISS FFT, the generated tables, the <code>replay</code> program, and the recording format document.</span></li>
+      <li><code>firmware/</code><span>This folder holds the ESP-IDF project for the watch.</span></li>
+      <li><code>tests/</code><span>This folder holds the unit tests, the saved test windows with the toolbox's answers, the saved converter cases, and the full PADS match test.</span></li>
+    </ul>
+  </section>
+
+  <section id="build" class="numbered">
+    <h2>Build order</h2>
+    <p>The build has twenty-four steps in six groups, numbered straight through.</p>
+
+    <div class="note">
+      <p><strong>Before step 1, flash Waveshare's ESP-IDF demo for the board.</strong> Confirm that the screen and touch work. Set the sensor to 112.1 readings a second, measure the real rate against the watch's microsecond timer, and note how much it drifts over twenty minutes. Check that the battery runs the screen for two hours, or plan to record the demo on USB power.</p>
+    </div>
+
+    <h4>Reference on the laptop</h4>
+    <ol class="steps">
+      <li><span>Install ParaDigMa 1.1.2 in its own venv and run <code>reference/compare.py</code>. Confirm that the plain rebuild still matches the toolbox.</span></li>
+      <li><span>Run the toolbox on every PADS task and count how often it fires per task in each group. These counts are the reference the C port must reproduce.</span></li>
+    </ol>
+
+    <h4>Shared C library</h4>
+    <ol class="steps">
+      <li><span>Write <code>tools/gen_tables.py</code>. It writes the 12 means, the 12 spreads, the 12 weights, the offset, the cut-off, both Hann windows, the 15 by 101 filter table, the 12 by 15 cosine table, and the model file's hash into a header. Commit the header.</span></li>
+      <li><span>Write the C detector step for step from <code>reference/plain_detector.py</code>, in 32-bit floats, with KISS FFT.</span></li>
+      <li><span>Save a few hundred test windows with the toolbox's answers and detector numbers into <code>tests/</code>, including windows close to each cut-off. The 12 numbers and the probability must agree within 0.0001. The answers must agree on every window, except where the toolbox's probability sits within 0.0001 of its cut-off, its low-frequency sum sits within 0.01 percent of 50, or its two largest peak steps differ by less than 0.01 percent.</span></li>
+      <li><span>Run the same rule through <code>replay</code> on every PADS file. This full test needs the toolbox, so it runs before each release and not on every commit.</span></li>
+      <li><span>Write the reading time rule and the converter as described under Sensor and converter.</span></li>
+      <li><span>Save converter cases with the toolbox's own conversion at 100 Hz into <code>tests/</code>. The C converter must agree within 0.001 degrees per second outside window 0 of each stretch.</span></li>
+      <li><span>Write the window rule, the session share, and the face state rules, with unit tests for every state change, the two-in-a-row rule, and the dose due timing.</span></li>
+      <li><span>Set up the checks that run on every commit. They build the library on the laptop, run the unit tests, the saved windows, and the saved converter cases, check the model file's hash against the committed tables, and build the firmware. None of them needs the toolbox.</span></li>
+    </ol>
+
+    <h4>Watch firmware</h4>
+    <ol class="steps">
+      <li><span>Start from Waveshare's ESP-IDF example package. Keep the display, touch, IMU, and power drivers, remove the demo apps, and set up the five tasks from Firmware design.</span></li>
+      <li><span>Write the sensor task as described under Sensor and converter.</span></li>
+      <li><span>Write the pipeline task with the window rule. Measure how long each detector run takes on the chip.</span></li>
+      <li><span>Write the state task.</span></li>
+      <li><span>Write the USB task with the recording lines and the commands.</span></li>
+    </ol>
+
+    <h4>Laptop tools</h4>
+    <ol class="steps">
+      <li><span>Write <code>tools/watch_cli.py</code>. It sets the clock and the dose schedule, starts a session, and saves the recording to a file.</span></li>
+      <li><span>Write <code>tools/compare_session.py</code>. It runs <code>replay</code> on a recording and reports any window where the watch's answer differs, under the rule in step 5. It then runs the toolbox on each stretch with its conversion set to 100, using the reading times from the recording, and reports how often the watch agrees. It leaves out window 0 of each stretch.</span></li>
+    </ol>
+
+    <h4>Watch face</h4>
+    <ol class="steps">
+      <li><span>Build the watch face from Waveshare's LVGL example as described under Watch face.</span></li>
+      <li><span>Add the dose flow with the "Took it" button, the three second lock, and the tone.</span></li>
+    </ol>
+
+    <h4>Tests and demo</h4>
+    <ol class="steps">
+      <li><span>Do the 11 PADS tasks yourself with the recording on. You have no tremor, so every tremor result is a false alarm, and you count them per task. Run the session comparison on the recording.</span></li>
+      <li><span>Spend 30 minutes on everyday tasks with the watch on. Count false results while you type, walk, brush your teeth, dry your hair, scratch, stir, and use a screwdriver.</span></li>
+      <li><span>Measure the response time. Shake as described under Response time for 20 seconds, then hold still, and repeat ten times. Find the start and end of each shake in the readings, and take the face changes from the <code>F</code> lines. Report the median and the worst delay in each direction.</span></li>
+      <li><span>Use every watch screen while you shake your hand, then again in bright daylight with your reading glasses off.</span></li>
+      <li><span>Record the demo session. Include rest, several 20 second shakes, arm movement, and a dose reminder answered with "Took it". Run the session comparison on it afterwards.</span></li>
+    </ol>
+
+    <p style="margin-top:1.25rem">The write-up should say that a deliberate shake is a stand-in for tremor. The PADS patient recordings run through <code>replay</code> are the real test.</p>
+  </section>
+
+  <section id="face">
+    <h2>Watch face</h2>
+    <p>The face runs on a 410 by 502 AMOLED touch screen and is built in LVGL. The board has a clock chip, a battery gauge, and an audio codec, and it has no vibration motor. The screen stays on for the whole session.</p>
+
+    <h3>Who wears it</h3>
+    <div class="needs">
+      <div class="row head"><p>The wearer</p><p>So the face</p></div>
+      <div class="row"><p>Their hand shakes, so they miss small targets.</p><p>Every tap target is at least a third of the screen. There is no swipe, drag, long press, or double tap.</p></div>
+      <div class="row"><p>Their movements are slow and can freeze.</p><p>Nothing times out while they use it. A screen stays open until the button is pressed or five minutes pass.</p></div>
+      <div class="row"><p>Levodopa can cause extra movement, so the hand can hit the screen by accident.</p><p>After a dose is logged, the button area ignores taps for three seconds, so a second tap cannot log a second dose.</p></div>
+      <div class="row"><p>In off periods they may not be able to work a screen at all.</p><p>The wearer never starts or stops a measurement. Tapping "Took it" is the only action, and it is optional.</p></div>
+      <div class="row"><p>Most are over sixty, and Parkinson's weakens contrast and colour vision.</p><p>Text is bold and nothing is smaller than 28 pixels. Colour never carries meaning alone, because every state also has a word and an icon.</p></div>
+      <div class="row"><p>Their voice is often soft, and their hearing is usually fine.</p><p>There is no voice control. Every accepted tap presses the card in and plays one soft tone, which a laptop command can turn off.</p></div>
+    </div>
+
+    <h3>Look</h3>
+    <ul>
+      <li>The face uses light mode, with white cards on a faintly warm background.</li>
+      <li>The type is Red Hat Display in bold, as in the design file. LVGL needs one converted font file for each size, so the face uses only 28, 40, 56, and 96 pixel sizes.</li>
+      <li>The time is 96 pixels tall and the date under it is 28 pixels. The state circle is about 260 pixels wide, which leaves room for the larger time.</li>
+      <li>The design file sets the colours. Every colour pair must pass a contrast check at the large text level, and the state colours must stay distinct for people who confuse red and green.</li>
+    </ul>
+
+    <h3>The state circle</h3>
+    <p>One large circle in the middle of the Home screen shows the state. A filled circle means the detector gave an answer, and an outline means it did not.</p>
+    <ul class="states">
+      <li>
+        <div class="dot tremor" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 12c1.5-5 3-5 4.5 0s3 5 4.5 0 3-5 4.5 0 3 5 4.5 0"/></svg></div>
+        <div><b>Tremor</b><span>The detector found rest tremor.</span></div>
+      </li>
+      <li>
+        <div class="dot calm" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12h16"/></svg></div>
+        <div><b>No tremor</b><span>The detector checked and found none.</span></div>
+      </li>
+      <li>
+        <div class="dot" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12h14M13 7l5 5-5 5"/></svg></div>
+        <div><b>Arm moving</b><span>The arm was moving with purpose, so there is no answer.</span></div>
+      </li>
+      <li>
+        <div class="dot" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></div>
+        <div><b>Waiting</b><span>The watch is warming up after a start or a gap, or the sensor has failed.</span></div>
+      </li>
+      <li>
+        <div class="dot dose" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="8.5" width="18" height="7" rx="3.5"/><path d="M12 8.5v7"/></svg></div>
+        <div><b>Dose due</b><span>A dose is due, and the circle turns purple.</span></div>
+      </li>
+    </ul>
+    <p class="caption">The colours here show the rule. Dose due takes over the circle until the due state ends, and then the detector state returns.</p>
+
+    <h3>Where the design file must change</h3>
+    <ul>
+      <li>The design file says Dyskinesia. This project detects tremor only, so every label says Tremor and the Session figure says "of still time this session".</li>
+      <li>The design file has no No tremor state. Add it as a filled green circle, in a green clearly different from the "Took it" button.</li>
+      <li>The design file has No link and Idle circles and a Bluetooth mark. Remove all three, because the watch has no Bluetooth and no idle state. Add the Waiting outline.</li>
+      <li>The design file fills the Arm moving circle in charcoal, which is almost as dark as the Tremor navy. Draw it as an outline.</li>
+      <li>The design file pulses three states forever. The watch pulses the circle once when the state changes and then holds still. The Logged tick plays once.</li>
+      <li>The design file sets the time at 32 pixels and the date and small labels at 22 pixels. Use the sizes under Look.</li>
+      <li>The design file puts a clock icon next to "Last" lines. Remove it, because it has no meaning.</li>
+      <li>The design file's Today screen becomes the Session screen described below.</li>
+      <li>The design file's Status screen says "Up" and shows samples sent. Use the Status list below.</li>
+    </ul>
+
+    <h3>Behaviour</h3>
+    <ul>
+      <li>The BOOT button cycles through the screens. The PWR button stays the power button, because holding it turns the board off.</li>
+      <li>No action has a confirm step or an undo, because a confirm step doubles the taps for someone who finds one tap hard.</li>
+      <li>The face shows no severity, off periods, or dyskinesia, because the detector gives none of them.</li>
+    </ul>
+
+    <h3>Screens</h3>
+    <ul class="screens">
+      <li><b>Home</b> shows the time and date at the top left, battery at the top right, and the state circle in the middle with "Last tremor 14:32" under it. A tap anywhere opens Medication.</li>
+      <li><b>Medication</b> shows the last dose and the next one due, such as "Levodopa, 16:00". When a dose is due, that line turns purple. The lower half is one large "Took it" button, and only the lower half takes taps. A tap logs the dose and shows a check mark with "Logged" for three seconds before it returns to Home.</li>
+      <li><b>Session</b> shows the session's share of still time with tremor as one large figure with a plain line under it. Below it sit up to twelve blocks, one for each 10 minutes of the session. A block with under two minutes of still time is drawn hollow.</li>
+      <li><b>Status</b> lists battery percentage and voltage, uptime, the measured sensor rate, the stretch number, the time the last detector run took, whether the recording is on, the firmware version, and the table hash. It is for the build and stays in for the write-up.</li>
+    </ul>
+  </section>
+
+  <section id="deliver">
+    <h2>What you deliver</h2>
+    <ul>
+      <li>A recorded video of a demo session shows the watch face responding to 20 second shakes.</li>
+      <li>The repo follows the layout above, with the recording of the demo session.</li>
+      <li>A match report shows the C detector agreeing with the toolbox on every PADS file, with the largest difference in the probability.</li>
+      <li>A session report shows that <code>replay</code> agreed with the watch on every window of the demo, and how often the toolbox agreed.</li>
+      <li>A results table has one row per PADS task and a column each for PADS healthy, PADS Parkinson's, PADS other movement disorder, and you. Each cell is how often the detector fired, and the table states that the patient columns are not a hit rate.</li>
+      <li>A results page adds the false results from the everyday tasks, the measured sensor rate, the time each detector run takes on the chip, and the response time each way.</li>
+      <li>The write-up says that the detector is published and validated, was ported to C without retraining, and undercounts by design. It says that the setup was tested on public recordings and your own wrist and never on a person with tremor, and that a one to two hour session shows the measure without validating it. It also says that the design serves the person with tremor in the same way your AAC work does.</li>
+    </ul>
+  </section>
+
+  <footer>
+    <p>Revised 21 October 2026. The detector comes from Timmermans and colleagues, npj Parkinson's Disease, 2025, and the test data from Varghese and colleagues, npj Parkinson's Disease, 2024. The sensor rates come from the QMI8658A datasheet.</p>
+  </footer>
+</div>
