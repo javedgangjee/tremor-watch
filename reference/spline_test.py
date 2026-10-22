@@ -11,7 +11,7 @@ import sys, os, warnings
 import numpy as np, pandas as pd
 warnings.filterwarnings("ignore")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from context.plain_detector import build_tables, detect
+from plain_detector import build_tables, detect
 import paradigma
 from paradigma.config import TremorConfig, IMUConfig
 from paradigma.classification import ClassifierPackage

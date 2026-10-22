@@ -39,8 +39,8 @@ Every command runs from the repo root.
    - Each command exits with code 0.
    - In rate_test.py, the line for 112.1 Hz run at 112 Hz says the tremor label agrees on 98.0% of windows, because 2 of 100 windows differ.
    - In latency_test.py, the 50, 200, 600, and 1500 degrees per second shakes at 5 Hz each give tremor 20/20.
-   - In spline_test.py, the line for margin 16 in float32 gives a largest value gap of 3.2e-06 or less, 149 windows, a largest probability gap of 5e-07 or less, and agreement of 100.0%.
-   - In demo_test.py, each of the five cases with the forearm resting shows Tremor in 10/10 runs and stays on Tremor for 100% of the shake.
+   - In spline_test.py, the line for margin 16 in float32 gives 150 windows, a largest probability gap of 5e-07 or less, and agreement of 100.0%. Its largest value gap is about 0.41 degrees per second. This gap sits in the last 0.05 seconds of the recording, where the toolbox's curve and the block fit end in different ways. Away from the end the gap is about 3.2e-06, as the plan's Measured so far section says. The user agreed this change on 21 October 2026.
+   - In demo_test.py, each of the five cases with the forearm resting shows Tremor in 10/10 runs and stays on Tremor for 99% or more of the shake. The 600 degrees per second case gives 99%, which is one window in ten runs. The user agreed this change on 21 October 2026.
 
 6. The count script runs on all of PADS.
    - The command is `reference/.venv/bin/python reference/pads_counts.py`.
