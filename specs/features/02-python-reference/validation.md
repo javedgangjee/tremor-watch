@@ -71,3 +71,19 @@ Every command runs from the repo root.
 ## Requirement coverage
 
 Requirements 1, 2, 3, and 17 are covered by check 1. Requirement 4 is covered by check 7. Requirement 5 is covered by checks 2 and 3. Requirements 6, 7, 11, 16, and 22 are covered by checks 4, 6, and 8. Requirement 8 is covered by check 4 cases 3 and 6. Requirement 9 is covered by check 4 case 4. Requirement 10 is covered by check 4 case 5. Requirement 12 is covered by check 9. Requirement 13 is covered by checks 5 and 7. Requirement 14 is covered by checks 6 and 7. Requirement 15 is covered by checks 6 and 7. Requirement 18 is covered by check 9. Requirement 19 is covered by check 4 case 2. Requirement 20 is covered by check 4 case 1 and check 6. Requirement 21 is covered by check 4 cases 5 to 7. Requirement 23 is covered by check 6. Requirement 24 is covered by check 8. Requirement 25 is covered by check 4.
+
+## Results
+
+The checks ran on 22 October 2026 on branch feature/02-python-reference at commit 3bf6c35. Every check passed.
+
+1. Check 1 passed. The venv rebuilt from reference/requirements.txt with exit code 0 and printed 3.13.15 1.1.2 1.6.0.
+2. Check 2 passed. The model file's hash is 4be2ac2b511c501257ea8186068f06a94d0084d653840e907be72cd103dc5b0e.
+3. Check 3 passed. The first line gave True, 12, and a threshold of 0.029570, and the second gave 37 numbers plus the threshold. Both sides had 200 windows. In float64 the largest mfcc difference was 3.55e-15 and the largest prob difference was 8.88e-16. In float32 they were 1.24e-06 and 2.02e-07. The tremor label agreed on 200 of 200 windows in both.
+4. Check 4 passed. pytest reported 9 passed.
+5. Check 5 passed. All four scripts exited with code 0. rate_test.py gave 98.0% for 112.1 Hz run at 112 Hz. latency_test.py gave tremor 20/20 for the 50, 200, 600, and 1500 degrees per second shakes. spline_test.py gave 150 windows, a largest probability gap of 4.50e-07, and 100.0% agreement for margin 16 in float32, with a largest value gap of 0.409 degrees per second. demo_test.py showed Tremor in 10/10 runs for each resting case, and the stays-on share was 100% except 99% for the 600 degrees per second case.
+6. Check 6 passed. The script exited with code 0 in 55 seconds. It read 10318 files with 0 missing, pads_counts.csv has 99 rows, and pads_windows.csv has 26264 rows, which equals the number from the observation files. The three result files are the same byte for byte as the committed files.
+7. Check 7 passed. git add printed no file in data/ or reference/.venv/. The stat shows six renames from context/ to reference/. Each of the five scripts changes only its import line, and plain_detector.py does not change.
+8. Check 8 passed. The user confirmed the count report.
+9. Check 9 passed. The user confirmed the README.
+
+Every item in requirements.md has at least one passing check.
