@@ -1,0 +1,106 @@
+ESP-ROM:esp32s3-20210327
+Build:Mar 27 2021
+rst:0x15 (USB_UART_CHIP_RESET),boot:0x2b (SPI_FAST_FLASH_BOOT)
+Saved PC:0x4037c2fa
+SPIWP:0xee
+mode:DIO, clock div:1
+load:0x3fce2820,len:0x1664
+load:0x403c8700,len:0xf7c
+load:0x403cb700,len:0x31ec
+entry 0x403c892c
+I (24) boot: ESP-IDF v6.1 2nd stage bootloader
+I (24) boot: compile time Oct 21 2026 22:17:39
+I (25) boot: Multicore bootloader
+I (25) boot: chip revision: v0.2
+I (27) boot: efuse block revision: v1.4
+I (31) qio_mode: Enabling default flash chip QIO
+I (35) boot.esp32s3: Boot SPI Speed : 80MHz
+I (39) boot.esp32s3: SPI Mode       : QIO
+I (43) boot.esp32s3: SPI Flash Size : 16MB
+I (47) boot: Enabling RNG early entropy source...
+I (51) boot: Partition Table:
+I (54) boot: ## Label            Usage          Type ST Offset   Length
+I (60) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+I (67) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+I (73) boot:  2 factory          factory app      00 00 00010000 00177000
+I (80) boot: End of partition table
+I (83) esp_image: segment 0: paddr=00010020 vaddr=3c070020 size=36058h (221272) map
+I (125) esp_image: segment 1: paddr=00046080 vaddr=3fc95200 size=038d4h ( 14548) load
+I (128) esp_image: segment 2: paddr=0004995c vaddr=40374000 size=066bch ( 26300) load
+I (134) esp_image: segment 3: paddr=00050020 vaddr=42000020 size=60f94h (397204) map
+I (198) esp_image: segment 4: paddr=000b0fbc vaddr=4037a6bc size=0aad0h ( 43728) load
+I (207) esp_image: segment 5: paddr=000bba94 vaddr=50000000 size=00024h (    36) load
+I (214) boot: Loaded app from partition at offset 0x10000
+I (215) boot: Disabling RNG early entropy source...
+I (225) octal_psram: vendor id    : 0x0d (AP)
+I (225) octal_psram: dev id       : 0x02 (generation 3)
+I (225) octal_psram: density      : 0x03 (64 Mbit)
+I (227) octal_psram: good-die     : 0x01 (Pass)
+I (231) octal_psram: Latency      : 0x01 (Fixed)
+I (236) octal_psram: VCC          : 0x01 (3V)
+I (240) octal_psram: SRF          : 0x01 (Fast Refresh)
+I (245) octal_psram: BurstType    : 0x01 (Hybrid Wrap)
+I (250) octal_psram: BurstLen     : 0x01 (32 Byte)
+I (254) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)
+I (259) octal_psram: DriveStrength: 0x00 (1/1)
+I (264) MSPI Timing: Enter psram timing tuning
+I (268) esp_psram: Found 8MB PSRAM device
+I (271) esp_psram: Speed: 80MHz
+I (274) cpu_start: Multicore app
+I (579) esp_psram: SPI SRAM memory test OK
+I (587) cpu_start: GPIO 44 and 43 are used as console UART I/O pins
+I (588) cpu_start: Pro cpu start user code
+I (588) cpu_start: cpu freq: 240000000 Hz
+I (589) app_init: Application information:
+I (593) app_init: Project name:     bringup_rate
+I (598) app_init: App version:      590f5df-dirty
+I (602) app_init: Compile time:     Oct 21 2026 22:17:12
+I (607) app_init: ELF file SHA256:  dc27cb8d3...
+I (611) app_init: ESP-IDF:          v6.1
+I (615) efuse_init: Min chip rev:     v0.0
+I (619) efuse_init: Max chip rev:     v0.99 
+I (623) efuse_init: Chip rev:         v0.2
+I (627) heap_init: Initializing. RAM available for dynamic allocation:
+I (633) heap_init: At 3FCA99B0 len 0003FD60 (255 KiB): RAM
+I (638) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
+I (643) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM
+I (648) heap_init: At 600FE000 len 00001FE8 (7 KiB): RTCRAM
+I (654) esp_psram: Adding pool of 8192K of PSRAM memory to heap allocator
+I (661) spi_flash: detected chip: gd
+I (664) spi_flash: flash io: qio
+W (666) spi_flash: Detected size(32768k) larger than the size in the binary image header(16384k). Using the size in the binary image header.
+I (679) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+I (685) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+I (692) main_task: Started on CPU0
+I (695) esp_psram: Reserving pool of 32K of internal memory for DMA/internal allocations
+I (703) main_task: Calling app_main()
+I (706) LVGL: Starting LVGL task
+I (709) ESP32-S3-Touch-AMOLED-2.06: Initialize SPI bus
+I (715) sh8601: LCD panel create success, version: 2.0.0
+I (1125) QMI8658: QMI8658 initialized successfully
+SETTINGS ctrl2=0x26 ctrl3=0x66 ctrl7=0x03
+SETTINGS accel_on=1 gyro_on=1 accel_rate_code=0x06 gyro_rate_code=0x06 gyro_range=+/-1024 dps
+I (1141) main_task: Returned from app_main()
+START t_us=2495763 count=224
+MINUTE 01 one_minute_hz=114.3386 since_start_hz=114.3386
+MINUTE 02 one_minute_hz=114.3363 since_start_hz=114.3375
+MINUTE 03 one_minute_hz=114.3360 since_start_hz=114.3370
+MINUTE 04 one_minute_hz=114.3333 since_start_hz=114.3361
+MINUTE 05 one_minute_hz=114.3333 since_start_hz=114.3355
+MINUTE 06 one_minute_hz=114.3333 since_start_hz=114.3352
+MINUTE 07 one_minute_hz=114.3314 since_start_hz=114.3346
+MINUTE 08 one_minute_hz=114.3295 since_start_hz=114.3340
+MINUTE 09 one_minute_hz=114.3306 since_start_hz=114.3336
+MINUTE 10 one_minute_hz=114.3289 since_start_hz=114.3331
+MINUTE 11 one_minute_hz=114.3295 since_start_hz=114.3328
+MINUTE 12 one_minute_hz=114.3276 since_start_hz=114.3324
+MINUTE 13 one_minute_hz=114.3281 since_start_hz=114.3321
+MINUTE 14 one_minute_hz=114.3276 since_start_hz=114.3317
+MINUTE 15 one_minute_hz=114.3276 since_start_hz=114.3315
+MINUTE 16 one_minute_hz=114.3262 since_start_hz=114.3311
+MINUTE 17 one_minute_hz=114.3276 since_start_hz=114.3309
+MINUTE 18 one_minute_hz=114.3257 since_start_hz=114.3306
+MINUTE 19 one_minute_hz=114.3262 since_start_hz=114.3304
+MINUTE 20 one_minute_hz=114.3257 since_start_hz=114.3302
+SUMMARY rate_20min_hz=114.3302 lowest_1min_hz=114.3257 highest_1min_hz=114.3386 first5_hz=114.3355 last5_hz=114.3263 drift_ppm=-80.8 within_2_percent=yes
+COUNTER steps_over_one=0 largest_step=0 read_errors=0
