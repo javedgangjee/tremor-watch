@@ -9,7 +9,7 @@ import numpy as np
 from scipy.interpolate import interp1d
 warnings.filterwarnings("ignore")
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from context.plain_detector import build_tables, detect
+from plain_detector import build_tables, detect
 import paradigma
 from paradigma.classification import ClassifierPackage
 

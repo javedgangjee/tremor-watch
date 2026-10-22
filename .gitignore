@@ -3,3 +3,7 @@ firmware/**/build/
 firmware/**/managed_components/
 firmware/**/sdkconfig.old
 .vscode/
+data/
+reference/.venv/
+__pycache__/
+.pytest_cache/

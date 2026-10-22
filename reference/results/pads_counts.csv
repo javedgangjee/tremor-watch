@@ -1,0 +1,100 @@
+task,group,wrist,windows,fired,share
+Relaxed,healthy,left,316,16,0.05063291139240506
+Relaxed,healthy,right,316,11,0.03481012658227848
+Relaxed,healthy,both,632,27,0.04272151898734177
+Relaxed,Parkinson's,left,1104,266,0.24094202898550723
+Relaxed,Parkinson's,right,1104,245,0.22192028985507245
+Relaxed,Parkinson's,both,2208,511,0.23143115942028986
+Relaxed,other movement disorder,left,456,137,0.30043859649122806
+Relaxed,other movement disorder,right,456,137,0.30043859649122806
+Relaxed,other movement disorder,both,912,274,0.30043859649122806
+RelaxedTask,healthy,left,316,19,0.060126582278481014
+RelaxedTask,healthy,right,316,11,0.03481012658227848
+RelaxedTask,healthy,both,632,30,0.04746835443037975
+RelaxedTask,Parkinson's,left,1104,299,0.2708333333333333
+RelaxedTask,Parkinson's,right,1104,265,0.24003623188405798
+RelaxedTask,Parkinson's,both,2208,564,0.2554347826086957
+RelaxedTask,other movement disorder,left,456,124,0.2719298245614035
+RelaxedTask,other movement disorder,right,456,124,0.2719298245614035
+RelaxedTask,other movement disorder,both,912,248,0.2719298245614035
+StretchHold,healthy,left,158,0,0.0
+StretchHold,healthy,right,158,0,0.0
+StretchHold,healthy,both,316,0,0.0
+StretchHold,Parkinson's,left,552,63,0.11413043478260869
+StretchHold,Parkinson's,right,552,51,0.09239130434782608
+StretchHold,Parkinson's,both,1104,114,0.10326086956521739
+StretchHold,other movement disorder,left,228,36,0.15789473684210525
+StretchHold,other movement disorder,right,228,39,0.17105263157894737
+StretchHold,other movement disorder,both,456,75,0.16447368421052633
+LiftHold,healthy,left,158,0,0.0
+LiftHold,healthy,right,158,0,0.0
+LiftHold,healthy,both,316,0,0.0
+LiftHold,Parkinson's,left,552,44,0.07971014492753623
+LiftHold,Parkinson's,right,552,36,0.06521739130434782
+LiftHold,Parkinson's,both,1104,80,0.07246376811594203
+LiftHold,other movement disorder,left,228,21,0.09210526315789473
+LiftHold,other movement disorder,right,228,19,0.08333333333333333
+LiftHold,other movement disorder,both,456,40,0.08771929824561403
+HoldWeight,healthy,left,158,5,0.03164556962025317
+HoldWeight,healthy,right,158,2,0.012658227848101266
+HoldWeight,healthy,both,316,7,0.022151898734177215
+HoldWeight,Parkinson's,left,552,153,0.27717391304347827
+HoldWeight,Parkinson's,right,552,126,0.22826086956521738
+HoldWeight,Parkinson's,both,1104,279,0.25271739130434784
+HoldWeight,other movement disorder,left,228,71,0.31140350877192985
+HoldWeight,other movement disorder,right,228,67,0.29385964912280704
+HoldWeight,other movement disorder,both,456,138,0.3026315789473684
+PointFinger,healthy,left,158,0,0.0
+PointFinger,healthy,right,158,0,0.0
+PointFinger,healthy,both,316,0,0.0
+PointFinger,Parkinson's,left,552,1,0.0018115942028985507
+PointFinger,Parkinson's,right,552,2,0.0036231884057971015
+PointFinger,Parkinson's,both,1104,3,0.002717391304347826
+PointFinger,other movement disorder,left,228,2,0.008771929824561403
+PointFinger,other movement disorder,right,228,0,0.0
+PointFinger,other movement disorder,both,456,2,0.0043859649122807015
+DrinkGlas,healthy,left,158,1,0.006329113924050633
+DrinkGlas,healthy,right,158,0,0.0
+DrinkGlas,healthy,both,316,1,0.0031645569620253164
+DrinkGlas,Parkinson's,left,552,13,0.02355072463768116
+DrinkGlas,Parkinson's,right,552,7,0.012681159420289856
+DrinkGlas,Parkinson's,both,1104,20,0.018115942028985508
+DrinkGlas,other movement disorder,left,228,2,0.008771929824561403
+DrinkGlas,other movement disorder,right,228,3,0.013157894736842105
+DrinkGlas,other movement disorder,both,456,5,0.010964912280701754
+CrossArms,healthy,left,158,0,0.0
+CrossArms,healthy,right,158,0,0.0
+CrossArms,healthy,both,316,0,0.0
+CrossArms,Parkinson's,left,552,35,0.06340579710144928
+CrossArms,Parkinson's,right,552,24,0.043478260869565216
+CrossArms,Parkinson's,both,1104,59,0.05344202898550725
+CrossArms,other movement disorder,left,228,28,0.12280701754385964
+CrossArms,other movement disorder,right,228,21,0.09210526315789473
+CrossArms,other movement disorder,both,456,49,0.1074561403508772
+TouchIndex,healthy,left,158,0,0.0
+TouchIndex,healthy,right,158,0,0.0
+TouchIndex,healthy,both,316,0,0.0
+TouchIndex,Parkinson's,left,552,2,0.0036231884057971015
+TouchIndex,Parkinson's,right,552,2,0.0036231884057971015
+TouchIndex,Parkinson's,both,1104,4,0.0036231884057971015
+TouchIndex,other movement disorder,left,228,1,0.0043859649122807015
+TouchIndex,other movement disorder,right,228,0,0.0
+TouchIndex,other movement disorder,both,456,1,0.0021929824561403508
+TouchNose,healthy,left,158,0,0.0
+TouchNose,healthy,right,158,0,0.0
+TouchNose,healthy,both,316,0,0.0
+TouchNose,Parkinson's,left,552,2,0.0036231884057971015
+TouchNose,Parkinson's,right,552,1,0.0018115942028985507
+TouchNose,Parkinson's,both,1104,3,0.002717391304347826
+TouchNose,other movement disorder,left,228,0,0.0
+TouchNose,other movement disorder,right,228,0,0.0
+TouchNose,other movement disorder,both,456,0,0.0
+Entrainment,healthy,left,316,7,0.022151898734177215
+Entrainment,healthy,right,316,8,0.02531645569620253
+Entrainment,healthy,both,632,15,0.023734177215189875
+Entrainment,Parkinson's,left,1104,98,0.08876811594202899
+Entrainment,Parkinson's,right,1104,79,0.07155797101449275
+Entrainment,Parkinson's,both,2208,177,0.08016304347826086
+Entrainment,other movement disorder,left,456,32,0.07017543859649122
+Entrainment,other movement disorder,right,456,23,0.05043859649122807
+Entrainment,other movement disorder,both,912,55,0.06030701754385965
