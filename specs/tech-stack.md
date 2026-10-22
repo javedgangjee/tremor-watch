@@ -9,8 +9,9 @@
 
 ## Watch firmware
 
-- The firmware is written in C with ESP-IDF. The ESP-IDF version is the one that Waveshare's example package for this board targets. Feature 1 records the exact version here.
-- The face uses LVGL, at the version in Waveshare's LVGL example for this board. Feature 1 records the exact version here.
+- The firmware is written in C with ESP-IDF v6.1. Its version macros give ESP-IDF v6.1.0. Waveshare tests its examples on v5.5.5 and v6.0.2 only, so a build problem in a Waveshare example may come from the version.
+- The firmware starts from Waveshare's repo github.com/waveshareteam/ESP32-S3-Touch-AMOLED-2.06 at commit 30f3b23b3d4bb38d32f7d0cddffb66759668a855. It uses the board support package waveshare/esp32_s3_touch_amoled_2_06 at version 2.0.0 and the QMI8658 driver waveshare/qmi8658 at version 2.0.2.
+- The face uses LVGL 9.5.0, which is the version in Waveshare's LVGL example for this board.
 - The font is Red Hat Display bold, converted for LVGL at 28, 40, 56, and 96 pixels only.
 - The layout, colours, and icons come from the design file context/Tremor Watch Light.html, with the changes that the plan's Watch face section lists. The design's colours are #111315 for text, #5C6265 for second-level text, #1B2E42 for Tremor, #3F2559 for Dose due, #173A28 for the "Took it" button and Logged, and #C9CDD0 for empty blocks.
 - The icons in the design file are Lucide icons. They must be converted to LVGL images.
