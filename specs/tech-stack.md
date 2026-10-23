@@ -24,6 +24,8 @@
 - The dose schedule and the tone setting live in the chip's settings store. Answers and doses stay in memory, and nothing else is written to flash.
 - The pipeline task asks the sensor task to end a stretch through a queue of one stretch number. It asks when a stretch loses readings, loses its first message, or fills the converter's ring. The sensor task then ends the stretch with the overflow flag, and the STRETCH line gives reason=pipeline.
 - A sensor fault answer comes when no sensor message has arrived for 2 seconds, and then once a second until a message arrives.
+- The detector takes about 6.6 milliseconds a window on the chip at ESP-IDF's default -Og level, with the 64-bit scoring step in software. Inside the watch firmware it takes about 6.9 milliseconds, because the other tasks share the chip. Feature 8 measured both.
+- Each answer comes about 113 milliseconds after its window's last 100 Hz sample, and feature 8's table run gave 65 to 162 milliseconds from window 10 on. The wait comes from the converter, which needs 16 extra readings after each block, and from the bursts of 11 readings.
 - firmware/detector_check/ is a separate ESP-IDF project. It runs the saved windows of tests/detector/ on the chip, so the chip's numbers can be checked with the rule of tests/detector/test_detector.c.
 
 ## Shared C library

@@ -53,6 +53,16 @@ This file records each change to Tremor log that a person who reads or runs the 
 - Feature 7 adds a holding screen that shows "Tremor log" and the uptime, and holding versions of the pipeline and state tasks that count the readings and send the uptime.
 - Feature 7 adds tests/firmware/table_run.py and its pytest cases in tests/firmware/test_table_run.py, and the script runs the watch on a table for 30 minutes and judges the log.
 - Feature 7 adds tests/firmware/table_log.txt and tests/firmware/table_report.md, which show 2 stretches in 30 minutes, no lost readings, and one drift end after 746.958 seconds.
+- Feature 8 adds the pipeline task's rules in core/pipeline.h and core/pipeline.c, which follow the stretches, feed the converter and the window rule, ask for a stretch end when readings are lost or the converter's ring fills, and give a sensor fault answer after 2 seconds with no sensor message.
+- Feature 8 adds the state task's rules in core/session.h and core/session.c, which pass each answer to the session share and the face, call face_gap() at each new stretch after a gap, and run the dose rules each second.
+- Feature 8 adds Unity tests for the two new files in tests/pipeline/ and tests/session/, so `make check` now runs 11 CTest tests.
+- Feature 8 replaces the holding pipeline task with one that runs the converter and the C detector on each window and sends each answer to the state task.
+- Feature 8 replaces the holding state task with one that holds the face state, the session share, and the dose rules, and the holding screen now shows the name of the face state.
+- Feature 8 makes the sensor task end a stretch when the pipeline task asks through a queue of one stretch number, and the STRETCH line then gives reason=pipeline.
+- Feature 8 adds firmware/detector_check/, a separate ESP-IDF project that runs the 322 saved windows on the chip, and tests/firmware/windows_bin.py, which turns the saved windows into the binary file that the project embeds.
+- Feature 8 adds tests/firmware/chip_windows.py with its pytest cases, and its committed log and report show that the chip agrees with the toolbox on all 322 saved windows with a largest difference of 2.66e-07 in the probability.
+- Feature 8 adds tests/firmware/pipeline_run.py with its pytest cases, and its committed log and report show 1796 answers in 30 minutes on a table with no tremor answer, no sensor fault, and no drop.
+- Feature 8 measures the detector at about 6.6 milliseconds a window on the chip, and each answer comes about 113 milliseconds after its window's last 100 Hz sample.
 
 ### Changed
 
@@ -90,3 +100,10 @@ This file records each change to Tremor log that a person who reads or runs the 
 - The roadmap entry for feature 9 now says that feature 9 makes the USB task the only writer on the recording's port, checks that the port can carry the full recording, and tests that the watch drops the recording lines with no laptop.
 - The roadmap entry for feature 11 now says that the screen task must not call bsp_display_start(), because that function in board support package 2.0.0 corrupts the heap.
 - The roadmap entry for feature 12 now says that the battery needs a check before the demo, because the power chip found no battery in feature 7's table run.
+- The .gitignore file now leaves out the clangd cache in firmware/.cache/.
+- The tech stack now records core/pipeline.h, core/session.h, the end request queue, the sensor fault rule, firmware/detector_check/, and the commands for the chip check and the pipeline run.
+- The tech stack now gives the detector's run time on the chip and the wait from a window's last sample to its answer.
+- The roadmap entry for feature 7 now records that feature 8's table run had no drift end, and the user still decides on a drift fix.
+- The roadmap entry for feature 8 now records the end request, the sensor fault rule, the results on the chip and the table, the weak case 5 in tests/session/test_session.c, and that manual checks 10 and 11 wait for the user.
+- The roadmap entry for feature 9 now says that feature 9 decides the recording lines from feature 8's lines, measures the free stack again if a task formats recording lines, and decides whether a test command forces a stretch end.
+- The roadmap entries for features 10 to 12 now say how compare_session.py times the answers, that feature 11 replaces the holding screen and plays the tone, and that feature 12 checks the gap path if feature 9 adds no test command.
