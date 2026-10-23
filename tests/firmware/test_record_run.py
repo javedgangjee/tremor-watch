@@ -53,7 +53,8 @@ def table_hash() -> str:
 
 def boot_line(boot_id: int = BOOT_ID) -> str:
     """Give a good B line."""
-    return f"B,{boot_id},{RESET_CAUSE},9,{table_hash()}"
+    version = load("record_run", RECORD_RUN).FIRMWARE_VERSION
+    return f"B,{boot_id},{RESET_CAUSE},{version},{table_hash()}"
 
 
 def value(text: str, key: str) -> str:

@@ -135,7 +135,11 @@ static void take_message(const sensor_msg_t *m)
     };
     unsigned flags = pipe_part(&s_pipe, &part, esp_timer_get_time());
     if ((flags & PIPE_STRETCH) != 0) {
-        state_msg_t msg = {.kind = STATE_MSG_STRETCH, .stretch = m->stretch};
+        state_msg_t msg = {
+            .kind = STATE_MSG_STRETCH,
+            .stretch = m->stretch,
+            .rate_uhz = pipe_stretch(&s_pipe)->rate_uhz,
+        };
         send_state(&msg);
     }
     if ((flags & PIPE_END) != 0) {
@@ -163,6 +167,7 @@ static void run_windows(int64_t stamp_us)
         state_msg_t msg = {
             .kind = STATE_MSG_ANSWER,
             .stretch = pipe_stretch(&s_pipe)->number,
+            .rate_uhz = pipe_stretch(&s_pipe)->rate_uhz,
             .has_window = true,
             .window = number,
             .code = (uint8_t)res_from_answer(number, &r),
@@ -191,6 +196,7 @@ static void send_fault(void)
     state_msg_t msg = {
         .kind = STATE_MSG_ANSWER,
         .stretch = pipe_stretch(&s_pipe)->number,
+        .rate_uhz = pipe_stretch(&s_pipe)->rate_uhz,
         .has_window = false,
         .window = 0,
         .code = (uint8_t)RES_SENSOR_FAULT,

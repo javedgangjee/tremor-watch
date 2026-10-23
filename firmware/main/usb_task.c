@@ -58,6 +58,7 @@ typedef struct {
 } usb_counts_t;
 
 atomic_uint g_line_drops;
+atomic_bool g_recording_on;
 
 static usb_counts_t s_counts;
 static record_msg_t s_record;
@@ -108,8 +109,10 @@ static bool put_line(const char *text)
     s_out[len] = '\n';
     int taken = usb_serial_jtag_write_bytes(s_out, len + 1, 0);
     if (taken <= 0) {
+        atomic_store(&g_recording_on, false);
         return false;
     }
+    atomic_store(&g_recording_on, true);
     s_counts.bytes += (uint64_t)taken;
     return true;
 }

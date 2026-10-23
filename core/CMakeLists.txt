@@ -15,6 +15,10 @@ if(ESP_PLATFORM)
         pipeline.c
         session.c
         record.c
+        look.c
+        screens.c
+        view.c
+        tone.c
     )
     idf_component_register(
         SRCS ${TREMOR_SOURCES} kissfft/kiss_fft.c kissfft/kiss_fftr.c
@@ -49,6 +53,10 @@ add_library(tremor_core STATIC
     pipeline.c
     session.c
     record.c
+    look.c
+    screens.c
+    view.c
+    tone.c
     kissfft/kiss_fft.c
     kissfft/kiss_fftr.c
 )
@@ -61,7 +69,7 @@ target_compile_options(tremor_core PRIVATE
     "-DKISS_FFT_FREE(p)=((void)0)"
 )
 set_source_files_properties(detector.c reading_time.c converter.c window.c share.c face.c dose.c imu_units.c pipeline.c
-    session.c record.c PROPERTIES COMPILE_OPTIONS "${TREMOR_WARNINGS}")
+    session.c record.c look.c screens.c view.c tone.c PROPERTIES COMPILE_OPTIONS "${TREMOR_WARNINGS}")
 target_link_libraries(tremor_core PUBLIC m)
 
 add_executable(replay replay.c)

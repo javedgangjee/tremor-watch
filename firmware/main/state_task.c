@@ -6,9 +6,15 @@
  * The task takes each new stretch and each answer from the pipeline task and
  * writes a GAP line, or an ANSWER line and the W line of the recording. When
  * the shown state changes, it writes a FACE line and the F line. It ticks the
- * doses once a second, and it sends the screen task the uptime and the shown
- * state once a second and at each change. It never waits on the screen
- * queue, and it counts each message it drops.
+ * doses once a second. It builds the view with view_build() from core/view.h
+ * and sends it to the screen task once a second and after each change. It
+ * never waits on the screen queue, and it counts each view it drops.
+ *
+ * A "Took it" tap comes from the screen task. The task gives it to
+ * sess_took_it(), and when the tap is accepted it writes a DOSE line, the D
+ * line of the recording, and the FACE and F lines when the shown state
+ * changed. When the tap is refused it writes a DOSE_REFUSED line. The task
+ * reads the power chip at start and every 10 seconds for the Status screen.
  *
  * At start the task loads the dose schedule and the tone setting from the
  * settings store. It applies the laptop's commands that the USB task sends,
@@ -26,24 +32,49 @@
 #include "freertos/queue.h"
 #include "freertos/task.h"
 
+#include "power.h"
 #include "record.h"
 #include "session.h"
 #include "settings.h"
 #include "tasks.h"
+#include "view.h"
 
 #define SECOND_TICKS pdMS_TO_TICKS(1000)
+/* The task reads the power chip every 10 seconds. */
+#define POWER_EVERY_S 10
 
 static sess_t s_sess;
 static uint32_t s_screen_drops;
 static bool s_tone_on;
+static view_t s_view;
+static view_input_t s_input;
+/* The accepted and refused "Took it" taps since boot. */
+static uint32_t s_took_it;
+static uint32_t s_refused;
+static power_info_t s_power;
+static bool s_power_ok;
 
+/* read_power() reads the power chip for the Status screen. */
+static void read_power(void)
+{
+    power_info_t info = {0};
+    s_power_ok = power_read(&info) == ESP_OK;
+    s_power = info;
+    s_input.battery_known = s_power_ok && info.battery_in && info.battery_percent >= 0;
+    s_input.battery_mv = info.battery_mv;
+    s_input.battery_percent = info.battery_percent;
+}
+
+/* send_screen() builds the view and sends it to the screen task with no
+ * wait. */
 static void send_screen(void)
 {
-    screen_msg_t msg = {
-        .uptime_s = (uint32_t)(esp_timer_get_time() / 1000000),
-        .face = (uint8_t)face_shown(&s_sess.face),
-    };
-    if (xQueueSend(g_screen_queue, &msg, 0) != pdTRUE) {
+    int64_t now_us = esp_timer_get_time();
+    s_input.uptime_s = (uint32_t)(now_us / 1000000);
+    s_input.recording = atomic_load(&g_recording_on);
+    s_input.tone_on = s_tone_on;
+    view_build(&s_view, &s_sess, &s_input, now_us);
+    if (xQueueSend(g_screen_queue, &s_view, 0) != pdTRUE) {
         s_screen_drops++;
     }
 }
@@ -77,6 +108,12 @@ static void take_stretch(const state_msg_t *m)
 static void take_answer(const state_msg_t *m)
 {
     unsigned flags = sess_answer(&s_sess, m->has_window, m->window, (res_code_t)m->code, m->time_us);
+    s_input.has_answer = true;
+    s_input.stretch = m->stretch;
+    s_input.rate_uhz = m->rate_uhz;
+    if (m->has_window) {
+        s_input.run_us = m->run_us;
+    }
     char window[12] = "none";
     char prob[32] = "none";
     char below[32] = "none";
@@ -98,6 +135,32 @@ static void take_answer(const state_msg_t *m)
         usb_send("%s", line);
     }
     after_call(flags);
+}
+
+/* take_took_it() takes a "Took it" tap from the screen task. */
+static void take_took_it(const state_msg_t *m)
+{
+    unsigned flags = sess_took_it(&s_sess, m->at_us);
+    if ((flags & SESS_DOSE_LOGGED) == 0) {
+        s_refused++;
+        usb_send("DOSE_REFUSED at_us=%lld", (long long)m->at_us);
+        return;
+    }
+    s_took_it++;
+    s_input.doses_accepted++;
+    dose_entry_t dose;
+    if (dose_last(&s_sess.dose, &dose)) {
+        usb_send("DOSE at_us=%lld answers_local_us=%lld count=%lu", (long long)dose.time_us,
+                 (long long)dose.answers_local_us, (unsigned long)dose_count(&s_sess.dose));
+        char line[REC_LINE_MAX];
+        if (rec_dose(line, sizeof line, &dose) > 0) {
+            usb_send("%s", line);
+        }
+    }
+    after_call(flags);
+    if ((flags & SESS_FACE_CHANGED) == 0) {
+        send_screen();
+    }
 }
 
 /* reply() sends the A line of a command. */
@@ -151,6 +214,7 @@ static void take_command(const state_msg_t *m)
         usb_send("CLOCK at_us=%lld offset_us=%lld local_us=%lld", (long long)m->at_us, (long long)offset_us,
                  (long long)(m->at_us + offset_us));
         reply(REC_CMD_CLOCK, REC_DONE);
+        send_screen();
         break;
     }
     case REC_CMD_SCHEDULE: {
@@ -161,6 +225,7 @@ static void take_command(const state_msg_t *m)
         bool stored = settings_save_schedule(&s_sess.dose.schedule);
         send_settings("command", stored ? "ok" : "error");
         reply(REC_CMD_SCHEDULE, stored ? REC_DONE : REC_NOT_STORED);
+        send_screen();
         break;
     }
     case REC_CMD_SESSION: {
@@ -171,6 +236,9 @@ static void take_command(const state_msg_t *m)
         usb_send("SESSION at_us=%lld changed=%d", (long long)now_us, changed ? 1 : 0);
         after_call(changed ? SESS_FACE_CHANGED : 0u);
         reply(REC_CMD_SESSION, REC_DONE);
+        if (!changed) {
+            send_screen();
+        }
         break;
     }
     case REC_CMD_TONE: {
@@ -178,6 +246,7 @@ static void take_command(const state_msg_t *m)
         bool stored = settings_save_tone(s_tone_on);
         send_settings("command", stored ? "ok" : "error");
         reply(REC_CMD_TONE, stored ? REC_DONE : REC_NOT_STORED);
+        send_screen();
         break;
     }
     default:
@@ -201,7 +270,8 @@ static void send_minute_line(uint32_t minute)
     }
     usb_send("STATE_MINUTE minute=%lu answers=%lu tremor=%lu no_tremor=%lu moving=%lu warming=%lu fault=%lu "
              "share_tremor=%lu share_still=%lu share_moving=%lu share=%s face=%d face_changes=%lu gaps=%lu "
-             "blocks=%lu screen_drops=%lu stack_free=%lu clock=%d schedule=%u due=%d doses=%lu tone=%d",
+             "blocks=%lu screen_drops=%lu stack_free=%lu clock=%d schedule=%u due=%d doses=%lu tone=%d "
+             "battery=%d battery_mv=%u battery_percent=%d took_it=%lu refused=%lu",
              (unsigned long)minute, (unsigned long)total, (unsigned long)a[RES_TREMOR],
              (unsigned long)a[RES_NO_TREMOR], (unsigned long)a[RES_ARM_MOVING], (unsigned long)a[RES_WARMING_UP],
              (unsigned long)a[RES_SENSOR_FAULT], (unsigned long)sh->tremor,
@@ -210,7 +280,9 @@ static void send_minute_line(uint32_t minute)
              (unsigned long)share_block_count(sh), (unsigned long)s_screen_drops,
              (unsigned long)uxTaskGetStackHighWaterMark(NULL), s_sess.dose.clock_set ? 1 : 0,
              (unsigned)s_sess.dose.schedule.count, dose_is_due(&s_sess.dose) ? 1 : 0,
-             (unsigned long)dose_count(&s_sess.dose), s_tone_on ? 1 : 0);
+             (unsigned long)dose_count(&s_sess.dose), s_tone_on ? 1 : 0, s_power.battery_in ? 1 : 0,
+             (unsigned)s_power.battery_mv, s_power.battery_percent, (unsigned long)s_took_it,
+             (unsigned long)s_refused);
 }
 
 void state_task(void *arg)
@@ -219,9 +291,14 @@ void state_task(void *arg)
     send_task_line("state");
     sess_init(&s_sess, esp_timer_get_time());
     load_settings();
+    s_input.firmware = FIRMWARE_VERSION;
+    s_input.hash = TABLE_HASH;
+    read_power();
+    send_screen();
 
     TickType_t next_second = xTaskGetTickCount() + SECOND_TICKS;
     uint32_t minute = 1;
+    uint32_t seconds = 0;
     state_msg_t msg;
     for (;;) {
         TickType_t now = xTaskGetTickCount();
@@ -231,6 +308,8 @@ void state_task(void *arg)
                 take_stretch(&msg);
             } else if (msg.kind == STATE_MSG_COMMAND) {
                 take_command(&msg);
+            } else if (msg.kind == STATE_MSG_TOOK_IT) {
+                take_took_it(&msg);
             } else {
                 take_answer(&msg);
             }
@@ -239,7 +318,11 @@ void state_task(void *arg)
             next_second += SECOND_TICKS;
             unsigned flags = sess_tick(&s_sess, esp_timer_get_time());
             if ((flags & SESS_TONE) != 0) {
+                s_input.dose_tones++;
                 usb_send("TONE enabled=%d", s_tone_on ? 1 : 0);
+            }
+            if (++seconds % POWER_EVERY_S == 0) {
+                read_power();
             }
             after_call(flags);
             send_screen();
