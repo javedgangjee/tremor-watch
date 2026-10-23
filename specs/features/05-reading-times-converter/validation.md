@@ -60,3 +60,38 @@ The one match limit comes from Build order step 8 of the plan. The C converter m
 ## Requirement coverage
 
 Requirement 1 is covered by check 1 test_reading_time cases 1 and 9. Requirement 2 is covered by test_reading_time cases 1, 5, and 10. Requirement 3 is covered by test_reading_time cases 3, 4, and 10. Requirement 4 is covered by test_reading_time case 9 and by the types in requirement 19, which check 1 builds. Requirement 5 is covered by check 1, which builds the time rule into tremor_core. Requirement 6 is covered by check 2 item 4 and by test_reading_time cases 1, 2, and 10. Requirement 7 is covered by test_converter cases 3 and 4. Requirement 8 is covered by test_converter cases 4 and 7. Requirement 9 is covered by test_converter case 4 on stretch above_50hz. Requirement 10 is covered by check 2 and by check 1, which builds on the laptop. Requirement 11 is covered by test_converter case 4 and check 3 cases 1 to 4. Requirement 12 is covered by test_converter case 4, which reads only CSV files. Requirement 13 is covered by check 3 case 3. Requirement 14 is covered by test_converter case 4. Requirement 15 is covered by checks 1 and 3. Requirement 16 is covered by check 4. Requirement 17 is covered by check 2 item 3 and test_converter cases 5 and 7. Requirements 18 and 19 are covered by test_reading_time cases 1, 3, 5, and 9. Requirement 20 is covered by test_reading_time case 1. Requirement 21 is covered by test_reading_time cases 5 and 6. Requirement 22 is covered by test_reading_time cases 4, 6, 7, and 8. Requirement 23 is covered by test_converter cases 2 to 5. Requirement 24 is covered by test_converter cases 3, 4, and 7. Requirement 25 is covered by test_converter case 4. Requirement 26 is covered by test_converter cases 1, 5, and 6. Requirement 27 is covered by test_converter case 4. Requirement 28 is covered by test_converter case 4. Requirements 29 and 30 are covered by check 3 cases 1 to 4. Requirement 31 is covered by test_reading_time case 10. Requirement 32 is covered by check 5.
+
+## Results
+
+The checks ran on 22 October 2026 on branch feature/05-reading-times-converter at commit ed35b31. The build folder was removed before check 1. Every check passed.
+
+1. Check 1 passed. The clean build printed no warning, and CTest reported 100% tests passed out of 3. test_detector ran its 5 cases with 0 failures and gave the same numbers as in feature 4. test_reading_time ran its 10 cases with 0 failures. In case 7 the stream ended in stretch 1, which started 1.108 s after the first stamp. In case 10 the twenty minutes made 6 stretches, and the first five lasted 218.9, 156.1, 177.8, 260.5, and 308.5 seconds, which is close to the planning model. test_converter ran its 7 cases with 0 failures. Case 4 compared 67,200 values in 22,400 samples. The largest gap from sample 100 on was 0.00016 degrees per second on shake_clipped, and the largest gap before sample 100 was 17.7 degrees per second on noise. Each stretch gave 2,900 samples, which is 29 blocks.
+2. Check 2 passed. Items 1 to 5 each printed nothing. The flags file for tremor_core shows that reading_time.c and converter.c build with -ffp-contract=off and with -Wall -Wextra -Werror -pedantic.
+3. Check 3 passed. pytest reported 47 passed. The 42 cases from features 2 to 4 sit in files that check 4 shows did not change. Each of the 5 new cases in tests/converter/test_make_cases.py matches its text in this file, and case 1 made the three files again and found them the same byte for byte.
+4. Check 4 passed. The command printed nothing.
+5. Check 5 passed. The stat lists the 18 files that the check names, and it lists no other file.
+
+Every item in requirements.md has at least one passing check. Feature 4's checks that run here still pass, which are test_detector in CTest and the 42 earlier pytest cases.
+
+### Against the plan's Sensor and converter section
+
+A reading of core/reading_time.c and core/converter.c beside the plan's Sensor and converter section finds that the code follows each rule there.
+
+- Within a stretch, reading n gets the time t0 + (n - f0) / r with one fixed rate, and t0 is the first burst's stamp.
+- The first stretch takes its rate from the stamps of its first 10 seconds, and a later stretch takes its rate from the first burst to the last burst of the stretch before.
+- A burst ends the stretch when its stamp lies more than half a reading period from the prediction or when the overflow flag is set.
+- Time is kept as 64-bit reading numbers and 64-bit microsecond stamps, and no time is kept as 32-bit seconds.
+- The time rule and the converter build into tremor_core with no ESP-IDF header, no heap call, no changing static data, and -ffp-contract=off.
+- Each block covers 100 samples, which is one second, with 16 extra readings on each side. It fits a natural cubic spline with one Thomas solve per axis in 32-bit floats, reads the curve at each 100 Hz moment, and keeps no extra reading in its output.
+- The 100 Hz grid starts at the stretch's first reading, and conv_start() starts the curve and the grid again after a gap.
+- The converter adds no filter, and above_50hz agrees within 5.75e-05 from sample 100 on.
+
+The solve and the curve match natural_spline_block() and the curve line in reference/spline_test.py, with the period folded in as requirement 25 says. The forward sweep uses the same factor and value steps in the same order.
+
+The code goes beyond the plan's words in three places, and each comes from a requirement that the user has not reviewed yet.
+
+- Requirement 21 lets a stretch measure its own rate when the stretch before it lasted less than 10 seconds. The plan says that every later stretch takes its rate from the stretch before, so this case departs from the plan's words. The plan gives its reason as the stretch before being minutes long, and a short stretch does not meet that reason.
+- Requirement 22 adds a line test before a stretch has its rate, and it ends a stretch when a stamp is not later than the stamp before or when a reading number is skipped. The plan names only the half period and the overflow as reasons to end a stretch.
+- Requirement 24 drops a part block at the end of a stretch. The plan does not say what happens there.
+
+The stamp of a burst marks the moment the buffer reached its fill level, which in the tests is the eleventh reading of the burst. The plan and the code both give that stamp to the first reading of the first burst. So every time in a stretch sits about 10 readings, or about 87 ms, after the moment the reading was taken. The offset is the same for every reading and every stretch, so it changes no rate, no gap test, and no comparison with the toolbox.
