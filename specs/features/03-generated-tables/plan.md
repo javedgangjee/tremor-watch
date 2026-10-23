@@ -22,3 +22,8 @@ The steps run in this order. Every command runs from the repo root in the refere
 6. Update specs/tech-stack.md. Under Shared C library, add that the generated tables are in core/detector_tables.h and that `reference/.venv/bin/python tools/gen_tables.py` makes them. Add that the model numbers are 64-bit values and the tables are 32-bit values. Under Reference and laptop tools, add that the tests for gen_tables.py need the toolbox and run in the reference venv.
 
 7. Set the status of feature 3 to in progress in specs/roadmap.md. This step is done in plan mode.
+
+## Changes during implement
+
+- The toolbox's classifier stores its 12 weights as a flat array of shape (12,), not as one row of shape (1, 12). tools/gen_tables.py treats a flat array of 12 weights as one row, and it still stops on any other shape. The agent decided this on 22 October 2026, and the user has not reviewed it yet.
+- Check 1 case 10 names no seed for its 50 random spectra. The test uses numpy's default_rng with seed 10. The agent decided this on 22 October 2026, and the user has not reviewed it yet.
