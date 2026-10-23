@@ -22,6 +22,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "driver/gpio.h"
 #include "esp_attr.h"
@@ -122,6 +123,7 @@ typedef struct {
     uint32_t largest_burst;
     uint32_t losses[LOSS_KINDS];
     uint32_t msg_drops;
+    uint32_t record_drops;
     int64_t largest_delay_us;
     uint32_t kind1_ends;
     uint32_t kind2_ends;
@@ -132,6 +134,7 @@ static QueueHandle_t s_stamps;
 static uint8_t s_fifo[FIFO_READINGS * READING_BYTES];
 static rt_state_t s_rt;
 static sensor_msg_t s_msg;
+static record_msg_t s_record;
 static sensor_counts_t s_counts;
 /* The number of the next reading, counted from power-on. */
 static uint64_t s_next_reading;
@@ -385,7 +388,9 @@ static void reset_fifo(void)
 
 
 /* send_readings() sends the burst to the pipeline task in parts of at most
- * SENSOR_MSG_READINGS readings. Only the first part carries the flags. */
+ * SENSOR_MSG_READINGS readings. Only the first part carries the flags. It
+ * sends the USB task a copy of each part through the record queue, and it
+ * waits on neither queue. */
 static void send_readings(uint32_t count, unsigned flags, bool overflow, int64_t stamp_us, uint64_t first)
 {
     const rt_stretch_t *st = rt_current(&s_rt);
@@ -412,6 +417,18 @@ static void send_readings(uint32_t count, unsigned flags, bool overflow, int64_t
         }
         if (xQueueSend(g_sensor_queue, &s_msg, 0) != pdTRUE) {
             s_counts.msg_drops++;
+        }
+        s_record.flags = s_msg.flags;
+        s_record.first_part = done == 0;
+        s_record.stretch = st->number;
+        s_record.rate_uhz = st->rate_uhz;
+        s_record.stamp_us = stamp_us;
+        s_record.first_reading = first + done;
+        s_record.count = part;
+        s_record.burst_count = count;
+        memcpy(s_record.raw, s_msg.raw, sizeof s_record.raw);
+        if (xQueueSend(g_record_queue, &s_record, 0) != pdTRUE) {
+            s_counts.record_drops++;
         }
         done += part;
     }
@@ -477,14 +494,14 @@ static void send_minute_line(uint32_t minute)
     uint32_t stretches = s_rt.started ? rt_current(&s_rt)->number + 1 : 0;
     usb_send("SENSOR_MINUTE minute=%lu readings=%llu bursts=%lu bursts_at_wtm=%lu largest_burst=%lu overflow=%lu "
              "full=%lu read_error=%lu stall=%lu late=%lu msg_drops=%lu largest_delay_us=%lld stretches=%lu "
-             "kind1_ends=%lu kind2_ends=%lu pipeline=%lu",
+             "kind1_ends=%lu kind2_ends=%lu pipeline=%lu record_drops=%lu",
              (unsigned long)minute, (unsigned long long)c->readings, (unsigned long)c->bursts,
              (unsigned long)c->bursts_at_wtm, (unsigned long)c->largest_burst,
              (unsigned long)c->losses[LOSS_OVERFLOW], (unsigned long)c->losses[LOSS_FULL],
              (unsigned long)c->losses[LOSS_READ_ERROR], (unsigned long)c->losses[LOSS_STALL],
              (unsigned long)c->losses[LOSS_LATE], (unsigned long)c->msg_drops, (long long)c->largest_delay_us,
              (unsigned long)stretches, (unsigned long)c->kind1_ends, (unsigned long)c->kind2_ends,
-             (unsigned long)c->losses[LOSS_PIPELINE]);
+             (unsigned long)c->losses[LOSS_PIPELINE], (unsigned long)c->record_drops);
 }
 
 void sensor_task(void *arg)

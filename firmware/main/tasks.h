@@ -3,14 +3,17 @@
  * tasks. Each part of the watch has one owning task, and the tasks talk
  * through these queues.
  *
- * The sensor task reads the IMU and sends readings to the pipeline task.
+ * The sensor task reads the IMU and sends readings to the pipeline task. It
+ * also sends the USB task a copy of each burst part through the record queue.
  * The pipeline task runs the converter and the detector, and it sends each
  * new stretch and each answer to the state task. It asks the sensor task to
  * end a stretch through the end queue.
- * The state task owns the face state, the session share, and the doses, and
- * it sends the screen task what to draw.
+ * The state task owns the face state, the session share, the doses, and the
+ * settings, and it sends the screen task what to draw. It applies the
+ * laptop's commands.
  * The screen task owns LVGL, and no other task calls LVGL.
- * The USB task owns the serial port, and no other task writes to it.
+ * The USB task owns the USB port, and no other task writes to it. It writes
+ * the recording and reads the laptop's commands.
  */
 
 #ifndef TASKS_H
@@ -22,6 +25,12 @@
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
+
+#include "record.h"
+
+/* The firmware version that the B line carries. Each later feature that
+ * changes the firmware sets its own number. */
+#define FIRMWARE_VERSION 9
 
 /* A sensor message holds at most this many readings. */
 #define SENSOR_MSG_READINGS 16
@@ -65,6 +74,30 @@ typedef struct {
     float gyro_dps[SENSOR_MSG_READINGS][3];
 } sensor_msg_t;
 
+/*
+ * record_msg_t carries a copy of one part of a burst from the sensor task to
+ * the USB task, which writes the S, T, and R lines from it.
+ */
+typedef struct {
+    /* The flags that rt_burst() returned for the burst. Only the first part
+     * carries them. */
+    unsigned flags;
+    /* first_part is true on the burst's first part. */
+    bool first_part;
+    /* The stretch number and its rate after the rt_burst() call. */
+    uint32_t stretch;
+    uint32_t rate_uhz;
+    /* The burst's stamp in microseconds. */
+    int64_t stamp_us;
+    /* The number of this part's first reading, counted from power-on. */
+    uint64_t first_reading;
+    /* The number of readings in this part and in the whole burst. */
+    uint32_t count;
+    uint32_t burst_count;
+    /* The raw counts of each reading, in the axis order of sensor_msg_t. */
+    int16_t raw[SENSOR_MSG_READINGS][6];
+} record_msg_t;
+
 /* line_t holds one text line for the USB task, with no newline. */
 typedef struct {
     char text[LINE_CHARS + 1];
@@ -80,13 +113,15 @@ typedef struct {
 /* The kinds of state message. */
 typedef enum {
     STATE_MSG_STRETCH,
-    STATE_MSG_ANSWER
+    STATE_MSG_ANSWER,
+    STATE_MSG_COMMAND
 } state_msg_kind_t;
 
 /*
  * state_msg_t carries a new stretch or an answer from the pipeline task to
- * the state task. A stretch message uses only kind and stretch. A sensor fault
- * answer has no window and no detector numbers.
+ * the state task, or a command from the USB task. A stretch message uses only
+ * kind and stretch. A sensor fault answer has no window and no detector
+ * numbers. A command message uses only kind, command, and at_us.
  */
 typedef struct {
     state_msg_kind_t kind;
@@ -106,28 +141,33 @@ typedef struct {
     int64_t time_us;
     /* The detector's run time. */
     int64_t run_us;
-    /* The timer value at the end of the run. */
+    /* The timer value at the end of the run. For a command message, the timer
+     * value when the command's newline arrived. */
     int64_t at_us;
     /* The end of the run minus the stamp of the burst that completed the
      * window. */
     int64_t delay_us;
+    /* The command of a command message. */
+    rec_command_t command;
 } state_msg_t;
 
 /* The queues. main.c makes them before any task starts. The end queue holds
  * one stretch number, which the pipeline task writes with xQueueOverwrite()
- * when a stretch must end. */
+ * when a stretch must end. The record queue carries record_msg_t items from
+ * the sensor task to the USB task. */
 extern QueueHandle_t g_sensor_queue;
 extern QueueHandle_t g_line_queue;
 extern QueueHandle_t g_screen_queue;
 extern QueueHandle_t g_state_queue;
 extern QueueHandle_t g_end_queue;
+extern QueueHandle_t g_record_queue;
 
 /* The number of lines that the other tasks dropped since boot, because the
  * line queue was full. */
 extern atomic_uint g_line_drops;
 
 /*
- * usb_send() formats one line and puts it on the line queue with no wait.
+ * usb_send() formats one line and places it on the line queue with no wait.
  * It returns false and counts the drop when the queue is full.
  */
 bool usb_send(const char *fmt, ...) __attribute__((format(__printf__, 1, 2)));

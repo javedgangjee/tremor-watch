@@ -19,7 +19,12 @@
 - firmware/ holds the ESP-IDF project for the watch, and the five tasks live in firmware/main/. firmware/bringup/ stays as feature 1's record.
 - The power driver is an unchanged copy of XPowersLib from Waveshare's examples/esp-idf/01_AXP2101/components/XPowersLib/ in firmware/components/XPowersLib/.
 - The IMU raises its buffer interrupt on INT1, which the board wires to GPIO21.
-- printf goes to UART0 at 115200 baud as the main console and to the USB Serial/JTAG port as the second console. ESP-IDF's own log runs at level INFO, so its lines from other tasks also reach the serial port. Feature 9 makes the USB task the only writer on the port that carries the recording.
+- The console is UART0 at 115200 baud, and the firmware has no second console, because CONFIG_ESP_CONSOLE_SECONDARY_NONE is set. ESP-IDF's own log runs at level INFO and goes to UART0 only, and so does its crash text. The USB task also removes the ROM printf's channel to the USB Serial/JTAG port at its start, so ESP-IDF's early log and its log from interrupts stay on UART0 too. The chip's ROM still writes its boot text to the USB port before the firmware starts, so a reader skips every line before the first B line. Flashing and the reset by script still work over the USB port.
+- The USB task is the only writer on the USB Serial/JTAG port, and no task writes to stdout. It uses ESP-IDF's usb_serial_jtag driver with a send buffer of 4096 bytes and a receive buffer of 512 bytes. The recording and the diagnostic lines need about 4,200 bytes a second.
+- The USB task puts each line into the send buffer with no wait, and the driver takes a whole line or none of it. A line that does not fit is dropped and counted, so no task waits on a laptop that is gone or not reading. After a drop, the next line that fits first brings the B line and the latest S line again.
+- The sensor task sends the USB task a copy of each burst part through a record queue of 32 items in PSRAM, with no wait. The queue lives in PSRAM, because the display's transfers need the internal memory that it would take.
+- The dose schedule and the tone setting live in ESP-IDF's NVS in the nvs partition. The namespace is "tremor", the key "schedule" holds a version byte and a dose_schedule_t, and the key "tone" holds one byte. firmware/main/settings.c is the only file that writes it. With nothing stored, the schedule is off and the tone is on.
+- The dose clock lives in memory only. A restart leaves it unset until the laptop's CLOCK command sets it, and the firmware does not use the board's clock chip.
 - ESP-IDF loads with `. ~/.espressif/tools/activate_idf_v6.1.sh`, because the plain export.sh fails on this laptop unless IDF_TOOLS_PATH is `~/.espressif/tools`.
 - The dose schedule and the tone setting live in the chip's settings store. Answers and doses stay in memory, and nothing else is written to flash.
 - The pipeline task asks the sensor task to end a stretch through a queue of one stretch number. It asks when a stretch loses readings, loses its first message, or fills the converter's ring. The sensor task then ends the stretch with the overflow flag, and the STRETCH line gives reason=pipeline.
@@ -47,6 +52,7 @@
 - Each converter block makes 100 samples at 100 Hz and fits its natural cubic spline over its readings plus 16 extra readings on each side. A block holds at most 192 readings. The converter keeps readings in a ring of 2048, and it accepts rates from 50 to 150 readings a second. At the end of a stretch it drops a block whose readings are not all in, as requirement 24 of feature 5 says, and that requirement waits for the user's review too.
 - core/window.h holds the result codes and the window rule. core/share.h holds the session share and the Session screen's blocks. core/face.h holds the face state, the two-in-a-row rule, and the gap rule, which shows Waiting at once when a new stretch starts after a gap. core/dose.h holds the dose schedule and the due rule. The caller owns the state of each, so none of these files has static data that changes. On the watch the pipeline task owns the window rule, and the state task owns the share, the face, and the doses.
 - core/pipeline.h holds the pipeline task's rules for the stretches, the converter, the windows, and the sensor fault answers. core/session.h holds the state task's rules, which join the share, the face, and the doses. The caller owns the state of each, so neither file has static data that changes.
+- core/record.h holds the recording line format and the command parser, and core/recording_format.md describes the lines, the commands, and the answers. The W line writes the probability and the low-frequency sum as the shortest text that reads back as the same double, which is what the watch's picolibc gives for %.17g.
 
 ## Reference and laptop tools
 
@@ -73,6 +79,9 @@
 - The command `caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/table_run.py` runs the 30-minute table run on the watch and judges it.
 - The command `idf.py -C firmware/detector_check -p /dev/cu.usbmodem101 flash` and then `~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/chip_windows.py` run the saved windows on the chip and judge them. The watch firmware must be flashed again afterwards.
 - The command `caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/pipeline_run.py` runs the pipeline and the state task on a table for 30 minutes and judges the log.
+- The command `caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/record_run.py` runs the full recording on a table for 30 minutes and judges the log.
+- The command `caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/command_run.py` sends the four commands, restarts the watch, and waits for a dose to become due and to end, which takes about 23 minutes.
+- The command `~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/drop_run.py` closes the port for 60 seconds and opens it again without a reset, which takes about 5 minutes.
 - The full PADS match test needs the toolbox, so it runs before each release and not on every commit.
 - The test data is PADS from PhysioNet, which holds 100 Hz gyroscope recordings in radians per second.
 
