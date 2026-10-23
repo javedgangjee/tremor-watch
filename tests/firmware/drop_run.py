@@ -32,7 +32,7 @@ if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
 import record_run  # noqa: E402
-from record_run import Burst, bursts_of, gaps_of, kind_of, read_log  # noqa: E402
+from record_run import Burst, bursts_of, gaps_of, is_record, kind_of, read_log, record_fields  # noqa: E402
 from table_run import Check, fields_of  # noqa: E402
 
 LOG = logging.getLogger("drop_run")
@@ -202,25 +202,50 @@ def check_answers(log: DropLog) -> Check:
 
 @dataclass
 class GapInfo:
-    """What the T lines and the last USB_MINUTE line show about the closed time."""
+    """What the T lines and the last USB_MINUTE line show about the closed time.
+    close_gap is the gap at the close that the laptop makes, or None. gaps holds
+    every other gap, which is the watch's own when port_drops is above 0."""
 
     port_drops: int
     restarts: int
+    close_gap: tuple[Burst, Burst] | None
     gaps: list[tuple[Burst, Burst]]
 
 
+def is_close_gap(log: DropLog, bursts: list[Burst], gap: tuple[Burst, Burst]) -> bool:
+    """Tell the gap at the close. When the script closes the port, the Mac throws
+    away the bytes it already holds, so the lines from CLOSE up to the first text
+    after OPEN never reach the log. Such a gap runs from the last T line before
+    CLOSE to the first T line after OPEN with no B line between them, and from
+    the first line after OPEN the R lines follow on up to that T line."""
+    a, b = gap
+    before = [x for x in bursts if x.index < log.close]
+    after = [x for x in bursts if x.index > log.open]
+    if not before or not after or before[-1].index != a.index or after[0].index != b.index:
+        return False
+    if any(kind_of(t) == "B" for t in log.texts[a.index + 1 : b.index]):
+        return False
+    after_open = log.texts[log.open + 1 : b.index]
+    numbers = [int(record_fields(t)[0]) for t in after_open if kind_of(t) == "R" and is_record(t)]
+    return numbers == list(range(b.first - len(numbers), b.first))
+
+
 def gap_info(log: DropLog) -> GapInfo:
-    """Find the gaps in the T numbers and the drop counts."""
+    """Find the gaps in the T numbers, the gap at the close, and the drop counts."""
     usb = last(log, "USB_MINUTE")
-    return GapInfo(int(usb.get("port_drops", "0")), int(usb.get("restarts", "0")), gaps_of(bursts_of(log.texts)))
+    bursts = bursts_of(log.texts)
+    gaps = gaps_of(bursts)
+    close_gap = next((g for g in gaps if is_close_gap(log, bursts, g)), None)
+    own = [g for g in gaps if g is not close_gap]
+    return GapInfo(int(usb.get("port_drops", "0")), int(usb.get("restarts", "0")), close_gap, own)
 
 
 def check_gap(log: DropLog, unplug: bool) -> Check:
-    """Item 6 checks the gap in the T numbers and the B and S lines at it."""
+    """Item 6 checks the gap at the close, the watch's own gap, and the B and S lines at it."""
     info = gap_info(log)
     problems: list[str] = []
     if len(info.gaps) > 1:
-        problems.append(f"{len(info.gaps)} gaps in the T numbers")
+        problems.append(f"{len(info.gaps)} gaps in the T numbers apart from the gap at the close")
     if unplug and info.port_drops == 0:
         problems.append("the unplug dropped no line")
     if info.gaps:
@@ -231,12 +256,13 @@ def check_gap(log: DropLog, unplug: bool) -> Check:
             between = log.texts[a.index + 1 : b.index]
             latest = [t for t in log.texts[: a.index] if kind_of(t) == "S"]
             if not any(kind_of(t) == "B" for t in between) or not latest or latest[-1] not in between:
-                problems.append("no B line and S line between the two T lines at the gap")
+                problems.append("no B line and S line between the two T lines at the watch's gap")
             if info.restarts < 1:
                 problems.append(f"restarts={info.restarts}")
     elif info.port_drops > 0:
-        problems.append(f"port_drops={info.port_drops} with no gap")
-    detail = f"port_drops={info.port_drops} restarts={info.restarts} gaps={len(info.gaps)}"
+        problems.append(f"port_drops={info.port_drops} with no gap of the watch's own")
+    detail = (f"port_drops={info.port_drops} restarts={info.restarts} "
+              f"gap at the close={int(info.close_gap is not None)} other gaps={len(info.gaps)}")
     return Check("gap and repeated lines", not problems, detail + (f", first: {problems[0]}" if problems else ""))
 
 
@@ -260,17 +286,31 @@ def measurements(log: DropLog) -> list[str]:
         out.append(f"- The watch dropped {info.port_drops} lines while nobody read the port.")
     else:
         out.append("- The watch dropped no line. This check showed only that the watch never waited on the port.")
+    if info.close_gap is not None:
+        a, b = info.close_gap
+        first = log.texts[log.open + 1]
+        out.append(f"- The laptop lost the lines from the `{CLOSE}` line to the first text after the `{OPEN}` line, "
+                   f"which is `{first}`.")
+        out.append(f"- The gap at the close runs from the T line at reading {a.first} to the T line at reading "
+                   f"{b.first}. It spans {b.first - a.first - a.count} readings in the T numbers, and the R lines "
+                   f"of {b.first - a.first - len(a.readings)} readings are missing.")
+    else:
+        out.append("- The T numbers have no gap at the close.")
     if info.gaps:
         a, b = info.gaps[0]
-        out.append(f"- The gap in the T numbers spans {b.first - a.first - a.count} readings.")
+        name = "The watch's own gap" if info.port_drops > 0 else "The other gap in the T numbers"
+        out.append(f"- {name} runs from the T line at reading {a.first} to the T line at reading {b.first}, "
+                   f"and it spans {b.first - a.first - a.count} readings.")
         after_open = log.texts[log.open + 1 :]
         boot_at = next((i for i, t in enumerate(after_open) if kind_of(t) == "B"), None)
         if boot_at is not None:
             out.append(f"- {boot_at} lines from before the close arrived after the OPEN line.")
         if info.port_drops == 0:
             out.append("- The lines were lost on the laptop's side, because the T numbers have a gap.")
-    else:
+    elif info.close_gap is None:
         out.append("- The T numbers have no gap, so the laptop's side lost no line.")
+    else:
+        out.append("- The T numbers have no gap apart from the gap at the close.")
     return out
 
 

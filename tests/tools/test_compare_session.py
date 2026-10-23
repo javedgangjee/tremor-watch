@@ -169,8 +169,12 @@ def test_27_clean_recording_passes(tmp_path: Path, clean: tuple[list[str], rm.Bu
     last = rm.t_lines(lines)[-1][1]
     stretch1 = cs.toolbox_windows(
         rm.shake_counts(100, np.arange(burst.first, last.first + last.count), rm.RATE_UHZ), r1)
-    expected = int((stretch0["k"] >= 1).sum() + (stretch1["k"] >= 1).sum())
-    assert expected > 0
+    # The toolbox compares window k from k = 1 on only where the watch gave window 4k.
+    # Stretch 1 ends before the watch's window 16, so its toolbox window k = 4 is left out.
+    watch = {(int(f[1]), int(f[2])) for f in (line.split(",") for line in lines if line.startswith("W,"))}
+    expected = sum(int(k) >= 1 and (stretch, 4 * int(k)) in watch
+                   for stretch, windows in ((0, stretch0), (1, stretch1)) for k in windows["k"])
+    assert expected == 9
     assert f"The toolbox's codes agree on {expected} of {expected} windows, which is 100.0 percent." in report
     assert "100.0 percent from the watch's codes and 100.0 percent from the toolbox's codes" in report
 
