@@ -85,3 +85,73 @@ The response limits in test_response come from the plan's Response time section,
 ## Requirement coverage
 
 Requirement 1 is covered by test_window cases 3 to 5 and test_response, which runs a window for every block. Requirement 2 is covered by test_window case 3 and test_response. Requirement 3 is covered by test_share cases 2 and 3 and check 3 case 1. Requirement 4 is covered by test_window case 2 and test_share case 2. Requirement 5 is covered by test_window cases 1 and 2 and test_share cases 2 and 4. Requirement 6 is covered by test_share cases 3 and 4 and check 3 cases 1 and 2. Requirement 7 is covered by test_face cases 3 to 5 and test_share case 2. Requirement 8 is covered by test_response cases 1 to 6. Requirement 9 is covered by test_face cases 1, 5, and 6. Requirement 10 is covered by check 1, which builds the rules into tremor_core and runs their tests. Requirement 11 is covered by test_dose case 1. Requirement 12 is covered by test_dose cases 3, 5, and 8. Requirement 13 is covered by test_dose cases 3 and 8 and test_face case 6. Requirement 14 is covered by test_dose cases 3, 4, and 8. Requirement 15 is covered by test_dose cases 10 and 14, where every accepted tap stays in the count. Requirement 16 is covered by test_dose cases 2 and 7. Requirement 17 is covered by test_dose case 13 and test_share case 1. Requirement 18 is covered by test_dose case 10. Requirement 19 is covered by test_share cases 5 to 7, test_face case 7, and test_dose cases 4 and 12. Requirement 20 is covered by check 2 and by check 1, which builds on the laptop. Requirement 21 is covered by check 1. Requirement 22 is covered by checks 2 and 4. Requirements 23 to 25 are covered by check 2 item 3 and test_window cases 1 to 5. Requirement 26 is covered by test_share cases 2 to 4 and check 3. Requirement 27 is covered by test_share cases 5 to 7. Requirements 28 and 29 are covered by test_face cases 1 to 7. Requirements 30 to 34 are covered by test_dose cases 1 to 15. Requirement 35 is covered by test_response cases 1 to 7. Requirement 36 is covered by check 3. Requirement 37 is covered by check 5.
+
+## Results
+
+The checks ran on 22 October 2026 on branch feature/06-state-rules at commit a3b83c4. The build folder was removed before check 1. Every check passed.
+
+1. Check 1 passed. The clean build printed no warning, and CTest reported 100% tests passed out of 8. test_detector, test_reading_time, and test_converter passed unchanged. test_window ran 5 cases, test_share ran 7, test_face ran 7, test_dose ran 15, and test_response ran 7, each with 0 failures. A reading of test_dose cases 5 to 7 and 9 to 12 found that they match their text here. test_response printed the table below, where each delay is in seconds.
+
+   | Case | Runs with Tremor | Show median | Show worst | Back median | Back worst | Single odd answers |
+   |---|---|---|---|---|---|---|
+   | 5 Hz | 10 of 10 | 2.27 | 3.23 | 4.74 | 5.27 | 0 |
+   | 4 Hz | 10 of 10 | 3.23 | 5.26 | 4.21 | 4.21 | 4 |
+   | 6 Hz | 10 of 10 | 3.23 | 3.23 | 5.27 | 5.27 | 0 |
+   | gentle | 10 of 10 | 3.23 | 3.23 | 4.21 | 5.27 | 0 |
+   | hard | 10 of 10 | 2.27 | 5.26 | 5.27 | 5.27 | 4 |
+   | lifted | 2 of 10 | none | 2.27 | 4.21 | 5.27 | 11 |
+   | slow | 0 of 10 | none | none | 5.27 | 5.27 | 0 |
+   | fast | 0 of 10 | none | none | none | none | 0 |
+
+   The lifted row has no show median because only 2 runs showed Tremor, and 2.27 s is the worst of those two.
+2. Check 2 passed. Items 1 to 5 each printed nothing. nm shows that window.o, share.o, and face.o hold only code and string constants, and dose.o calls memset, memcpy, and memchr and has no data symbol. The build files show that window.c, share.c, face.c, and dose.c build with -ffp-contract=off and with -Wall -Wextra -Werror -pedantic.
+3. Check 3 passed. pytest reported 50 passed.
+4. Check 4 passed. The command printed nothing.
+5. Check 5 passed. The stat lists the 21 files that the check names, and it lists no other file.
+
+Every item in requirements.md has at least one passing check. Requirement 9 has passing checks, but no check covers its words "after a gap", and the code does not meet them. The next section explains this.
+
+### Against the build spec
+
+A reading of core/window.c, core/share.c, core/face.c, and core/dose.c beside the plan's Windows, Response time, Firmware design, Dose schedule, and Watch face sections finds that the code follows these rules.
+
+- Window n holds samples 100n to 100n + 399, and win_push_block() gives it as soon as the block that holds sample 100n + 399 arrives. No timer is involved.
+- Every window gives an answer, so the face gets one each second.
+- share_add() counts only windows whose number divides by 4, leaves out window 0, and counts only tremor, no tremor, and arm moving. The share is tremor windows over still windows times 100, as in aggregate_tremor().
+- The five result codes come from one list in window.h, and there is no idle code.
+- The face changes only when two answers in a row map to the same state. face_answer() changes only the face, so the state task can pass the same raw code to share_add().
+- Dose due takes over the shown state while a dose is due, and the detector state returns when it ends.
+- A schedule holds one name and up to six times. A time becomes due unless a dose was logged in the hour before it. The due state ends on a tap or after 15 minutes, and the same time never becomes due again. Nothing becomes due until the clock is set.
+- A tap less than 3 seconds after the last dose is refused, and every accepted tap stays in the count.
+- The four files hold no ESP-IDF header, no heap call, and no static data that changes.
+
+The code does not follow one rule. The Watch face section says Waiting shows while the watch warms up after a start or a gap. Requirement 28 says that answers on each side of a stretch break count as in a row, and each stretch gives only one warming up answer, which is window 0. A single answer never shows, so after a gap the face never shows Waiting. It keeps the last state through the gap and the 4 second warm-up. A scratch program fed face_answer() the codes warming up, no tremor, no tremor, no tremor, warming up, no tremor, tremor, tremor. The face showed Waiting, Waiting, No tremor, No tremor, No tremor, No tremor, No tremor, and Tremor, so the second warming up answer never showed. The same holds for a single sensor fault answer, and feature 7 or 8 decides how often that code comes. face_init() is the only way to force Waiting, and it also clears the last tremor time, so the state task cannot use it at a gap. This comes from requirement 28, which the user has not reviewed.
+
+The code goes beyond the build spec's words in these places. Each comes from a requirement that the user has not reviewed, or from the plan's list of changes during implement.
+
+- The result codes and the face states have fixed numbers, as requirements 24 and 28 say.
+- A Session block takes each counted still window as 4 seconds of still time. The share keeps the latest 12 blocks and drops older ones, and a window in a dropped block counts in the session share only. A window timed before the session start goes in block 0. These come from requirement 27 and the plan's changes.
+- The last tremor time is the latest tremor answer after which the face shows Tremor, as requirement 29 says.
+- A dose time becomes due at the first tick at or after it, and only when that tick comes within 15 minutes. The hour before includes both ends. A later time that becomes due while another is due takes its place and plays the tone again. A time that passed before the clock, the schedule, or a new session was set never becomes due. When a due dose ends and a later time becomes due on the same tick, the tick returns only DOSE_BECAME_DUE. These come from requirement 31 and the plan's changes.
+- The 3 second lock lives in dose_took_it() as well as on the screen. A tap with no clock or no schedule is accepted and answers -1. A tap with no dose due answers the nearest scheduled time. The rules keep the latest 8 doses. These come from requirement 32.
+- dose_next() skips a time that a logged dose already covers, as requirement 33 says.
+- A new session keeps the schedule and the clock, as requirement 34 says.
+- The hour rule turns each logged dose into local time with the clock offset in force when it checks, not the offset in force at the tap. If the laptop sets the clock again with a different offset, earlier doses move in local time. No requirement states this.
+
+### The response time limits
+
+The limits here are the build spec's numbers plus one answer step. The build spec's own numbers, read strictly, would fail 6 of the 20 measures in the five resting cases. The show median is 2.27 s in the 5 Hz and hard cases, which is 0.23 s under "about 2½". The worst show delay is 5.26 s in the 4 Hz and hard cases, which is 0.26 s over "at most about 5". The back median is 4.21 s in the 4 Hz and gentle cases, which is 0.29 s under "about 4½". Every other measure lies inside the build spec's numbers, and no back worst is over 5.27 s, which lies inside 5½.
+
+Only the worst show delay is slower than the build spec, and by 0.26 s. The other misses are faster than the build spec says. Answers come once a second, so every delay falls on a grid of whole seconds plus 0.21 to 0.27 s, and a band one second wide such as 2½ to 3½ holds only one point of that grid. reference/demo_test.py, run today, has no two-in-a-row rule. It gave a first Tremor answer after a median of 1.3 to 2.3 s and a first No tremor answer after 3.3 to 4.3 s, with a worst first Tremor of 4.3 s at 4 Hz. With one more answer for the rule, these become about 2.3 to 3.3 s, 4.3 to 5.3 s, and a worst of 5.3 s. So the build spec's own simulation sits outside its words by about the same amounts, and the words read as "about" fit both.
+
+### The lifted case
+
+The build spec says that with the forearm lifted the face showed Arm moving for most of the shake. It does not say that Tremor never shows. reference/demo_test.py prints how many lifted runs show Tremor. Run today, it gave a single Tremor answer about 2.3 s after the shake started in 10 of 10 runs, and 3 of 10 runs gave Tremor again after the shake stopped.
+
+In the C test, every tremor answer in the lifted case comes from window 27, 28, or 49. These windows hold the shake's start at 30 s or its end at 50 s, so the sway covers only part of the window. The low-frequency sum stays under 50 while the 5 Hz shake sets the peak. Runs 6 and 9 gave tremor in both windows 27 and 28, so the rule let Tremor show for about 2 seconds before Arm moving. Every lifted run showed Arm moving for about 80 percent of the shake's answers.
+
+A scratch program wrote out the readings of the 10 lifted sessions that test_response builds, with the C answer for each window. scipy's cubic interp1d and plain_detector.py in 32-bit floats then ran on the same readings. The Python chain gave the same tremor and arm at rest answers on all 750 windows after window 0, and it found the same 15 tremor windows. The probability differed by at most 2.0e-7, and the low-frequency sum by at most 3.1e-5. So the 2 of 10 runs come from the C test's random numbers, and they do not point to a fault in the C chain. The planning model's 0 of 40 used numpy's random numbers, which give other phases.
+
+### The banned words in test_share_toolbox.py
+
+The split words only stop the check from matching its own pattern list. A scan of the file's syntax tree found no call to print, no import of os, no try block, and no except clause. The file reads its own text with pathlib. Every function has type hints on its arguments and its return, and the list type is parameterised. So the file breaks none of the Python rules. The check is a plain text search, so it would miss a form such as `from os import path`. That is a gap in the check, and it hides nothing in this file.
