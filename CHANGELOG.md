@@ -36,6 +36,13 @@ This file records each change to Tremor log that a person who reads or runs the 
 - Feature 5 adds tests/converter/test_converter.c, which shows that the C converter agrees with the saved toolbox cases within 0.00016 degrees per second from sample 100 on, and the limit is 0.001.
 - Feature 5 adds tests/reading_time/test_reading_time.c, which checks the time rule on made-up burst streams and on the twenty one-minute rates from feature 1, where the rule made 6 stretches in twenty minutes.
 - Feature 5 adds the two C tests to the CMake build and five pytest cases for make_cases.py in tests/converter/test_make_cases.py.
+- Feature 6 adds the result codes and the window rule in core/window.h and core/window.c, which give window n of a stretch as soon as the block that holds 100 Hz sample 100n + 399 arrives.
+- Feature 6 adds the session share in core/share.h and core/share.c, which counts every fourth window after window 0 as the toolbox does and keeps the latest twelve 10-minute blocks for the Session screen.
+- Feature 6 adds the face state in core/face.h and core/face.c, which changes the face only when two answers in a row agree and shows Waiting at once when a new stretch starts after a gap.
+- Feature 6 adds the dose rules in core/dose.h and core/dose.c, which make a scheduled time due unless a dose was logged in the hour before it, end the due state after a tap or 15 minutes, and refuse a second tap within 3 seconds.
+- Feature 6 adds Unity tests in tests/window/, tests/share/, tests/face/, and tests/dose/ for every state change, the two-in-a-row rule, and the dose due timing.
+- Feature 6 adds tests/response/test_response.c, which runs eight simulated shake cases at 114.3302 readings a second through the C converter, the C detector, and the face rule, and checks the delays against the build spec's numbers plus one answer step.
+- Feature 6 adds tests/share/test_share_toolbox.py, which shows that the toolbox's aggregate_tremor() gives the same share as the C tests for the same window counts.
 
 ### Changed
 
@@ -60,3 +67,9 @@ This file records each change to Tremor log that a person who reads or runs the 
 - The tech stack and the roadmap entry for feature 5 now point to requirements 21, 22, and 24 of feature 5, which go beyond the build spec's words and wait for the user's review.
 - The roadmap entry for feature 7 now says that feature 7 counts how often stretches end on the watch and how long they last, on the wrist and on a table, because the time rule with the measured drift started a new stretch every 2.5 to 5 minutes.
 - The roadmap entries for features 7 to 10 now say how the sensor task, the pipeline task, the S line, and replay use the time rule and the converter.
+- The tech stack now names the four pairs of files that feature 6 adds, says what each holds, and says which task owns each on the watch.
+- The roadmap entry for feature 6 now records the gap rule and says that the response time limits are the build spec's numbers plus one answer step, because the build spec's own simulation in reference/demo_test.py misses its words by about the same amounts.
+- The roadmap entry for feature 7 now counts stretch ends with the watch on a table only, and it counts ends that lose readings apart from ends that come from drift, because every stretch end now shows Waiting for about 6 seconds.
+- The roadmap entry for feature 8 now says that the state task calls face_gap() at each new stretch after a gap, and that feature 8 decides how a failed sensor reaches the face.
+- The roadmap entries for features 9 and 11 now say how the recording lines and the screens use the codes, the face states, the share blocks, and the dose rules from feature 6.
+- The roadmap entry for feature 12 now holds the stretch count with the watch on the wrist, which moved from feature 7.

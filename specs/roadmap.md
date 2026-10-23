@@ -33,14 +33,17 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
 6. Windows, share, and state rules
    - The goal is to build the rules that turn answers into the face state, the session share, and dose due timing.
    - It covers step 9 and the Windows, Response time, Firmware design, and Dose schedule sections. It includes the result codes, the two-in-a-row rule, and unit tests for every state change.
-   - The status is in progress.
+   - The face shows Waiting at once when a new stretch starts after a gap, because face_gap() in core/face.h sets it. The user chose this rule on 23 October 2026, because each new stretch gives only one warming up answer and one answer never changes the face.
+   - The response time limits in tests/response/test_response.c are the build spec's numbers plus one answer step, which is one second. The build spec's own simulation in reference/demo_test.py has no two-in-a-row rule. With one more answer for the rule, its delays miss the build spec's words by about the same amounts as the C test's delays do. The Results section of specs/features/06-state-rules/validation.md gives the numbers.
+   - Requirements 23 to 37 in specs/features/06-state-rules/requirements.md are the agent's choices, and they wait for the user's review. The Results section of validation.md in the same folder lists where the code goes beyond the build spec's words.
+   - The status is done.
 
 7. Commit checks, firmware base, and sensor task
    - The goal is to run every check that needs no toolbox with one make command, strip Waveshare's example to the five tasks, and read the IMU into timed stretches.
    - It covers steps 10 to 12 and the Firmware design and Sensor and converter sections. The firmware build is one of the make checks. The hash check compares the model file's SHA-256 hash with DET_MODEL_SHA256 in core/detector_tables.h.
    - Feature 4 made the laptop CMake build, and its CTest run already checks the saved windows. This feature sets up core/ as an ESP-IDF component. The component must build with -ffp-contract=off and with the KISS_FFT_MALLOC and KISS_FFT_FREE options from core/CMakeLists.txt, so that KISS FFT never touches the heap on the watch.
    - The sensor task calls rt_burst() from core/reading_time.h once for each burst. It passes the first reading's number counted from power-on, the number of readings, the stamp taken inside the interrupt, and the overflow flag. It turns the raw gyroscope counts into degrees per second, as requirement 27 of feature 5 says.
-   - This feature counts how often stretches end on the watch and how long they last, with the watch on the wrist and with the watch on a table. Feature 5 modelled the time rule with the measured drift of -80.8 parts per million, and the rule started a new stretch every 2.5 to 5 minutes. Each new stretch loses its 4-second warm-up window. The user keeps the build spec's fixed-rate rule for now and decides on a change after this measurement.
+   - This feature counts how often stretches end on the watch and how long they last, with the watch on a table only. It counts two kinds of stretch end apart. The first kind loses readings, because the sensor's buffer overflowed or a reading number was skipped. The second kind loses no readings and comes from the time rule alone, which points to drift. Feature 5 modelled the time rule with the measured drift of -80.8 parts per million, and the rule started a new stretch every 2.5 to 5 minutes. Since feature 6, every stretch end shows Waiting until two answers in the new stretch agree, which takes about 6 seconds, so frequent drift ends would make the face flicker. The user keeps the build spec's fixed-rate rule for now and decides on a drift fix after this count. Feature 12 makes the same count with the watch on the wrist.
    - The status is planned.
 
 8. Pipeline and state tasks
@@ -49,12 +52,16 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
    - Feature 4 checked the numpy-order float32 sums and the 64-bit scoring step on the laptop only. This feature runs the saved windows in tests/detector/ on the chip and checks them with the same rule as tests/detector/test_detector.c. The chip has no hardware for doubles, so the measured run time includes the 64-bit scoring step in software.
    - The pipeline task is the only task that calls the detector, because the detector's work buffers are static. It calls det_init() once before the first window.
    - The pipeline task owns a conv_t from core/converter.h. It calls conv_start() at each new stretch and conv_set_rate() when the time rule gives the stretch its rate. When conv_push() returns false, the stretch must end, and this feature decides how the pipeline task tells the sensor task.
+   - The pipeline task owns a win_t from core/window.h. It calls win_start() at each new stretch and gives each answer its result code with res_from_answer().
+   - The state task owns a share_t, a face_t, and a dose_t from core/share.h, core/face.h, and core/dose.h. It passes every answer's code unchanged to share_add() and face_answer(), and it calls dose_tick() at least once a second. It calls face_gap() at each new stretch after a gap, so the face shows Waiting while the watch warms up. The first stretch after power-on or a new session needs no call.
+   - The pipeline task sends each answer, so this feature decides when an answer carries the sensor fault code and how a failed sensor reaches the face. The validate stage of feature 6 found that a single sensor fault answer never shows Waiting, because one answer never changes the face.
    - The status is planned.
 
 9. USB recording and commands
    - The goal is to write every reading and answer to the laptop and accept the laptop's commands.
    - It covers step 15 and the USB recording section. It adds the recording format document to core/, the boot line, and the commands for the clock, the dose schedule, a new session, and the tone. The table hash in the boot line is DET_MODEL_SHA256 from core/detector_tables.h, which is the model file's SHA-256 hash.
    - The S line writes the rate as the whole number of millionths of a reading per second that the time rule holds, as requirement 18 of feature 5 says. A first stretch has no rate until its first 10 seconds of stamps pass, so this feature decides when the S line of such a stretch goes out.
+   - The W line writes the result codes 0 to 4 from core/window.h, and the F line writes the face states 0 to 4 from core/face.h, as requirements 24 and 28 of feature 6 say. The D line writes the scheduled time that dose_took_it() answers, as requirement 32 says. The clock command sets the dose clock with dose_set_clock() from core/dose.h.
    - The status is planned.
 
 10. Laptop tools
@@ -66,9 +73,11 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
 11. Watch face
     - The goal is to build the four screens, the state circle, and the dose flow for a wearer with tremor.
     - It covers steps 18 and 19 and the Watch face section. It starts from context/Tremor Watch Light.html and makes the changes that the Watch face section lists. It also picks the No tremor green and the Waiting outline colour, which the design file does not have.
+    - The three second lock after a dose also lives in dose_took_it() from core/dose.h, and the dose flow uses its refusal, as requirement 32 of feature 6 says. The Session screen draws the blocks that share_block() in core/share.h gives, and share_block_hollow() says which block is hollow.
     - The status is planned.
 
 12. Wrist tests, demo, and deliverables
     - The goal is to measure false alarms, response time, and readability with the builder wearing the watch, then record the demo and produce the deliverables.
     - It covers steps 20 to 24 and the Response time and What you deliver sections. It includes the demo video, the session report, the results table, the results page, and the credit lines. It has no write-up, by the user's decision, although the plan asks for one.
+    - This feature counts how often stretches end and how long they last with the watch on the wrist. It counts the same two kinds of stretch end apart as feature 7 does on the table.
     - The status is planned.
