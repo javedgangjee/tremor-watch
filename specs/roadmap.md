@@ -27,7 +27,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
 5. Reading times and converter
    - The goal is to give each reading its time and convert the readings to 100 a second as the toolbox does.
    - It covers steps 7 and 8 and the Sensor and converter section. It saves converter cases, and the C converter must agree within 0.001 degrees per second outside window 0. Feature 1 measured 114.33 readings a second on this board, so no code or test may assume 112.1, and each stretch takes its rate from the reading times as the plan says.
-   - The status is planned.
+   - The status is in progress.
 
 6. Windows, share, and state rules
    - The goal is to build the rules that turn answers into the face state, the session share, and dose due timing.
