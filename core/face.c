@@ -45,6 +45,15 @@ bool face_answer(face_t *f, res_code_t code, int64_t time_us)
     return face_shown(f) != shown;
 }
 
+bool face_gap(face_t *f)
+{
+    face_state_t shown = face_shown(f);
+    f->detector = FACE_WAITING;
+    f->has_before = false;
+    f->before = FACE_WAITING;
+    return face_shown(f) != shown;
+}
+
 bool face_set_dose_due(face_t *f, bool due)
 {
     face_state_t shown = face_shown(f);

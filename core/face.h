@@ -7,9 +7,9 @@
  * share and the recording unchanged.
  *
  * The face states follow the plan's Watch face section, under The state
- * circle. Waiting shows while the watch warms up or when the sensor has
- * failed. Dose due takes over the circle while a dose is due, and then the
- * detector state returns. The numbers are fixed, and the F line of the
+ * circle. Waiting shows while the watch warms up after a start or a gap, or
+ * when the sensor has failed. Dose due takes over the circle while a dose is
+ * due, and then the detector state returns. The numbers are fixed, and the F line of the
  * recording writes them.
  *
  * The caller owns the state. The file has no static data that changes. On the
@@ -58,6 +58,15 @@ face_state_t face_from_code(res_code_t code);
  * answer's state when the answer before maps to the same state. It returns
  * true when the shown state changes. */
 bool face_answer(face_t *f, res_code_t code, int64_t time_us);
+
+/* face_gap() marks a gap. The state task calls it when a new stretch starts
+ * after a gap. It sets the detector state to Waiting at once and clears the
+ * answer before, so an answer from the old stretch never pairs with an answer
+ * from the new one. It keeps the dose due flag and the last tremor time. It
+ * returns true when the shown state changes. The first stretch after
+ * face_init() needs no call, because face_init() already sets the same state,
+ * and a call there changes nothing and returns false. */
+bool face_gap(face_t *f);
 
 /* face_set_dose_due() sets the dose due flag. It returns true when the shown
  * state changes. */

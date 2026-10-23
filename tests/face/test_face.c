@@ -193,6 +193,61 @@ static void test_7_last_tremor_time(void)
     TEST_ASSERT_EQUAL_INT(FACE_NO_TREMOR, face_shown(&face));
 }
 
+static void test_8_gap_shows_waiting_at_once(void)
+{
+    int64_t t = -1;
+    start();
+    face_answer(&face, RES_TREMOR, 0 * SECOND_US);
+    answer_at(RES_TREMOR, 1, 1);
+    TEST_ASSERT_EQUAL_INT(FACE_TREMOR, face_shown(&face));
+    TEST_ASSERT_TRUE(face_gap(&face));
+    TEST_ASSERT_EQUAL_INT(FACE_WAITING, face_shown(&face));
+    TEST_ASSERT_EQUAL_INT(FACE_WAITING, face_detector(&face));
+    TEST_ASSERT_TRUE(face_last_tremor(&face, &t));
+    TEST_ASSERT_EQUAL_INT64(1 * SECOND_US, t);
+    TEST_ASSERT_FALSE(face_gap(&face));
+    TEST_ASSERT_FALSE(face_answer(&face, RES_WARMING_UP, 2 * SECOND_US));
+    TEST_ASSERT_EQUAL_INT(FACE_WAITING, face_shown(&face));
+    TEST_ASSERT_FALSE(face_answer(&face, RES_TREMOR, 3 * SECOND_US));
+    TEST_ASSERT_EQUAL_INT(FACE_WAITING, face_shown(&face));
+    TEST_ASSERT_TRUE(face_last_tremor(&face, &t));
+    TEST_ASSERT_EQUAL_INT64(1 * SECOND_US, t);
+    TEST_ASSERT_TRUE(face_answer(&face, RES_TREMOR, 4 * SECOND_US));
+    TEST_ASSERT_EQUAL_INT(FACE_TREMOR, face_shown(&face));
+    TEST_ASSERT_TRUE(face_last_tremor(&face, &t));
+    TEST_ASSERT_EQUAL_INT64(4 * SECOND_US, t);
+
+    reach(FACE_TREMOR);
+    TEST_ASSERT_TRUE(face_gap(&face));
+    TEST_ASSERT_FALSE(answer(RES_TREMOR));
+    TEST_ASSERT_EQUAL_INT(FACE_WAITING, face_shown(&face));
+    TEST_ASSERT_TRUE(answer(RES_TREMOR));
+    TEST_ASSERT_EQUAL_INT(FACE_TREMOR, face_shown(&face));
+
+    start();
+    TEST_ASSERT_FALSE(face_gap(&face));
+    TEST_ASSERT_EQUAL_INT(FACE_WAITING, face_shown(&face));
+    TEST_ASSERT_EQUAL_INT(FACE_WAITING, face_detector(&face));
+    TEST_ASSERT_FALSE(face_last_tremor(&face, &t));
+}
+
+static void test_9_gap_while_dose_due(void)
+{
+    reach(FACE_NO_TREMOR);
+    TEST_ASSERT_TRUE(face_set_dose_due(&face, true));
+    TEST_ASSERT_FALSE(face_gap(&face));
+    TEST_ASSERT_EQUAL_INT(FACE_DOSE_DUE, face_shown(&face));
+    TEST_ASSERT_EQUAL_INT(FACE_WAITING, face_detector(&face));
+    TEST_ASSERT_FALSE(answer(RES_WARMING_UP));
+    TEST_ASSERT_FALSE(answer(RES_NO_TREMOR));
+    TEST_ASSERT_EQUAL_INT(FACE_DOSE_DUE, face_shown(&face));
+    TEST_ASSERT_EQUAL_INT(FACE_WAITING, face_detector(&face));
+    TEST_ASSERT_TRUE(face_set_dose_due(&face, false));
+    TEST_ASSERT_EQUAL_INT(FACE_WAITING, face_shown(&face));
+    TEST_ASSERT_TRUE(answer(RES_NO_TREMOR));
+    TEST_ASSERT_EQUAL_INT(FACE_NO_TREMOR, face_shown(&face));
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -203,5 +258,7 @@ int main(void)
     RUN_TEST(test_5_warming_up_and_sensor_fault_agree);
     RUN_TEST(test_6_dose_due_takes_over);
     RUN_TEST(test_7_last_tremor_time);
+    RUN_TEST(test_8_gap_shows_waiting_at_once);
+    RUN_TEST(test_9_gap_while_dose_due);
     return UNITY_END();
 }
