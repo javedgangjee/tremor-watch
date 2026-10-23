@@ -9,12 +9,12 @@
 - PASS: every minute line. all present
 - PASS: no losses. kind1_ends=0 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 breaks=0 line_drops=0 kind1_lines=0
 - PASS: reading counts agree. difference 11
-- PASS: burst sizes and delay. bursts=18711 at_wtm=18711 largest=11 delay_us=5653
-- PASS: rates near feature 1's rate. 2 rates, limits 114215870 to 114444530, rates [114353538, 114353234]
-- PASS: stretch numbers. numbers [0, 1]
+- PASS: burst sizes and delay. bursts=18710 at_wtm=18710 largest=11 delay_us=5561
+- PASS: rates near feature 1's rate. 1 rates, limits 114215870 to 114444530, rates [114347777]
+- PASS: stretch numbers. numbers [0]
 - PASS: drift ends beyond half a period. all beyond
 - PASS: still on the table. 30 minutes
-- PASS: screen updates. updates=1802, need 1620
+- PASS: screen updates. updates=1800, need 1620
 
 ## Pass checks of pipeline_run.py
 
@@ -25,43 +25,41 @@
 - PASS: face follows the model. 0 problems
 - PASS: share counts match the answers. 0 problems
 - PASS: no faults or drops. faults=0 end_requests=0 answer_drops=0 screen_drops=0 pipeline=0
-- PASS: screen shows the face. face=1 face_changes=3, want face 1 and 3 changes
+- PASS: screen shows the face. face=1 face_changes=1, want face 1 and 1 changes
 
 ## Pass checks of the record lines
 
-- PASS: one B line before START. B,4097841975,11,9,4be2ac2b511c501257ea8186068f06a94d0084d653840e907be72cd103dc5b0e
+- PASS: one B line before START. B,2274443476,11,9,4be2ac2b511c501257ea8186068f06a94d0084d653840e907be72cd103dc5b0e
 - PASS: every line follows the format. 0 bad lines
-- PASS: S lines. 2 stretches, 0 problems
-- PASS: T and R lines. 18733 T lines, 206052 readings, 0 problems
-- PASS: a W line for each answer. 1795 W lines, 0 problems
-- PASS: an F line for each face change. 3 FACE lines and 3 F lines
+- PASS: S lines. 1 stretches, 0 problems
+- PASS: T and R lines. 18732 T lines, 206041 readings, 0 problems
+- PASS: a W line for each answer. 1798 W lines, 0 problems
+- PASS: an F line for each face change. 1 FACE lines and 1 F lines
 - PASS: no D or A line. 0 lines
 - PASS: no drops and no commands. record_drops=0 line_drops=0 port_drops=0 restarts=0 commands=0
 
 ## Measurements
 
-- The log holds 107 lines before the B line.
-- USB_MINUTE gives 4419 bytes a second over 30 minutes.
-- The log gives 4419 bytes a second and 127 lines a second.
-- The largest gap between two line arrivals after the first minute is 0.101 seconds.
-- PIPELINE_MINUTE gives the free stack in bytes at each minute as 2528, 2368, 2368, 2368, 2368, 2368, 2320, 2320, 2320, 2320, 2320, 2320, 2320, 2320, 2320, 2320, 2320, 2320, 2320, 2320, 2320, 2320, 2320, 2320, 2320, 2320, 2320, 2320, 2320, 2320.
-- STATE_MINUTE gives the free stack in bytes at each minute as 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252.
-- USB_MINUTE gives the free stack in bytes at each minute as 2700, 2700, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636.
-- The detector run time in microseconds is minimum 6776, median 6868, maximum 8874.
-- The delay from the burst's stamp to the end of the run in microseconds has a median of 12696 and a maximum of 60049.
+- The log holds 103 lines before the B line.
+- USB_MINUTE gives 4439 bytes a second over 30 minutes.
+- The log gives 4439 bytes a second and 127 lines a second.
+- The largest gap between two line arrivals after the first minute is 0.103 seconds.
+- PIPELINE_MINUTE gives the free stack in bytes at each minute as 2528, 2368, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240, 2240.
+- STATE_MINUTE gives the free stack in bytes at each minute as 2268, 2268, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252, 2252.
+- USB_MINUTE gives the free stack in bytes at each minute as 2700, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636, 2636.
+- The detector run time in microseconds is minimum 6787, median 6868, maximum 8857.
+- The delay from the burst's stamp to the end of the run in microseconds has a median of 12697 and a maximum of 60076.
 - Stretch 0 gave its window 0 answer 10.020 seconds after its t0.
-- Stretch 1 gave its window 0 answer 4.149 seconds after its t0.
-- The answers by code are tremor 0, no tremor 1793, arm moving 0, warming up 2, sensor fault 0.
+- The answers by code are tremor 0, no tremor 1797, arm moving 0, warming up 1, sensor fault 0.
 - 0 tremor answers came on a still table, and each one is a false alarm.
 - The share at minute 30 is 0.000000.
-- The log holds 3 FACE lines.
-- The pipeline task's free stack in bytes was 2320, 2368, 2528.
-- The state task's free stack in bytes was 2252.
-- The gap path ran on the watch 1 times.
+- The log holds 1 FACE lines.
+- The pipeline task's free stack in bytes was 2240, 2368, 2528.
+- The state task's free stack in bytes was 2252, 2268.
+- The gap path did not run on the watch, because no stretch ended.
 
 ## Stretches
 
 | Stretch | t0 (us) | Rate (uHz) | Ended by |
 |---|---|---|---|
-| 0 | 234354 | 114353538 | kind 2 time |
-| 1 | 1636864959 | 114353234 | open |
+| 0 | 234273 | 114347777 | open |

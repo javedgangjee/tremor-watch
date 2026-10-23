@@ -221,3 +221,74 @@ The watch is left flashed with the firmware/ build of commit 50899e6. Its last b
 ### Decisions in this stage
 
 The user asked for this run to go on with no input and to commit even with failing checks. So this stage committed validation.md and the six output files. It did not change the text of any check, any code, or any script. The user decides whether to fix the comment in usb_task.c, whether to change the filters of check 4 item 9 and check 10 item 6, and whether the gap path run of check 8 is enough for requirement 22. The agent decided this on 23 October 2026, and the user has not reviewed it yet.
+
+## Results of the second run, 2026-10-23
+
+This second validate stage ran on branch feature/09-usb-recording at commit 2c961e0, which rewords the comment in usb_task.c that check 4 item 3 found. The tree was clean. The stage first removed build/, firmware/build/, firmware/bringup/build/, and firmware/detector_check/build/, so every check ran from a clean build. The watch was flashed with the firmware/ build of check 3 before checks 8 to 10, and the three watch runs ran at their full length. The first Results section above stays as it was.
+
+Checks 1 to 9 passed. Check 4 passed apart from item 9, which failed as written for the same reason as in the first run. Check 10 failed on item 6 as written for the same reason as in the first run. Checks 11 and 12 wait for the user. So the feature is still not ready for review as written. Both failures point at the check, and the user decides whether to change their filters.
+
+### Automated checks
+
+1. Check 1 passed. The build printed no warning, and CTest reported "100% tests passed out of 12". The eleven tests from features 4 to 8 passed unchanged, and test_record ran its 14 cases with 0 failures.
+2. Check 2 passed. All five commands printed nothing.
+3. Check 3 passed. In item 1 the clean `make check` exited with code 0, and the log shows "100% tests passed out of 12" on line 94, "model hash matches" on line 99, and "Project build complete" on line 2517. In item 2 the detector_check build exited with code 0. In item 3 each of the two compile_commands.json files gave thirteen lines with True in the first column. The eleven project files, which include record.c, had True in the second column, and the two KISS FFT files had False. Items 4 and 5 printed nothing.
+4. Check 4 failed on item 9 as written. Items 1 to 8 and item 10 passed.
+   - Item 1 listed the eleven files of feature 8 and settings.c and settings.h.
+   - Item 3 now passes. The grep printed nothing, so the reworded comment fixed the failure of the first run.
+   - Item 5 printed settings.c and state_task.c. The three matches in settings.c are the lines that define settings_load(), settings_save_schedule(), and settings_save_tone().
+   - Item 10 printed five lines of firmware/main/CMakeLists.txt and found no copy of the hash.
+   - Item 9 failed as written for the same reason as in the first run. Its first two commands gave 1 for each file and 0. The third command printed four lines that read "# default:", three with a minus sign and one with a plus sign. The full diff shows that every option line that changed names CONSOLE or USB_SERIAL_JTAG. The removed option lines are CONFIG_ESP_CONSOLE_SECONDARY_NONE unset, CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG=y, and CONFIG_ESP_CONSOLE_USB_SERIAL_JTAG_ENABLED=y. The added option lines are CONFIG_ESP_CONSOLE_SECONDARY_NONE=y, CONFIG_ESP_CONSOLE_SECONDARY_USB_SERIAL_JTAG unset, and CONFIG_ESP_TRACE_TRANSPORT_USB_SERIAL_JTAG unset. Each "# default:" line is a marker that ESP-IDF v6.1 writes above an option that still has its default value, and the four marker lines move with the options they mark. This stage made a new sdkconfig from firmware/sdkconfig.defaults in a scratch folder with `idf.py -C firmware -B <scratch>/build -D SDKCONFIG=<scratch>/sdkconfig reconfigure`, and cmp found it the same as the committed firmware/sdkconfig byte for byte. So the code meets what the item is meant to prove, which is that the console change moved only options about the console and the USB Serial/JTAG port. The failure points at the check, because its filter does not allow the marker lines.
+5. Check 5 passed. pytest reported 75 passed. The 65 cases from features 2 to 8 passed unchanged. All 122 functions in the three scripts and the three test files have a type hint on each argument and on their return. The three scripts hold no `print(`, no `os.path`, no `except Exception`, and no line that starts with `import serial`.
+6. Check 6 passed. The command printed nothing.
+7. Check 7 passed. With the six output files and validation.md staged, `git diff --cached 57d4d39 --stat` listed 33 files. They are the 27 files the check names and the six output files of checks 8 to 10. firmware/dependencies.lock did not appear, and no other file did. The stage ran the command of the check again after the commit.
+8. Check 8 passed. record_run.py exited with code 0 after about 31 minutes. All 13 pass checks of table_run.py, all 8 pass checks of pipeline_run.py, and all 8 record line checks held.
+   - The log holds one B line, `B,2274443476,11,9,4be2ac2b511c501257ea8186068f06a94d0084d653840e907be72cd103dc5b0e`, and 103 lines came before it.
+   - No line from the B line on broke the format, and no ESP-IDF log line reached the port.
+   - The log holds 1 stretch with its two S lines, and 18732 T lines that cover 206041 readings with no gap and no overlap.
+   - The log holds 1798 W lines for 1798 ANSWER lines, and 1 F line for 1 FACE line. It holds no D line and no A line.
+   - At minute 30 record_drops, line_drops, port_drops, restarts, and commands were all 0.
+   - USB_MINUTE gives 4439 bytes a second over 30 minutes, and the log gives 4439 bytes a second and 127 lines a second.
+   - The largest gap between two line arrivals on the laptop after the first minute was 0.103 seconds.
+   - The pipeline task's free stack was 2528 bytes at minute 1, 2368 bytes at minute 2, and 2240 bytes at minutes 3 to 30. That is 80 bytes less than the 2320 of the first run. The state task's free stack was 2268 bytes at minutes 1 and 2 and 2252 bytes at minutes 3 to 30. The USB task's free stack was 2700 bytes at minute 1 and 2636 bytes at minutes 2 to 30.
+   - The detector run time was 6787 microseconds at the least, 6868 as the median, and 8857 at the most. The delay from the burst's stamp to the end of the run had a median of 12697 microseconds and a maximum of 60076. Stretch 0 gave its window 0 answer 10.020 seconds after its t0.
+   - No stretch ended in this run, so the gap path did not run on the watch this time.
+9. Check 9 passed. command_run.py exited with code 0 after about 23 minutes, and all 12 pass checks held.
+   - Boot 1's B line had boot ID 3162426297 and boot 2's had 505078862. Both had version 9 and the table hash.
+   - The nine bad commands got the nine answers in order. The scheduled minute was 366. Boot 2's SETTINGS line kept tone=0, times=366, and name=TestDose, and its first STATE_MINUTE line gave clock=0 and schedule=1.
+   - The clock difference was 0 microseconds.
+   - The due F line came 0.073 seconds after T, and the F line that ended the due state came 0.073 seconds after T + 900 seconds.
+   - Boot 2's reset cause was 11.
+   - The time from a command to its answer on the laptop had a median of 0.011 seconds and a maximum of 0.021 seconds over 16 commands.
+   - The state task's free stack was 2284 bytes at the first minute, 2268 bytes at the second, and 2252 bytes after. The USB task's free stack was 2700 bytes at the first five minutes and 2636 bytes after.
+   - The script put back boot 1's settings with `SCHEDULE` and `TONE,1`, and they got A,2,0 and A,4,0.
+10. Check 10 failed on item 6 as written, for the same reason as in the first run. drop_run.py exited with code 1. Items 1 to 5 passed. The log holds one START line and one boot ID, and every line from the B line on is whole. 730 T lines came before the `> CLOSE` line and 1569 after the `> OPEN` line. line_drops, msg_drops, record_drops, answer_drops, faults, and screen_drops were all 0. The widest pair of answers spanned 62 windows with every step from 0.9 to 1.1 seconds.
+    - The last USB_MINUTE line gives port_drops=7482 and restarts=1. The USB_MINUTE line of minute 2 is missing, because the watch dropped it while the port was closed.
+    - Item 6 failed because the T numbers show two gaps after the B line.
+    - The first gap lies at the close. The script read `T,8019,11,70361868`, wrote `> CLOSE`, and closed the port. After the `> OPEN` line the first text was the end of a line, `766`, which the script logged as `> PARTIAL 766`. Then came `R,8051` and `T,8052`. So the R lines of readings 8019 to 8049, the whole text of R line 8050, and the T lines of 8030 and 8041 never reached the log. The gap in T numbers spans 22 readings.
+    - The second gap is the watch's own. After `R,8138` come `B,2208397704,...`, which is the same boot, and `S,0,0,234312,114348886,1024`, which equals the latest S line, and then `T,14883`. This gap spans 6743 readings, which is about 59 seconds. R line 8139, the last reading of the burst at 8129, is the first line the watch dropped.
+    - The lines lost at the close were lost on the laptop's side. The watch puts each line into its buffer whole or not at all, so the half line after the open can only come from bytes the laptop threw away when the script closed the port. The drop rule makes the watch write the B and S lines before the next line after any drop, and no B line lies between `T,8019` and `T,8052`. So the watch sent those lines and the laptop dropped them. The 97 lines from before the close that arrived after the `> OPEN` line, from the half line to `R,8138`, are the lines that sat in the watch's send buffer.
+    - The code meets what item 6 is meant to prove. The watch dropped lines while nobody read, counted them, never made a task wait, and brought back the B line and the latest S line at its own gap, with restarts=1. The check fails because it allows one gap and does not allow for the laptop's loss at the close. This failure points at the check.
+
+### Manual checks
+
+11. Check 11 waits for the user. The watch needs a charged battery, because the power chip reported no battery in feature 7 and the watch turns off without USB power. Run `~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/drop_run.py --unplug --log SCRATCH/unplug_log.txt.gz --report SCRATCH/unplug_report.md`. When the script asks, unplug the USB cable, wait about 60 seconds, and plug it back. The expected result is exit code 0 with port_drops above 0, and the report shows a B line and an S line at the gap. The laptop may lose lines at the close here too, so item 6 may fail for the reason of check 10.
+12. Check 12 waits for the user. Run `caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/command_run.py` with the watch in view. T is the local clock time that the script's `SCHEDULE,TestDose,<m>` command names as minute m of the day. It lies 4 to 5 minutes after that command. Look at the watch between T and T + 900 seconds. The expected result is that the screen shows "Dose due" under the uptime, and "No tremor" again after T + 900 seconds.
+
+### Requirement coverage
+
+Every requirement has at least one passing check, apart from requirements 17, 22, and 39.
+
+- Requirement 17 has no passing check as written. Check 10 fails on item 6 for the reason given above, and check 11 waits for the user. Items 1 to 5 of check 10 pass, and the watch's side of item 6 holds.
+- Requirement 22 has no check on the watch by design, and it waits for the user. In this run no stretch ended, so the gap path did not run on the watch. The first run saw it run once through a time rule end. The sensor task's side of the end request has not run on the watch.
+- Requirement 39 has no passing check as written for the same reason as requirement 17.
+
+Requirements 16, 23, and 24 list check 4 item 9, which failed as written, but each also has passing checks in check 4 items 3 and 4 and check 8 items 3 and 9. Requirement 12 has check 9 and waits for check 12. Requirements 15 and 40 rest on the readings of core/recording_format.md and specs/tech-stack.md that the first run recorded. Neither file changed since then.
+
+### State of the watch
+
+The watch is left flashed with the firmware/ build of commit 2c961e0. Its last boot, in check 10's log, read `SETTINGS source=boot store=ok tone=1 times=none name=`, so the schedule is off and the tone is on.
+
+### Decisions in this stage
+
+The run went on with no input from the user and committed with failing checks, as the user asked. This stage did not change the text of any check, any code, or any script. The user decides whether to change the filters of check 4 item 9 and check 10 item 6, and whether the first run's gap path on the watch is enough for requirement 22. The agent decided this on 23 October 2026, and the user has not reviewed it yet.
