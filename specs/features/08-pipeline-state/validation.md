@@ -115,3 +115,101 @@ The limits in check 8 come from Build order step 5, as test_detector.c uses them
 ## Requirement coverage
 
 Requirement 1 is covered by checks 4 and 9. Requirement 2 is covered by check 1 test_pipeline cases 2 and 3 and check 9 item 3. Requirement 3 is covered by check 9 item 4. Requirement 4 is covered by check 1 test_session case 2 and check 9 item 7. Requirement 5 is covered by check 1 test_session cases 3 and 5 and check 9 items 3 and 7. Requirement 6 is covered by the run time measurements of checks 8 and 9. Requirement 7 is covered by check 8. Requirement 8 is covered by check 4 item 4 and check 9 item 2. Requirement 9 is covered by check 1 test_pipeline cases 2, 3, 6, and 7 and check 9 item 8. Requirement 10 is covered by check 1 test_pipeline cases 2 and 3 and check 9 item 3. Requirement 11 is covered by check 1 test_pipeline cases 2 to 5. Requirement 12 is covered by check 1 test_session and check 4 item 5. Requirement 13 is covered by check 1 test_session cases 3 and 6 and check 9 items 6 and 7. Requirement 14 is covered by check 1 test_session case 4 and check 9 items 5 and 6. Requirement 15 is covered by check 1 test_pipeline case 8 and test_session case 5. Requirement 16 is covered by check 4 items 2 to 6 and check 9 item 9. Requirement 17 is covered by check 4 item 7. Requirement 18 is covered by checks 2 and 3. Requirement 19 is covered by checks 2 and 6. Requirements 20 and 21 are covered by check 1 test_pipeline cases 2 to 7. Requirement 22 is covered by check 1 test_pipeline cases 4 to 6 and check 9 item 8. Requirement 23 is covered by check 1 test_pipeline case 8 and test_session case 5. Requirements 24 to 26 are covered by check 1 test_session cases 1 to 7. Requirement 27 is covered by check 9 items 1 and 6 to 8. Requirement 28 is covered by checks 8 and 9 and their measurements. Requirement 29 is covered by check 5 cases 1 to 4 of test_chip_windows.py and check 8. Requirement 30 is covered by check 9 item 9 and check 10. Requirement 31 is covered by check 5 and check 9. Requirement 32 is covered by check 3. Requirement 33 is covered by check 7 and a reading of specs/tech-stack.md.
+
+## Results
+
+The checks ran on 23 October 2026 on branch feature/08-pipeline-state at commit 940a6ac. The laptop build/ folder was removed before check 1, and check 3 removed build/, firmware/build/, and firmware/detector_check/build/ as it says. Every automated check passed. Checks 10 and 11 wait for the user, because nobody could look at the screen or touch the watch during this run. The USB port answered the whole time, so the reset helper was not needed. Check 8 ran before check 9, and the watch ran firmware/ during check 9 and stays flashed with it.
+
+1. Check 1 passed. The build printed no warning, and CTest reported 100% tests passed out of 11. The nine earlier tests ran unchanged. A reading of tests/pipeline/test_pipeline.c and tests/session/test_session.c found that their cases match their text here, with changes 6 and 7 of plan.md as the readings of session case 5 and pipeline case 3.
+2. Check 2 passed. Items 1 to 5 printed nothing. In item 3, nm read both object files, and they hold no data or bss symbol.
+3. Check 3 passed. `make check` in the empty environment exited with code 0 after about 41 seconds. The log shows "100% tests passed out of 11", then "model hash matches", then "Project build complete", in that order. `idf.py -C firmware/detector_check build` exited with code 0. Item 3 printed twelve lines for each project, with True in the first column on every line, True in the second column for the ten project files, and False for the two KISS FFT files. Items 4 and 5 printed nothing.
+4. Check 4 passed. Item 1 listed the eleven files of feature 7. Item 2 printed only screen_task.c, and its second grep printed nothing. Item 3 printed only usb_task.c. Item 4 printed only pipeline_task.c both times, and item 5 printed only state_task.c. Items 6 and 7 printed nothing.
+5. Check 5 passed. pytest reported 65 passed. The halfway point search in case 1 of test_chip_windows.py found 0 values, so the exact fraction step did not run on any value. The CSV holds values that make_windows.py wrote as 32-bit floats, so this is expected.
+6. Check 6 passed. The command printed nothing.
+7. Check 7 passed. With the validate files staged, `git diff --cached 2940181 --stat` lists 35 files, which equals the diff after the validate commit. They are the 31 files that the check names apart from the four output files, and the four output files. firmware/sdkconfig and firmware/dependencies.lock did not change, and the list holds no other file.
+8. Check 8 passed. The flash of firmware/detector_check exited with code 0, and chip_windows.py exited with code 0 after about 17 seconds. All five pass checks held. The flash of firmware/ afterwards exited with code 0.
+   - CHECK_CRC gave 0xcbf43926, and CHECK_START gave windows=322, bytes=1545600, and crc32=0x841aeb95. A separate run of zlib on windows_bytes() gave 0x841aeb95.
+   - The log holds 644 CHECK_WINDOW lines and CHECK_END runs=644. The only "rst:" line is the boot line before CHECK_CRC.
+   - A separate script read pass 1 against answers.csv and found the same largest differences as the report.
+9. Check 9 passed. pipeline_run.py exited with code 0 after about 31 minutes. All 13 pass checks of table_run.py and all 8 pass checks of this feature held.
+   - The log holds one DETECTOR_INIT line with ok=1, and no PIPELINE_ERROR, END_REQUEST, GAP, or TONE line.
+   - The run had one stretch. Stretch 0 started at t0 238216 microseconds, took the rate 114351469 from its first 10 seconds, and had not ended when the run stopped. So no drift end came in 30 minutes, and the gap path did not run on the watch. Item 5 holds only because no later stretch exists.
+   - The answers ran from window 0 to window 1795 with no gap in the numbers. The last at_us was 1,799,378,537 microseconds. After the first 15 seconds, the wait between two answers lay from 961,902 to 1,058,186 microseconds.
+   - At minute 30, PIPELINE_MINUTE gave windows=1796, faults=0, end_requests=0, answer_drops=0, and rate_refused=0. STATE_MINUTE gave screen_drops=0, and SENSOR_MINUTE gave pipeline=0. Every loss count was 0, and USB_MINUTE gave line_drops=0.
+   - SCREEN_MINUTE at minute 30 gave updates=1800, face=1, and face_changes=1.
+
+### Table run measurements
+
+| Measure | Value |
+|---|---|
+| Detector run time, minimum, median, and maximum | 6769, 6869, and 8803 microseconds |
+| Delay from the burst's stamp to the end of the run, median and maximum | 12422 and 62675 microseconds |
+| Time from t0 to the window 0 answer | 10.020 seconds |
+| Answers by code | 0 tremor, 1795 no tremor, 0 arm moving, 1 warming up, 0 sensor fault |
+| Share at minute 30 | 0.000000 from 448 still windows |
+| Face changes | 1, from Waiting to No tremor at 10.28 seconds after boot |
+| Pipeline task free stack | 2576 bytes at minute 1, 2368 at minute 2, and 2240 from minute 3 to minute 30 |
+| State task free stack | 2536 bytes at minute 1, 2520 at minute 2, and 2488 from minute 3 to minute 30 |
+
+- No tremor answer came on the still table, so the run had no false alarm. The largest probability was 0.00127. The low-frequency sum lay from 0.48 to 0.69, which is far below 50, so the arm at rest check held on every window.
+- Windows 0 to 9 waited for the rate at 10 seconds and then ran one after the other. The largest run time of 8803 microseconds and the largest delay of 62675 microseconds both came in this catch-up, on windows 3 and 5. After it, the run times lay near 6870 microseconds.
+- From window 10 on, each answer came 65 to 162 milliseconds after the time of its window's last 100 Hz sample, with a median of 113 milliseconds. The wait comes from the converter, which needs 16 extra readings after each block, and from the bursts of 11 readings. The time rule gives each burst's stamp to its first reading, so the later readings of a burst arrive before their rule times, and this makes the wait shorter than the 140 milliseconds that 16 readings take.
+
+### Saved windows on the chip
+
+| Measure | Chip, pass 1 | Laptop, test_detector |
+|---|---|---|
+| Largest difference in the 12 numbers | 3.66e-06 | 3.6e-06 |
+| Largest difference in the probability | 2.66e-07 | 2.71e-07 |
+| Largest relative difference in the low-frequency sum | 1.1e-06 | 1.1e-06 |
+| Windows near a cut-off, and of them near a peak tie | 31 and 11 | 31 and 11 |
+| Windows with a different answer, and with a different peak | 0 and 0 | 0 and 0 |
+
+| Pass | Minimum run time | Median run time | Maximum run time |
+|---|---|---|---|
+| 1 | 6603 microseconds | 6612.5 microseconds | 6803 microseconds |
+| 2 | 6603 microseconds | 6619 microseconds | 6646 microseconds |
+
+The largest run time in pass 1 came on window 0, the first run after start. The detector takes about 6.6 milliseconds on the chip with the 64-bit scoring step in software and the -Og build. Inside the watch firmware it takes about 6.9 milliseconds, because the other tasks share the chip. Both are under 1 percent of the 1 second between answers.
+
+### Manual checks
+
+10. Check 10 waits for the user. The log shows that the screen task took 1800 messages and that its face field matches the last FACE line, but nobody looked at the screen.
+11. Check 11 waits for the user. Nobody wore or shook the watch, so nothing yet shows a tremor answer on the watch.
+
+### Requirement coverage
+
+Every item in requirements.md has at least one passing check, with these limits.
+
+- Requirement 14 says that the state task calls face_gap() at each new stretch after a gap. Session case 4 passes on the laptop, but no stretch ended during the table run, so the gap path did not run on the watch.
+- Requirement 15 and requirement 23 say how a failed sensor reaches the face. Only the laptop cases test them, because a still watch never stops its sensor.
+- Requirement 22 has two halves. Pipeline cases 4 to 6 test the pipe's end request on the laptop. The sensor task's half, which reads the end queue and ends the stretch with reason=pipeline, did not run in any check, because no end request came on the watch. Check 9 item 8 shows only that pipeline=0.
+- Requirement 30 says that the holding screen shows the face state. Check 9 item 9 shows that the screen task took the face, and check 10 waits for the user.
+- Requirement 33 holds, because specs/tech-stack.md records every item that it lists.
+
+### Judgments
+
+Change 6 reads session case 5 in the right way. The case text names a first fault answer, a second fault answer, and a fault answer with window 4, and it then says that answers[RES_SENSOR_FAULT] is 2. Only one reading lets every sentence hold, which is that the second fault answer is the one passed with window 4 and has_window false. The test asserts exactly that, and the return value SESS_FACE_CHANGED with no SESS_COUNTED shows that the answer was not counted. The case is weaker than it looks, because share_add() never counts a fault code. So it would still pass if sess_answer() ignored has_window. The firmware never sends a code from 0 to 2 without a window, so this has no effect now.
+
+The free stack of the pipeline task is not a risk in this feature. The task has 4096 bytes and used at most 1856 of them, so 2240 bytes, which is 55 percent, stayed free. The deepest call is usb_send() with the PIPELINE_MINUTE line, because it holds a 320-byte line on the stack and runs vsnprintf() with doubles. That call ran every minute. The paths that did not run, which are END_REQUEST and the fault answer, call the same usb_send() with fewer values or send a smaller message. The free stack fell from 2576 to 2240 bytes over the first 3 minutes and then stayed at 2240 for 27 minutes. So the peak depends a little on timing, probably through interrupts that land in deep calls, and a margin of 2240 bytes covers that. The firmware also builds with the FreeRTOS stack canary, which stops the chip with an error if a stack overflows. Feature 9 adds the recording lines, and if the pipeline task formats them, its free stack needs a new reading. The state task kept 2488 of 4096 bytes free.
+
+### Against the build spec
+
+A reading of core/pipeline.c, core/session.c, and firmware/main/ beside the build spec's Windows, Response time, and Firmware design sections finds that the code follows these rules for the parts that this feature builds.
+
+- The pipeline task runs the detector only after a sensor message, on each window that the converter completes. So the runs follow the readings and never a timer. Window n holds samples 100n to 100n + 399, and its time is t0 + 10,000 × (100n + 399) microseconds.
+- Every answer goes to the face, so the face gets a new answer each second. The share counts only windows above 0 whose number divides by 4, and it counts only tremor, no tremor, and arm moving. Window 0 has the code warming up.
+- Every answer carries one code from core/window.h. The state task passes the code unchanged to share_add() and face_answer(), so the two-in-a-row rule changes only what the face shows.
+- The pipeline task is the only caller of det_init() and det_run(). It calls det_init() once before the first window. The state task owns the share, the face, and the doses through core/session.c, and core/ has unit tests for both new files.
+- The tasks talk through queues and never wait on a full queue. The detector runs on core 1, and the screen task runs on core 0. The screen task took 1800 messages in 30 minutes with no drop, so the detector runs did not hold up the screen.
+- The firmware writes nothing to flash, and answers stay in memory.
+
+The code goes beyond the build spec's words or leaves gaps in these places. None of them fails a check.
+
+- The build spec says that the detector runs on window n as soon as reading 100n + 399 exists. The converter makes a block only when its 16 extra readings after the block are in, so each answer comes about 113 milliseconds after its window's last sample by the time rule's clock. In the first stretch no window runs until the rate comes at 10 seconds, and then windows 0 to 9 run one after the other. Both waits come from the build spec's own converter and time rule, so they follow the build spec.
+- The build spec says that Waiting shows when the sensor has failed, and it gives no time. Requirement 23 sends the first fault answer after 2 seconds with no sensor message, so the face shows Waiting about 3 seconds after the sensor stops. This is the agent's choice.
+- The session share starts when the state task starts, and requirement 25 times each answer at its window's last sample. The build spec gives neither rule.
+- The holding screen calls face_name() from core/face.h to turn the state number into a word. The screen task still draws only the state that the state task sends.
+- ESP-IDF's own log lines at level INFO still reach the serial port, as feature 7 found. Feature 9 handles this.
+
+None of the nine changes in plan.md's "Changes during implement" goes against the build spec. Changes 1 to 5 set a line length, a flag that stops repeated rate tries, the out of sync rule for windows, the fields of a fault answer, and which counts a new session clears. The build spec says nothing about them. Changes 6 and 7 are readings of the test cases, and the judgment above covers change 6. Changes 8 and 9 are build settings and a note on specs/tech-stack.md. Each change waits for the user's review.
