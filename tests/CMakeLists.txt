@@ -21,3 +21,28 @@ target_compile_options(test_converter PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
 target_compile_definitions(test_converter PRIVATE "CONVERTER_TEST_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/converter\"")
 target_link_libraries(test_converter PRIVATE tremor_core unity)
 add_test(NAME test_converter COMMAND test_converter)
+
+add_executable(test_window window/test_window.c)
+target_compile_options(test_window PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
+target_link_libraries(test_window PRIVATE tremor_core unity)
+add_test(NAME test_window COMMAND test_window)
+
+add_executable(test_share share/test_share.c)
+target_compile_options(test_share PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
+target_link_libraries(test_share PRIVATE tremor_core unity)
+add_test(NAME test_share COMMAND test_share)
+
+add_executable(test_face face/test_face.c)
+target_compile_options(test_face PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
+target_link_libraries(test_face PRIVATE tremor_core unity)
+add_test(NAME test_face COMMAND test_face)
+
+add_executable(test_dose dose/test_dose.c)
+target_compile_options(test_dose PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
+target_link_libraries(test_dose PRIVATE tremor_core unity)
+add_test(NAME test_dose COMMAND test_dose)
+
+add_executable(test_response response/test_response.c)
+target_compile_options(test_response PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
+target_link_libraries(test_response PRIVATE tremor_core unity)
+add_test(NAME test_response COMMAND test_response)
