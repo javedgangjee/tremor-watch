@@ -1,0 +1,214 @@
+0.000	ESP-ROM:esp32s3-20210327
+0.000	Build:Mar 27 2021
+0.001	rst:0x15 (USB_UART_CHIP_RESET),boot:0x2b (SPI_FAST_FLASH_BOOT)
+0.001	Saved PC:0x4038cb42
+0.001	SPIWP:0xee
+0.001	mode:DIO, clock div:1
+0.001	load:0x3fce2820,len:0x1664
+0.001	load:0x403c8700,len:0xf7c
+0.001	load:0x403cb700,len:0x31ec
+0.001	entry 0x403c892c
+0.001	I (24) boot: ESP-IDF v6.1 2nd stage bootloader
+0.001	I (24) boot: compile time Oct 23 2026 01:13:26
+0.001	I (25) boot: Multicore bootloader
+0.002	I (25) boot: chip revision: v0.2
+0.002	I (27) boot: efuse block revision: v1.4
+0.002	I (31) qio_mode: Enabling default flash chip QIO
+0.002	I (35) boot.esp32s3: Boot SPI Speed : 80MHz
+0.002	I (39) boot.esp32s3: SPI Mode       : QIO
+0.002	I (43) boot.esp32s3: SPI Flash Size : 16MB
+0.002	I (47) boot: Enabling RNG early entropy source...
+0.002	I (51) boot: Partition Table:
+0.003	I (54) boot: ## Label            Usage          Type ST Offset   Length
+0.003	I (60) boot:  0 nvs              WiFi data        01 02 00009000 00006000
+0.003	I (67) boot:  1 phy_init         RF data          01 01 0000f000 00001000
+0.003	I (73) boot:  2 factory          factory app      00 00 00010000 00177000
+0.003	I (80) boot: End of partition table
+0.003	I (83) esp_image: segment 0: paddr=00010020 vaddr=3c060020 size=2d06ch (184428) map
+0.017	I (119) esp_image: segment 1: paddr=0003d094 vaddr=3fca5b00 size=02f84h ( 12164) load
+0.021	I (122) esp_image: segment 2: paddr=00040020 vaddr=42000020 size=52f9ch (339868) map
+0.074	I (175) esp_image: segment 3: paddr=00092fc4 vaddr=3fca8a84 size=00960h (  2400) load
+0.077	I (176) esp_image: segment 4: paddr=0009392c vaddr=40374000 size=21a68h (137832) load
+0.105	I (207) esp_image: segment 5: paddr=000b539c vaddr=50000000 size=00024h (    36) load
+0.119	I (220) boot: Loaded app from partition at offset 0x10000
+0.119	I (221) boot: Disabling RNG early entropy source...
+0.129	I (231) octal_psram: vendor id    : 0x0d (AP)
+0.129	I (231) octal_psram: dev id       : 0x02 (generation 3)
+0.131	I (231) octal_psram: density      : 0x03 (64 Mbit)
+0.135	I (233) octal_psram: good-die     : 0x01 (Pass)
+0.140	I (237) octal_psram: Latency      : 0x01 (Fixed)
+0.144	I (242) octal_psram: VCC          : 0x01 (3V)
+0.149	I (246) octal_psram: SRF          : 0x01 (Fast Refresh)
+0.154	I (251) octal_psram: BurstType    : 0x01 (Hybrid Wrap)
+0.158	I (255) octal_psram: BurstLen     : 0x01 (32 Byte)
+0.163	I (260) octal_psram: Readlatency  : 0x02 (10 cycles@Fixed)
+0.168	I (265) octal_psram: DriveStrength: 0x00 (1/1)
+0.172	I (269) MSPI Timing: Enter psram timing tuning
+0.175	I (274) esp_psram: Found 8MB PSRAM device
+0.178	I (277) esp_psram: Speed: 80MHz
+0.181	I (280) cpu_start: Multicore app
+0.484	I (585) esp_psram: SPI SRAM memory test OK
+0.492	I (593) cpu_start: GPIO 44 and 43 are used as console UART I/O pins
+0.492	I (594) cpu_start: Pro cpu start user code
+0.494	I (594) cpu_start: cpu freq: 240000000 Hz
+0.497	I (595) app_init: Application information:
+0.502	I (599) app_init: Project name:     tremor_log
+0.506	I (603) app_init: App version:      f9e986c
+0.511	I (607) app_init: Compile time:     Oct 23 2026 01:13:13
+0.515	I (612) app_init: ELF file SHA256:  4ab1e6950...
+0.518	I (617) app_init: ESP-IDF:          v6.1
+0.522	I (620) efuse_init: Min chip rev:     v0.0
+0.526	I (624) efuse_init: Max chip rev:     v0.99 
+0.530	I (628) efuse_init: Chip rev:         v0.2
+0.536	I (632) heap_init: Initializing. RAM available for dynamic allocation:
+0.542	I (638) heap_init: At 3FCAAED0 len 0003E840 (250 KiB): RAM
+0.547	I (643) heap_init: At 3FCE9710 len 00005724 (21 KiB): RAM
+0.552	I (648) heap_init: At 3FCF0000 len 00008000 (32 KiB): DRAM
+0.557	I (654) heap_init: At 600FE000 len 00001FE8 (7 KiB): RTCRAM
+0.563	I (659) esp_psram: Adding pool of 8192K of PSRAM memory to heap allocator
+0.567	I (666) spi_flash: detected chip: gd
+0.570	I (669) spi_flash: flash io: qio
+0.582	W (672) spi_flash: Detected size(32768k) larger than the size in the binary image header(16384k). Using the size in the binary image header.
+0.588	I (684) sleep_gpio: Configure to isolate all GPIO pins in sleep state
+0.595	I (690) sleep_gpio: Enable automatic switching of GPIO sleep configuration
+0.598	I (697) main_task: Started on CPU0
+0.606	I (700) esp_psram: Reserving pool of 32K of internal memory for DMA/internal allocations
+0.610	I (708) main_task: Calling app_main()
+0.612	START uptime_us=54639
+0.617	POWER pmu=ok vbus=1 battery=0 battery_mv=0 battery_percent=-1
+0.620	TASK name=usb core=0 priority=3
+0.623	TASK name=sensor core=1 priority=12
+0.628	I (723) QMI8658: QMI8658 initialized successfully
+0.633	I (725) ESP32-S3-Touch-AMOLED-2.06: Initialize SPI bus
+0.635	I (725) LVGL: Starting LVGL task
+0.641	I (735) sh8601: LCD panel create success, version: 2.0.0
+0.644	TASK name=pipeline core=1 priority=8
+0.647	TASK name=state core=0 priority=6
+0.650	TASK name=screen core=0 priority=5
+0.661	SENSOR_SETUP ctrl1=0x6C ctrl2=0x26 ctrl3=0x66 ctrl7=0x03 fifo_ctrl=0x0D fifo_wtm=11 gyro_range_dps=1024 int1_level=0
+0.664	I (725) main_task: Returned from app_main()
+0.801	STRETCH number=0 first=0 t0_us=238337 kind=start reason=start prev_span_us=0 prev_readings=0 prev_rate_uhz=0 error_us=none
+1.033	E (1133) gpio: gpio_install_isr_service(568): GPIO isr service already installed
+10.805	RATE number=0 rate_uhz=114351161
+60.559	SCREEN_MINUTE minute=1 updates=59
+60.560	USB_MINUTE minute=1 line_drops=0
+60.567	PIPELINE_MINUTE minute=1 readings=6842 breaks=0 gyro_mean_dps=1.0868,-3.2691,2.4884 gyro_sd_dps=0.1343,0.1573,0.6310 accel_mean_counts=-148.6,-23.3,-3769.6
+60.641	SENSOR_MINUTE minute=1 readings=6853 bursts=623 bursts_at_wtm=623 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5427 stretches=1 kind1_ends=0 kind2_ends=0
+120.560	SCREEN_MINUTE minute=2 updates=119
+120.560	USB_MINUTE minute=2 line_drops=0
+120.568	PIPELINE_MINUTE minute=2 readings=13695 breaks=0 gyro_mean_dps=1.0980,-3.2616,2.6137 gyro_sd_dps=0.1292,0.1440,0.4959 accel_mean_counts=-148.9,-23.4,-3776.8
+120.586	SENSOR_MINUTE minute=2 readings=13706 bursts=1246 bursts_at_wtm=1246 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=1 kind1_ends=0 kind2_ends=0
+180.561	SCREEN_MINUTE minute=3 updates=179
+180.561	USB_MINUTE minute=3 line_drops=0
+180.569	PIPELINE_MINUTE minute=3 readings=20559 breaks=0 gyro_mean_dps=1.1086,-3.2653,2.5375 gyro_sd_dps=0.1335,0.1496,0.5660 accel_mean_counts=-148.6,-23.8,-3769.5
+180.599	SENSOR_MINUTE minute=3 readings=20570 bursts=1870 bursts_at_wtm=1870 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=1 kind1_ends=0 kind2_ends=0
+240.562	SCREEN_MINUTE minute=4 updates=239
+240.562	USB_MINUTE minute=4 line_drops=0
+240.570	PIPELINE_MINUTE minute=4 readings=27423 breaks=0 gyro_mean_dps=1.1064,-3.2576,2.5987 gyro_sd_dps=0.1295,0.1449,0.5030 accel_mean_counts=-148.6,-23.7,-3776.3
+240.625	SENSOR_MINUTE minute=4 readings=27434 bursts=2494 bursts_at_wtm=2494 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=1 kind1_ends=0 kind2_ends=0
+300.562	SCREEN_MINUTE minute=5 updates=299
+300.562	USB_MINUTE minute=5 line_drops=0
+300.571	PIPELINE_MINUTE minute=5 readings=34287 breaks=0 gyro_mean_dps=1.1080,-3.2639,2.5830 gyro_sd_dps=0.1288,0.1442,0.5132 accel_mean_counts=-148.4,-23.9,-3775.8
+300.652	SENSOR_MINUTE minute=5 readings=34298 bursts=3118 bursts_at_wtm=3118 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=1 kind1_ends=0 kind2_ends=0
+360.563	SCREEN_MINUTE minute=6 updates=359
+360.564	USB_MINUTE minute=6 line_drops=0
+360.572	PIPELINE_MINUTE minute=6 readings=41140 breaks=0 gyro_mean_dps=1.0913,-3.2573,2.6033 gyro_sd_dps=0.1249,0.1363,0.3997 accel_mean_counts=-148.6,-23.8,-3782.4
+360.590	SENSOR_MINUTE minute=6 readings=41151 bursts=3741 bursts_at_wtm=3741 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=1 kind1_ends=0 kind2_ends=0
+420.564	SCREEN_MINUTE minute=7 updates=419
+420.564	USB_MINUTE minute=7 line_drops=0
+420.572	PIPELINE_MINUTE minute=7 readings=48004 breaks=0 gyro_mean_dps=1.0833,-3.2663,2.5870 gyro_sd_dps=0.1305,0.1469,0.5054 accel_mean_counts=-148.4,-23.8,-3775.8
+420.609	SENSOR_MINUTE minute=7 readings=48015 bursts=4365 bursts_at_wtm=4365 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=1 kind1_ends=0 kind2_ends=0
+480.565	SCREEN_MINUTE minute=8 updates=479
+480.565	USB_MINUTE minute=8 line_drops=0
+480.573	PIPELINE_MINUTE minute=8 readings=54868 breaks=0 gyro_mean_dps=1.0790,-3.2666,2.5916 gyro_sd_dps=0.1305,0.1479,0.5027 accel_mean_counts=-148.8,-23.9,-3776.4
+480.636	SENSOR_MINUTE minute=8 readings=54879 bursts=4989 bursts_at_wtm=4989 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=1 kind1_ends=0 kind2_ends=0
+540.566	SCREEN_MINUTE minute=9 updates=539
+540.566	USB_MINUTE minute=9 line_drops=0
+540.574	PIPELINE_MINUTE minute=9 readings=61732 breaks=0 gyro_mean_dps=1.0838,-3.2603,2.5421 gyro_sd_dps=0.1309,0.1461,0.5083 accel_mean_counts=-149.0,-23.6,-3776.9
+540.663	SENSOR_MINUTE minute=9 readings=61743 bursts=5613 bursts_at_wtm=5613 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=1 kind1_ends=0 kind2_ends=0
+600.566	SCREEN_MINUTE minute=10 updates=599
+600.567	USB_MINUTE minute=10 line_drops=0
+600.575	PIPELINE_MINUTE minute=10 readings=68585 breaks=0 gyro_mean_dps=1.0820,-3.2577,2.6173 gyro_sd_dps=0.1271,0.1380,0.4001 accel_mean_counts=-149.0,-23.3,-3782.6
+600.594	SENSOR_MINUTE minute=10 readings=68596 bursts=6236 bursts_at_wtm=6236 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=1 kind1_ends=0 kind2_ends=0
+660.567	SCREEN_MINUTE minute=11 updates=659
+660.568	USB_MINUTE minute=11 line_drops=0
+660.576	PIPELINE_MINUTE minute=11 readings=75449 breaks=0 gyro_mean_dps=1.0816,-3.2627,2.5655 gyro_sd_dps=0.1285,0.1474,0.4944 accel_mean_counts=-148.8,-23.4,-3776.5
+660.621	SENSOR_MINUTE minute=11 readings=75460 bursts=6860 bursts_at_wtm=6860 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=1 kind1_ends=0 kind2_ends=0
+720.568	SCREEN_MINUTE minute=12 updates=719
+720.568	USB_MINUTE minute=12 line_drops=0
+720.577	PIPELINE_MINUTE minute=12 readings=82313 breaks=0 gyro_mean_dps=1.0840,-3.2753,2.5232 gyro_sd_dps=0.1371,0.1536,0.5579 accel_mean_counts=-148.3,-23.3,-3764.6
+720.648	SENSOR_MINUTE minute=12 readings=82324 bursts=7484 bursts_at_wtm=7484 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=1 kind1_ends=0 kind2_ends=0
+747.866	STRETCH number=1 first=85426 t0_us=747292415 kind=2 reason=time prev_span_us=746957863 prev_readings=85426 prev_rate_uhz=114351161 error_us=4382.5
+747.869	RATE number=1 rate_uhz=114350493
+780.569	SCREEN_MINUTE minute=13 updates=779
+780.569	USB_MINUTE minute=13 line_drops=0
+780.577	PIPELINE_MINUTE minute=13 readings=89166 breaks=0 gyro_mean_dps=1.0757,-3.2732,2.5611 gyro_sd_dps=0.1248,0.1425,0.4568 accel_mean_counts=-148.1,-23.5,-3777.9
+780.596	SENSOR_MINUTE minute=13 readings=89177 bursts=8107 bursts_at_wtm=8107 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=2 kind1_ends=0 kind2_ends=1
+840.570	SCREEN_MINUTE minute=14 updates=839
+840.570	USB_MINUTE minute=14 line_drops=0
+840.578	PIPELINE_MINUTE minute=14 readings=96030 breaks=0 gyro_mean_dps=1.0801,-3.2741,2.5675 gyro_sd_dps=0.1257,0.1404,0.4467 accel_mean_counts=-148.8,-23.3,-3777.8
+840.605	SENSOR_MINUTE minute=14 readings=96041 bursts=8731 bursts_at_wtm=8731 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=2 kind1_ends=0 kind2_ends=1
+900.570	SCREEN_MINUTE minute=15 updates=899
+900.571	USB_MINUTE minute=15 line_drops=0
+900.579	PIPELINE_MINUTE minute=15 readings=102894 breaks=0 gyro_mean_dps=1.0987,-3.2742,2.5400 gyro_sd_dps=0.1325,0.1498,0.5484 accel_mean_counts=-148.7,-23.4,-3768.6
+900.632	SENSOR_MINUTE minute=15 readings=102905 bursts=9355 bursts_at_wtm=9355 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=2 kind1_ends=0 kind2_ends=1
+960.571	SCREEN_MINUTE minute=16 updates=959
+960.572	USB_MINUTE minute=16 line_drops=0
+960.580	PIPELINE_MINUTE minute=16 readings=109758 breaks=0 gyro_mean_dps=1.1058,-3.2663,2.5906 gyro_sd_dps=0.1336,0.1506,0.5305 accel_mean_counts=-148.5,-23.3,-3768.3
+960.659	SENSOR_MINUTE minute=16 readings=109769 bursts=9979 bursts_at_wtm=9979 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=2 kind1_ends=0 kind2_ends=1
+1020.572	SCREEN_MINUTE minute=17 updates=1019
+1020.573	USB_MINUTE minute=17 line_drops=0
+1020.581	PIPELINE_MINUTE minute=17 readings=116611 breaks=0 gyro_mean_dps=1.1061,-3.2676,2.6148 gyro_sd_dps=0.1272,0.1464,0.4736 accel_mean_counts=-148.3,-23.4,-3776.2
+1020.599	SENSOR_MINUTE minute=17 readings=116622 bursts=10602 bursts_at_wtm=10602 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=2 kind1_ends=0 kind2_ends=1
+1080.573	SCREEN_MINUTE minute=18 updates=1079
+1080.573	USB_MINUTE minute=18 line_drops=0
+1080.582	PIPELINE_MINUTE minute=18 readings=123475 breaks=0 gyro_mean_dps=1.1089,-3.2669,2.5916 gyro_sd_dps=0.1357,0.1552,0.5978 accel_mean_counts=-148.5,-23.6,-3761.9
+1080.617	SENSOR_MINUTE minute=18 readings=123486 bursts=11226 bursts_at_wtm=11226 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=2 kind1_ends=0 kind2_ends=1
+1140.574	SCREEN_MINUTE minute=19 updates=1139
+1140.574	USB_MINUTE minute=19 line_drops=0
+1140.582	PIPELINE_MINUTE minute=19 readings=130339 breaks=0 gyro_mean_dps=1.0862,-3.2801,2.6408 gyro_sd_dps=0.1229,0.1386,0.3895 accel_mean_counts=-148.6,-23.5,-3782.5
+1140.644	SENSOR_MINUTE minute=19 readings=130350 bursts=11850 bursts_at_wtm=11850 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=2 kind1_ends=0 kind2_ends=1
+1200.575	SCREEN_MINUTE minute=20 updates=1199
+1200.575	USB_MINUTE minute=20 line_drops=0
+1200.583	PIPELINE_MINUTE minute=20 readings=137203 breaks=0 gyro_mean_dps=1.0864,-3.2818,2.6176 gyro_sd_dps=0.1282,0.1429,0.4707 accel_mean_counts=-149.0,-23.6,-3777.0
+1200.671	SENSOR_MINUTE minute=20 readings=137214 bursts=12474 bursts_at_wtm=12474 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=2 kind1_ends=0 kind2_ends=1
+1260.575	SCREEN_MINUTE minute=21 updates=1259
+1260.576	USB_MINUTE minute=21 line_drops=0
+1260.584	PIPELINE_MINUTE minute=21 readings=144056 breaks=0 gyro_mean_dps=1.0966,-3.2744,2.6072 gyro_sd_dps=0.1306,0.1472,0.4927 accel_mean_counts=-148.8,-23.6,-3774.5
+1260.603	SENSOR_MINUTE minute=21 readings=144067 bursts=13097 bursts_at_wtm=13097 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=2 kind1_ends=0 kind2_ends=1
+1320.576	SCREEN_MINUTE minute=22 updates=1319
+1320.577	USB_MINUTE minute=22 line_drops=0
+1320.585	PIPELINE_MINUTE minute=22 readings=150920 breaks=0 gyro_mean_dps=1.0765,-3.2825,2.6380 gyro_sd_dps=0.1223,0.1393,0.3935 accel_mean_counts=-148.8,-23.6,-3781.8
+1320.628	SENSOR_MINUTE minute=22 readings=150931 bursts=13721 bursts_at_wtm=13721 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=2 kind1_ends=0 kind2_ends=1
+1380.577	SCREEN_MINUTE minute=23 updates=1379
+1380.577	USB_MINUTE minute=23 line_drops=0
+1380.586	PIPELINE_MINUTE minute=23 readings=157784 breaks=0 gyro_mean_dps=1.0818,-3.2710,2.5966 gyro_sd_dps=0.1310,0.1456,0.4714 accel_mean_counts=-148.7,-23.6,-3776.0
+1380.656	SENSOR_MINUTE minute=23 readings=157795 bursts=14345 bursts_at_wtm=14345 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=2 kind1_ends=0 kind2_ends=1
+1440.578	SCREEN_MINUTE minute=24 updates=1439
+1440.578	USB_MINUTE minute=24 line_drops=0
+1440.587	PIPELINE_MINUTE minute=24 readings=164637 breaks=0 gyro_mean_dps=1.0747,-3.2716,2.6391 gyro_sd_dps=0.1239,0.1378,0.3937 accel_mean_counts=-148.5,-23.8,-3782.4
+1440.605	SENSOR_MINUTE minute=24 readings=164648 bursts=14968 bursts_at_wtm=14968 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=2 kind1_ends=0 kind2_ends=1
+1500.579	SCREEN_MINUTE minute=25 updates=1499
+1500.579	USB_MINUTE minute=25 line_drops=0
+1500.587	PIPELINE_MINUTE minute=25 readings=171501 breaks=0 gyro_mean_dps=1.0888,-3.2842,2.6226 gyro_sd_dps=0.1250,0.1392,0.4070 accel_mean_counts=-148.6,-23.8,-3781.4
+1500.612	SENSOR_MINUTE minute=25 readings=171512 bursts=15592 bursts_at_wtm=15592 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=2 kind1_ends=0 kind2_ends=1
+1560.579	SCREEN_MINUTE minute=26 updates=1559
+1560.580	USB_MINUTE minute=26 line_drops=0
+1560.588	PIPELINE_MINUTE minute=26 readings=178365 breaks=0 gyro_mean_dps=1.0782,-3.2779,2.5935 gyro_sd_dps=0.1323,0.1514,0.5232 accel_mean_counts=-149.1,-24.0,-3770.5
+1560.640	SENSOR_MINUTE minute=26 readings=178376 bursts=16216 bursts_at_wtm=16216 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5551 stretches=2 kind1_ends=0 kind2_ends=1
+1620.580	SCREEN_MINUTE minute=27 updates=1619
+1620.581	USB_MINUTE minute=27 line_drops=0
+1620.589	PIPELINE_MINUTE minute=27 readings=185229 breaks=0 gyro_mean_dps=1.0810,-3.2810,2.5297 gyro_sd_dps=0.1356,0.1590,0.6155 accel_mean_counts=-148.8,-23.9,-3763.2
+1620.667	SENSOR_MINUTE minute=27 readings=185240 bursts=16840 bursts_at_wtm=16840 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5566 stretches=2 kind1_ends=0 kind2_ends=1
+1680.581	SCREEN_MINUTE minute=28 updates=1679
+1680.582	USB_MINUTE minute=28 line_drops=0
+1680.590	PIPELINE_MINUTE minute=28 readings=192082 breaks=0 gyro_mean_dps=1.0752,-3.2799,2.6146 gyro_sd_dps=0.1263,0.1430,0.4702 accel_mean_counts=-148.7,-24.0,-3776.2
+1680.609	SENSOR_MINUTE minute=28 readings=192093 bursts=17463 bursts_at_wtm=17463 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5566 stretches=2 kind1_ends=0 kind2_ends=1
+1740.582	SCREEN_MINUTE minute=29 updates=1739
+1740.582	USB_MINUTE minute=29 line_drops=0
+1740.591	PIPELINE_MINUTE minute=29 readings=198946 breaks=0 gyro_mean_dps=1.0794,-3.2875,2.5743 gyro_sd_dps=0.1340,0.1501,0.5338 accel_mean_counts=-148.3,-23.9,-3769.5
+1740.624	SENSOR_MINUTE minute=29 readings=198957 bursts=18087 bursts_at_wtm=18087 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5566 stretches=2 kind1_ends=0 kind2_ends=1
+1800.583	SCREEN_MINUTE minute=30 updates=1799
+1800.583	USB_MINUTE minute=30 line_drops=0
+1800.592	PIPELINE_MINUTE minute=30 readings=205810 breaks=0 gyro_mean_dps=1.0748,-3.2802,2.5963 gyro_sd_dps=0.1269,0.1494,0.4827 accel_mean_counts=-148.5,-24.1,-3776.0
+1800.651	SENSOR_MINUTE minute=30 readings=205821 bursts=18711 bursts_at_wtm=18711 largest_burst=11 overflow=0 full=0 read_error=0 stall=0 late=0 msg_drops=0 largest_delay_us=5566 stretches=2 kind1_ends=0 kind2_ends=1
