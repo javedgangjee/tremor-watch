@@ -61,6 +61,8 @@
 - The Python reference runs in its own venv with Python 3.13, ParaDigMa 1.1.2, and scikit-learn 1.6.0. The toolbox's model file needs scikit-learn below 1.6.1.
 - The pinned Python requirements live in reference/.
 - The tools in tools/ are gen_tables.py, watch_cli.py, and compare_session.py.
+- tools/watch_cli.py sets the watch's clock and dose schedule, starts a session, turns the tone on or off, and saves a recording. It needs pyserial, which the reference venv lacks, so it runs with the ESP-IDF Python at ~/.espressif/tools/python/v6.1/venv/bin/python.
+- tools/compare_session.py compares a recording with replay and the toolbox and writes a session report. It needs the toolbox, so it runs in the reference venv.
 - The Python tests in tests/ need the toolbox, so they run in the reference venv with `reference/.venv/bin/python -m pytest tests -q`.
 - New Python code follows the user's Python rules. The scripts in reference/ stay as they are, because the measured results come from them. In feature 2, compare.py, rate_test.py, latency_test.py, spline_test.py, and demo_test.py changed their import line to `from plain_detector import build_tables, detect` when they moved from context/, and nothing else changed.
 - reference/pads_counts.py runs the toolbox on every PADS recording. Its results in reference/results/ are pads_windows.csv, pads_counts.csv, and pads_counts.md, and they are committed as the counts the C port must reproduce.
@@ -71,8 +73,12 @@
 - The C unit tests use Unity v2.6.1, which is commit cbcd08fa7de711053a3deec6339ee89cad5d2697 of github.com/ThrowTheSwitch/Unity, and they run on the laptop through CTest. Unity has an MIT licence, and its files in tests/unity/ stay unchanged.
 - The command `cmake -S . -B build && cmake --build build && ctest --test-dir build --output-on-failure` builds core/ and replay on the laptop and runs the C unit tests.
 - The command `build/core/replay --pads FILE` runs the C detector on one PADS recording and prints one answer for every window.
+- The command `build/core/replay --recording FILE` runs the time rule, the converter, and the C detector on a recording from the watch and prints one answer for every window. FILE may be `-` for the standard input, and `--samples OUT` also writes the 100 Hz samples. The T line holds no overflow flag, so replay finds each stretch start from the S lines, and core/recording_format.md gives the rule.
+- The commands `~/.espressif/tools/python/v6.1/venv/bin/python tools/watch_cli.py clock`, `schedule NAME [HH:MM ...]`, `schedule --off`, `session`, `tone on`, `tone off`, and `record --out FILE [--minutes M]` drive the watch over USB. `record` resets the watch, sets its clock after the B line, and refuses to write over a file that exists.
+- The command `reference/.venv/bin/python tools/compare_session.py RECORDING --report REPORT` compares a saved recording with replay and the toolbox. It exits with code 0 only when replay agrees with the watch on every checked window.
 - The command `reference/.venv/bin/python tests/pads/pads_match.py` runs the full PADS match after the C build and writes tests/pads/pads_match.md.
-- The Python tests for tools/, the saved windows, and the PADS match use pytest.
+- The Python tests for tools/, replay's recording input, the saved windows, and the PADS match use pytest. The tests of replay's recording input are in tests/replay/, and they need the laptop build of replay.
+- tests/firmware/record_session.md is the session report of tests/firmware/record_log.txt.gz from compare_session.py.
 - The command `reference/.venv/bin/python tests/detector/make_windows.py` makes the 322 saved windows in tests/detector/windows.csv and tests/detector/answers.csv. The C unit tests read these files, so they need no toolbox.
 - The command `reference/.venv/bin/python tests/converter/make_cases.py` makes the saved converter cases in tests/converter/. The C unit tests read these files, so they need no toolbox.
 - The command `make check` runs the checks for every commit from the Makefile at the repo root. Its three parts are `make laptop`, which builds core/ and replay and runs the C unit tests with the saved windows and the saved converter cases, `make hash`, which compares the SHA-256 hash of the model file copy with DET_MODEL_SHA256 in core/detector_tables.h, and `make firmware`, which builds firmware/. None of them needs the toolbox, and nothing runs them by itself.

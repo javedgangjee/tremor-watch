@@ -3,8 +3,11 @@
 Each case writes a made-up gzip log with the "> CLOSE" and "> OPEN" lines and
 judges it with --log-only, so no watch is needed. In the made-up log the port
 closes at 80 seconds, the lines of the next second still arrive after the port
-opens, and the lines of the 60 seconds after that are lost. They run in the
-reference venv with this command.
+opens, and the lines of the 60 seconds after that are lost. Case 8's log also
+has the laptop's loss at the close. There the "> CLOSE" line follows the T line
+of burst CLOSE_BURST, and the lines from there to the middle of an R line two
+bursts later are lost, so the first text after "> OPEN" is a "> PARTIAL" line.
+They run in the reference venv with this command.
 
     reference/.venv/bin/python -m pytest tests/firmware -q
 """
@@ -28,6 +31,10 @@ OPEN_US = 81_000_000
 BACK_US = 141_000_000
 END_US = 200_000_000
 FIRST_ANSWER = T0 + 10_000_000
+# The burst whose T line comes last before the close when the laptop loses lines at the close.
+CLOSE_BURST = 826
+# The R line of burst CLOSE_BURST + 2 whose first half the laptop loses.
+PARTIAL_R = 5
 
 
 def load(name: str, path: Path) -> ModuleType:
@@ -94,16 +101,24 @@ def watch_lines(port_drops: int) -> list[tuple[int, str]]:
     return sorted(lines, key=lambda e: e[0])
 
 
-def make_log(port_drops: int) -> list[str]:
-    """Give a drop log. The lines from OPEN_US to BACK_US never arrive."""
+def make_log(port_drops: int, close_loss: bool = False) -> list[str]:
+    """Give a drop log. The lines from OPEN_US to BACK_US never arrive. With
+    close_loss, the laptop also loses the lines from the T line of CLOSE_BURST
+    to the middle of R line PARTIAL_R of the burst two later."""
     lines = ["ESP-ROM:esp32s3-20210327"]
+    cut_us = T0 + CLOSE_BURST * BURST_US + 1 if close_loss else CLOSE_US - 1
+    partial_us = T0 + (CLOSE_BURST + 2) * BURST_US + 2 + PARTIAL_R
     for at, text in watch_lines(port_drops):
-        if at < CLOSE_US:
+        if at <= cut_us:
             lines.append(text)
     lines.append("> CLOSE")
     lines.append("> OPEN")
     for at, text in watch_lines(port_drops):
-        if CLOSE_US <= at < OPEN_US or at >= BACK_US - 2:
+        if close_loss and at == partial_us:
+            lines.append(f"> PARTIAL {text[len(text) // 2:]}")
+        elif (close_loss and partial_us < at < OPEN_US) or (not close_loss and CLOSE_US <= at < OPEN_US):
+            lines.append(text)
+        elif at >= BACK_US - 2:
             lines.append(text)
     return lines
 
@@ -119,10 +134,16 @@ def judge(lines: list[str], tmp_path: Path) -> tuple[int, str]:
 
 
 def test_drops_with_repeated_lines(tmp_path: Path) -> None:
-    """Case 8 judges a log where the watch dropped 3 lines and repeated the B and S lines."""
-    code, report = judge(make_log(3), tmp_path)
+    """Case 8 judges a log where the laptop lost lines at the close and the watch dropped 3 lines
+    and repeated the B and S lines."""
+    code, report = judge(make_log(3, close_loss=True), tmp_path)
     assert code == 0, report
+    assert "gap at the close=1 other gaps=1" in report
+    assert "The watch's own gap runs from" in report
     assert "The watch dropped 3 lines" in report
+    assert "The laptop lost the lines from the `> CLOSE` line to the first text after the `> OPEN` line" in report
+    assert f"The gap at the close runs from the T line at reading {11 * CLOSE_BURST} to the T line at reading " \
+           f"{11 * (CLOSE_BURST + 3)}. It spans 22 readings" in report
 
 
 def test_lines_lost_on_the_laptop(tmp_path: Path) -> None:
@@ -134,9 +155,11 @@ def test_lines_lost_on_the_laptop(tmp_path: Path) -> None:
 
 
 def test_changed_logs_fail(tmp_path: Path) -> None:
-    """Case 10 checks five changed copies of case 8's log."""
-    clean = make_log(3)
+    """Case 10 checks seven changed copies of case 8's log."""
+    clean = make_log(3, close_loss=True)
+    assert judge(clean, tmp_path)[0] == 0
     opened = clean.index("> OPEN")
+    partial = clean.index(next(line for line in clean if line.startswith("> PARTIAL ")))
     boot_at_gap = next(i for i, line in enumerate(clean) if i > opened and line.startswith("B,"))
     copies: list[list[str]] = []
 
@@ -163,7 +186,17 @@ def test_changed_logs_fail(tmp_path: Path) -> None:
     lines.insert(opened + 1, "R,1234,5")
     copies.append(lines)
 
-    assert len(copies) == 5
+    lines = list(clean)
+    r_after = [i for i, line in enumerate(lines) if i > partial and line.startswith("R,")]
+    del lines[r_after[1]]
+    copies.append(lines)
+
+    lines = list(clean)
+    t_after = [i for i, line in enumerate(lines) if i > boot_at_gap and line.startswith("T,")]
+    lines = lines[: t_after[5]] + lines[t_after[6] :]
+    copies.append(lines)
+
+    assert len(copies) == 7
     for n, lines in enumerate(copies):
         assert lines != clean, n
         assert judge(lines, tmp_path)[0] == 1, n
