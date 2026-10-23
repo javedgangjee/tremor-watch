@@ -104,7 +104,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
     - When the laptop closes the port, the Mac throws away the bytes it already holds. So a recording that opens the port again can start with part of a line and miss a few lines from before the close.
     - pyserial sets DTR before RTS when it opens a port, and the chip resets while RTS is high and DTR is low. open_port() in tests/firmware/record_run.py opens the port without a reset.
     - tests/firmware/record_log.txt.gz holds a full 30-minute recording from the table, and this feature can use it to test replay.
-    - The status is planned.
+    - The status is in progress.
 
 11. Watch face
     - The goal is to build the four screens, the state circle, and the dose flow for a wearer with tremor.
