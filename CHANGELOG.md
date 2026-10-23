@@ -73,6 +73,13 @@ This file records each change to Tremor log that a person who reads or runs the 
 - Feature 9 adds the diagnostic lines SETTINGS, CLOCK, and SESSION.
 - Feature 9 adds tests/firmware/record_run.py, tests/firmware/command_run.py, and tests/firmware/drop_run.py with their pytest cases, so pytest now runs 75 cases.
 - Feature 9 adds the committed logs and reports of the three scripts, which show about 4,400 bytes and 127 lines a second with no dropped line in 30 minutes, every command answered within about 21 milliseconds, and the settings kept across a restart.
+- Feature 10 adds recording input to core/replay.c, so `build/core/replay --recording FILE` runs the time rule, the converter, and the C detector on a saved recording and prints one row for every window, and `--samples OUT` also writes the 100 Hz samples.
+- Feature 10 makes replay find each stretch start from the S lines, because the T line holds no overflow flag, and it drops and counts each burst whose R lines are not all in.
+- Feature 10 adds tools/watch_cli.py, which sets the watch's clock and dose schedule, starts a session, turns the tone on or off, and saves a recording to a gzip file after it resets the watch and sets its clock.
+- Feature 10 adds tools/compare_session.py, which compares a recording with replay under the rule of step 5, runs the toolbox on each checked stretch at 100 readings a second, and writes a report with the toolbox's agreement and the share from both sides.
+- Feature 10 adds pytest tests in tests/replay/ and tests/tools/ with 30 cases, so pytest now runs 105 cases.
+- Feature 10 adds tests/firmware/record_session.md, the session report of the 30-minute table recording, which shows replay agreeing with the watch on all 1797 compared windows and the toolbox agreeing on 449 of 449.
+- Feature 10 shows that replay agrees with the watch on every compared window of the three committed recordings and of two new recordings from the watch, with a largest probability difference of 2.52e-10, and that the toolbox agrees on every window it compares, with a largest difference of 1.02e-9.
 
 ### Changed
 
@@ -125,3 +132,9 @@ This file records each change to Tremor log that a person who reads or runs the 
 - The roadmap entry for feature 7 now records the drift end in feature 9's first table run, and the user still decides on a drift fix.
 - The roadmap entry for feature 9 now records the recording lines, the console change, the drop test, the results on the table, the items that wait for the user's review, the two checks that fail as written, and that manual checks 11 and 12 wait for the user.
 - The roadmap entries for features 10 to 12 now say how a reader reads the recording and opens the port, that feature 11 sends the D line and plays the tone only when the setting is on, and that feature 12 still checks the gap path on the watch.
+- Feature 8's validation now records that the screen showed "Tremor" during a wrist shake on 2026-10-23, and the roadmap entry for feature 12 now holds the log part of manual check 11, which the user moved there.
+- Feature 10 adds a section on saved recordings to core/recording_format.md, which gives the file form of a recording and how replay reads it.
+- The tech stack now records the two laptop tools, the Python each one runs with, the replay command for a recording, the commands of both tools, the tests in tests/replay/, and the session report of the table recording.
+- The roadmap entry for feature 8 now says that the screen part of manual check 11 passed and that its log part moved to feature 12.
+- The roadmap entry for feature 10 now records replay's recording input, the two tools, the results on the recordings, the items that wait for the user's review, and that check 5 case 27 fails as written.
+- The roadmap entries for features 11 and 12 now say how watch_cli.py sets up the dose flow and records a session, how compare_session.py makes the session report, and what the two tools do not check.
