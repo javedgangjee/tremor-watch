@@ -24,6 +24,7 @@
 - It includes no ESP-IDF headers and allocates no memory at run time.
 - It uses 32-bit floats and builds with -ffp-contract=off on both sides.
 - It uses KISS FFT, which has a BSD licence and handles the 400 and 200 point sizes. Feature 4 pins the KISS FFT commit here.
+- The generated tables are in core/detector_tables.h, and the command `reference/.venv/bin/python tools/gen_tables.py` makes them. The model numbers in it are 64-bit values, and the tables are 32-bit values.
 - The laptop build includes replay, a command-line program that reads a recording or a PADS file and prints an answer for every window.
 
 ## Reference and laptop tools
@@ -32,6 +33,7 @@
 - The Python reference runs in its own venv with Python 3.13, ParaDigMa 1.1.2, and scikit-learn 1.6.0. The toolbox's model file needs scikit-learn below 1.6.1.
 - The pinned Python requirements live in reference/.
 - The tools in tools/ are gen_tables.py, watch_cli.py, and compare_session.py.
+- The tests for gen_tables.py need the toolbox, so they run in the reference venv with `reference/.venv/bin/python -m pytest tests/tools -q`.
 - New Python code follows the user's Python rules. The scripts in reference/ stay as they are, because the measured results come from them. In feature 2, compare.py, rate_test.py, latency_test.py, spline_test.py, and demo_test.py changed their import line to `from plain_detector import build_tables, detect` when they moved from context/, and nothing else changed.
 - reference/pads_counts.py runs the toolbox on every PADS recording. Its results in reference/results/ are pads_windows.csv, pads_counts.csv, and pads_counts.md, and they are committed as the counts the C port must reproduce.
 - PADS 1.0.0 lives in data/pads/ and is never committed.

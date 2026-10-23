@@ -17,6 +17,11 @@ This file records each change to Tremor log that a person who reads or runs the 
 - Feature 2 adds nine unit tests for pads_counts.py in tests/reference/test_pads_counts.py, and they run with pytest in the reference venv.
 - Feature 2 adds reference/README.md, which gives the commands to make the venv, download and check PADS, and run each script, and which gives the PADS and ParaDigMa credit lines.
 - Feature 2 confirms that compare.py still shows the plain rebuild matches the toolbox, and the tremor label agrees on 200 of 200 windows in both float64 and float32.
+- Feature 3 adds tools/gen_tables.py, which takes the model numbers from the ParaDigMa 1.1.2 model file and the tables from reference/plain_detector.py and writes them into core/detector_tables.h.
+- Feature 3 adds core/detector_tables.h, which holds the 37 model numbers and the cut-off as 64-bit values, the two Hann windows, the filter table, and the cosine table as 32-bit values, and the model file's SHA-256 hash.
+- Feature 3 makes tools/gen_tables.py stop and write no file when the model file's hash, its feature names, or its classifier differ from the ParaDigMa 1.1.2 model.
+- Feature 3 adds 16 tests in tests/tools/test_gen_tables.py, which compile the header with tests/tools/dump_tables.c, compare every value with the toolbox and plain_detector.py, and run with pytest in the reference venv.
+- Feature 3 confirms that the header gives plain_detector.py the same answers as its own tables, and that the tremor answer agrees with the toolbox on 200 of 200 windows in float32.
 
 ### Changed
 
@@ -29,3 +34,6 @@ This file records each change to Tremor log that a person who reads or runs the 
 - The .gitignore file now leaves out data/, reference/.venv/, __pycache__/, and .pytest_cache/.
 - The tech stack now records the import line change, pads_counts.py and its results, and that PADS 1.0.0 lives in data/pads/ and is never committed.
 - Validation check 5 for feature 2 now uses the measured output of spline_test.py and demo_test.py, as the user agreed on 21 October 2026.
+- The tech stack now names core/detector_tables.h, the command that makes it, the types of its values, and the command that runs the tests for gen_tables.py.
+- The roadmap entry for feature 4 now says that feature 4 decides whether the C scoring step runs in 64-bit or 32-bit floats, and that it adds the two stop case tests for tools/gen_tables.py that feature 3 left out.
+- The roadmap entries for features 7 and 9 now say that the hash check and the boot line's table hash use DET_MODEL_SHA256 from core/detector_tables.h.
