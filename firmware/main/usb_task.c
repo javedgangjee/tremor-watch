@@ -249,9 +249,10 @@ static void write_minute_line(uint32_t minute)
 void usb_task(void *arg)
 {
     (void)arg;
-    /* The ROM's printf also writes to this port, and ESP-IDF's early log and
-     * its log from interrupts use it. Removing its second channel keeps that
-     * text on UART0 only, so it never breaks a line of the recording. */
+    /* The ROM's own print function also writes to this port, and ESP-IDF's
+     * early log and its log from interrupts use it. Removing its second
+     * channel keeps that text on UART0 only, so it never breaks a line of
+     * the recording. */
     esp_rom_install_channel_putc(2, NULL);
     usb_serial_jtag_driver_config_t config = {
         .tx_buffer_size = SEND_BUFFER,
