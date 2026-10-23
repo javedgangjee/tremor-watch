@@ -42,3 +42,14 @@ Every command runs from the repo root. Every check is automated.
 ## Requirement coverage
 
 Requirement 1 is covered by checks 1 (case 1), 2, and 4. Requirement 2 is covered by check 1 cases 4 and 5. Requirement 3 is covered by check 1 case 6. Requirement 4 is covered by check 1 case 7. Requirement 5 is covered by check 1 cases 8 and 10. Requirement 6 is covered by check 1 cases 9 and 10. Requirement 7 is covered by check 1 case 11. Requirement 8 is covered by check 1 cases 6 to 13. Requirement 9 is covered by check 1 cases 4, 5, and 14, and by check 3. Requirement 10 is covered by check 1 cases 12 and 13. Requirement 11 is covered by check 1 case 2. Requirement 12 is covered by check 1 case 15. Requirement 13 is covered by check 1 case 16 and by check 1 itself. Requirement 14 is covered by check 1 cases 2 and 3. Requirement 15 is covered by check 1 cases 4 to 9. Requirement 16 is covered by check 1 cases 6 to 9 and 12, and by check 3. Requirement 17 is covered by check 1 cases 1 and 14. Requirement 18 is covered by check 1 case 14. Requirement 19 is covered by check 1 case 1 and check 2. Requirement 20 is covered by check 1 case 15. Requirement 21 is covered by check 1 case 11. Requirement 22 is covered by check 1 cases 3 and 12. Requirement 23 is covered by check 1. Requirement 24 is covered by check 4.
+
+## Results
+
+The checks ran on 22 October 2026 on branch feature/03-generated-tables at commit 3409f66. Every check passed.
+
+1. Check 1 passed. pytest reported 16 passed, and it gave the same result again after the test cache was cleared. Each of the 16 tests matches its case as written. Case 10 uses seed 10 for its random spectra, as plan.md records.
+2. Check 2 passed. The script wrote the header to a temporary folder, logged the hash 4be2ac2b511c501257ea8186068f06a94d0084d653840e907be72cd103dc5b0e, and printed same with exit code 0.
+3. Check 3 passed. The git command printed nothing. compare.py gave the same lines as feature 2 check 3. In float64 the largest mfcc difference was 3.55e-15 and the largest prob difference was 8.88e-16. In float32 they were 1.24e-06 and 2.02e-07. The tremor label agreed on 200 of 200 windows in both.
+4. Check 4 passed. The stat lists core/detector_tables.h, tools/gen_tables.py, tests/tools/dump_tables.c, tests/tools/test_gen_tables.py, specs/tech-stack.md, specs/roadmap.md, and the three files in specs/features/03-generated-tables/. It lists no other file.
+
+Every item in requirements.md has at least one passing check. Requirement 18 names three cases that stop the run, and check 1 case 14 tests only the first one, which is the wrong hash. A reading of tools/gen_tables.py shows that it also stops on wrong feature names and on a classifier that is not a logistic regression with one row of 12 weights, but no test runs those two cases. A reading of the header shows no date, user name, or machine path, which supports requirement 19.
