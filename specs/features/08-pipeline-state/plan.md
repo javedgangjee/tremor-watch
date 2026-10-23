@@ -69,3 +69,17 @@ No step changes a file in reference/, context/, core/kissfft/, tests/unity/, too
 12. Update specs/tech-stack.md as in requirement 33. Under Shared C library, add that core/pipeline.h holds the pipeline task's stretch, converter, window, and fault rules, and that core/session.h holds the state task's rules. Under Watch firmware, add that the pipeline task asks the sensor task to end a stretch through a queue of one stretch number, that a sensor fault answer comes after 2 seconds with no sensor message and then once a second, and that firmware/detector_check/ runs the saved windows on the chip. Under Tests and checks, add the commands of validation.md checks 8 and 9 and change the CTest count where it is named.
 
 13. Set the status of feature 8 to in progress in specs/roadmap.md, and add `firmware/.cache/` to .gitignore. This step is done in plan mode.
+
+## Changes during implement
+
+1. LINE_CHARS in firmware/main/tasks.h is 319 and not 255. The PIPELINE_MINUTE line with the new fields was 273 characters long on the watch, so a 255-character line would cut off its last fields.
+2. pipe_t has one more field than step 1 lists. The field rate_tried records that the stretch has offered the converter a rate, so pipe_part() calls conv_set_rate() once in each stretch even when the converter refuses the rate. Without it, every later part would try again and count another refusal.
+3. pipe_window() returns false while the pipe is out of sync, so a dropped stretch gives no more windows.
+4. A sensor fault answer message carries run_us=0 and delay_us=0, and its at_us and time_us are the timer value when it became due.
+5. sess_new_session() clears the answer and gap counts and keeps the count of face changes, because that count runs from boot.
+6. In test_session.c case 5, the second fault answer is the one passed with window 4 and has_window false. This keeps answers[RES_SENSOR_FAULT] at 2, as the case says.
+7. In test_pipeline.c case 3, the 1,495 readings of stretch 1 include the readings of its first part.
+8. firmware/detector_check/CMakeLists.txt sets COMPONENTS to main, so ESP-IDF builds only main and the components it needs. detector_check.c prints a CHECK_ERROR line and stops when the embedded data has the wrong size or det_init() fails.
+9. specs/tech-stack.md names no CTest count, so step 12 changed no count.
+
+The agent decided this on 23 October 2026, and the user has not reviewed it yet.

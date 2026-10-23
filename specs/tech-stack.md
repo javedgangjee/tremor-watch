@@ -22,6 +22,9 @@
 - printf goes to UART0 at 115200 baud as the main console and to the USB Serial/JTAG port as the second console. ESP-IDF's own log runs at level INFO, so its lines from other tasks also reach the serial port. Feature 9 makes the USB task the only writer on the port that carries the recording.
 - ESP-IDF loads with `. ~/.espressif/tools/activate_idf_v6.1.sh`, because the plain export.sh fails on this laptop unless IDF_TOOLS_PATH is `~/.espressif/tools`.
 - The dose schedule and the tone setting live in the chip's settings store. Answers and doses stay in memory, and nothing else is written to flash.
+- The pipeline task asks the sensor task to end a stretch through a queue of one stretch number. It asks when a stretch loses readings, loses its first message, or fills the converter's ring. The sensor task then ends the stretch with the overflow flag, and the STRETCH line gives reason=pipeline.
+- A sensor fault answer comes when no sensor message has arrived for 2 seconds, and then once a second until a message arrives.
+- firmware/detector_check/ is a separate ESP-IDF project. It runs the saved windows of tests/detector/ on the chip, so the chip's numbers can be checked with the rule of tests/detector/test_detector.c.
 
 ## Shared C library
 
@@ -41,6 +44,7 @@
 - A rate is a whole number of millionths of a reading per second, held as a `uint32_t`. For example, 114.3302 readings a second is 114330200.
 - Each converter block makes 100 samples at 100 Hz and fits its natural cubic spline over its readings plus 16 extra readings on each side. A block holds at most 192 readings. The converter keeps readings in a ring of 2048, and it accepts rates from 50 to 150 readings a second. At the end of a stretch it drops a block whose readings are not all in, as requirement 24 of feature 5 says, and that requirement waits for the user's review too.
 - core/window.h holds the result codes and the window rule. core/share.h holds the session share and the Session screen's blocks. core/face.h holds the face state, the two-in-a-row rule, and the gap rule, which shows Waiting at once when a new stretch starts after a gap. core/dose.h holds the dose schedule and the due rule. The caller owns the state of each, so none of these files has static data that changes. On the watch the pipeline task owns the window rule, and the state task owns the share, the face, and the doses.
+- core/pipeline.h holds the pipeline task's rules for the stretches, the converter, the windows, and the sensor fault answers. core/session.h holds the state task's rules, which join the share, the face, and the doses. The caller owns the state of each, so neither file has static data that changes.
 
 ## Reference and laptop tools
 
@@ -65,6 +69,8 @@
 - The command `make check` runs the checks for every commit from the Makefile at the repo root. Its three parts are `make laptop`, which builds core/ and replay and runs the C unit tests with the saved windows and the saved converter cases, `make hash`, which compares the SHA-256 hash of the model file copy with DET_MODEL_SHA256 in core/detector_tables.h, and `make firmware`, which builds firmware/. None of them needs the toolbox, and nothing runs them by itself.
 - tests/model/ holds an unchanged copy of the ParaDigMa 1.1.2 model file and its licence, so the hash check needs no toolbox. tests/model/test_model_copy.py checks the copy against the toolbox's file.
 - The command `caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/table_run.py` runs the 30-minute table run on the watch and judges it.
+- The command `idf.py -C firmware/detector_check -p /dev/cu.usbmodem101 flash` and then `~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/chip_windows.py` run the saved windows on the chip and judge them. The watch firmware must be flashed again afterwards.
+- The command `caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/pipeline_run.py` runs the pipeline and the state task on a table for 30 minutes and judges the log.
 - The full PADS match test needs the toolbox, so it runs before each release and not on every commit.
 - The test data is PADS from PhysioNet, which holds 100 Hz gyroscope recordings in radians per second.
 

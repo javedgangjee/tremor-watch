@@ -51,3 +51,13 @@ add_executable(test_imu_units imu_units/test_imu_units.c)
 target_compile_options(test_imu_units PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
 target_link_libraries(test_imu_units PRIVATE tremor_core unity)
 add_test(NAME test_imu_units COMMAND test_imu_units)
+
+add_executable(test_pipeline pipeline/test_pipeline.c)
+target_compile_options(test_pipeline PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
+target_link_libraries(test_pipeline PRIVATE tremor_core unity)
+add_test(NAME test_pipeline COMMAND test_pipeline)
+
+add_executable(test_session session/test_session.c)
+target_compile_options(test_session PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
+target_link_libraries(test_session PRIVATE tremor_core unity)
+add_test(NAME test_session COMMAND test_session)

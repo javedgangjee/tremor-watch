@@ -3,7 +3,8 @@
  * LVGL or the board support package's display functions. The board support
  * package's LVGL port task runs LVGL's timers, and this task holds the port's
  * lock for every change. In this feature the screen shows a plain holding
- * screen with the words "Tremor log" and the uptime. Feature 11 draws the face.
+ * screen with the words "Tremor log", the uptime, and the name of the face
+ * state that the state task gives. Feature 11 draws the face.
  */
 
 #include <stdint.h>
@@ -17,10 +18,12 @@
 #include "bsp/touch.h"
 #include "esp_lcd_touch.h"
 #include "esp_lvgl_port.h"
+#include "face.h"
 #include "lvgl.h"
 #include "tasks.h"
 
 static lv_obj_t *s_uptime_label;
+static lv_obj_t *s_face_label;
 
 /* on_click() runs in the LVGL port task, which holds the lock. It sends the
  * point of each tap. */
@@ -52,16 +55,22 @@ static void build_screen(void)
     lv_obj_set_style_text_font(s_uptime_label, &lv_font_montserrat_48, 0);
     lv_label_set_text(s_uptime_label, "0:00:00");
     lv_obj_align(s_uptime_label, LV_ALIGN_CENTER, 0, 30);
+
+    s_face_label = lv_label_create(scr);
+    lv_obj_set_style_text_font(s_face_label, &lv_font_montserrat_28, 0);
+    lv_label_set_text(s_face_label, face_name(FACE_WAITING));
+    lv_obj_align(s_face_label, LV_ALIGN_CENTER, 0, 100);
     bsp_display_unlock();
 }
 
-static void show_uptime(uint32_t uptime_s)
+static void show_uptime(uint32_t uptime_s, face_state_t face)
 {
     char text[24];
     snprintf(text, sizeof text, "%lu:%02lu:%02lu", (unsigned long)(uptime_s / 3600),
              (unsigned long)(uptime_s / 60 % 60), (unsigned long)(uptime_s % 60));
     bsp_display_lock(0);
     lv_label_set_text(s_uptime_label, text);
+    lv_label_set_text(s_face_label, face_name(face));
     bsp_display_unlock();
 }
 
@@ -160,15 +169,24 @@ void screen_task(void *arg)
 
     uint32_t updates = 0;
     uint32_t minute = 1;
+    face_state_t face = FACE_WAITING;
+    uint32_t face_changes = 0;
     for (;;) {
         int64_t due_us = (int64_t)minute * MINUTE_US;
         screen_msg_t msg;
-        if (xQueueReceive(g_screen_queue, &msg, ticks_until(due_us)) == pdTRUE && s_uptime_label != NULL) {
-            show_uptime(msg.uptime_s);
-            updates++;
+        if (xQueueReceive(g_screen_queue, &msg, ticks_until(due_us)) == pdTRUE) {
+            if ((face_state_t)msg.face != face) {
+                face = (face_state_t)msg.face;
+                face_changes++;
+            }
+            if (s_uptime_label != NULL) {
+                show_uptime(msg.uptime_s, face);
+                updates++;
+            }
         }
         if (esp_timer_get_time() >= due_us) {
-            usb_send("SCREEN_MINUTE minute=%lu updates=%lu", (unsigned long)minute, (unsigned long)updates);
+            usb_send("SCREEN_MINUTE minute=%lu updates=%lu face=%d face_changes=%lu", (unsigned long)minute,
+                     (unsigned long)updates, (int)face, (unsigned long)face_changes);
             minute++;
         }
     }

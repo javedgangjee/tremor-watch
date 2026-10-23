@@ -19,17 +19,21 @@
 #define SENSOR_QUEUE_LEN 32
 #define LINE_QUEUE_LEN 48
 #define SCREEN_QUEUE_LEN 4
+#define STATE_QUEUE_LEN 8
 
 /* The stack sizes in bytes. */
 #define SENSOR_STACK 6144
 #define PIPELINE_STACK 4096
-#define STATE_STACK 3072
+/* The state task formats doubles, so its stack is larger. */
+#define STATE_STACK 4096
 #define SCREEN_STACK 4096
 #define USB_STACK 4096
 
 QueueHandle_t g_sensor_queue;
 QueueHandle_t g_line_queue;
 QueueHandle_t g_screen_queue;
+QueueHandle_t g_state_queue;
+QueueHandle_t g_end_queue;
 
 static void send_power_line(void)
 {
@@ -53,8 +57,12 @@ void app_main(void)
     g_line_queue = xQueueCreate(LINE_QUEUE_LEN, sizeof(line_t));
     g_sensor_queue = xQueueCreate(SENSOR_QUEUE_LEN, sizeof(sensor_msg_t));
     g_screen_queue = xQueueCreate(SCREEN_QUEUE_LEN, sizeof(screen_msg_t));
-    ESP_ERROR_CHECK(g_line_queue != NULL && g_sensor_queue != NULL && g_screen_queue != NULL ? ESP_OK
-                                                                                              : ESP_ERR_NO_MEM);
+    g_state_queue = xQueueCreate(STATE_QUEUE_LEN, sizeof(state_msg_t));
+    g_end_queue = xQueueCreate(1, sizeof(uint32_t));
+    ESP_ERROR_CHECK(g_line_queue != NULL && g_sensor_queue != NULL && g_screen_queue != NULL &&
+                            g_state_queue != NULL && g_end_queue != NULL
+                        ? ESP_OK
+                        : ESP_ERR_NO_MEM);
 
     ESP_ERROR_CHECK(bsp_i2c_init());
 
