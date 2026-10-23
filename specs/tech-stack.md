@@ -4,13 +4,13 @@
 
 - The watch is the Waveshare ESP32-S3-Touch-AMOLED-2.06.
 - The screen is a 410 by 502 AMOLED touch screen, and it stays on for the whole session.
-- The IMU is the QMI8658. It uses rate code 0x06 with the gyroscope and the accelerometer both on, and the gyroscope range is ±1024 degrees per second. The datasheet gives 112.1 readings a second for this code, but feature 1 measured 114.33 on this board over twenty minutes, with a drift of -80.8 parts per million.
+- The IMU is the QMI8658. It uses rate code 0x06 with the gyroscope and the accelerometer both on, and the gyroscope range is ±1024 degrees per second. The datasheet gives 112.1 readings a second for this code, but feature 1 measured 114.33 on this board over twenty minutes, with a drift of -80.8 parts per million. Feature 7's 30-minute table run measured 114350493 and 114351161 millionths of a reading per second with the time rule, which is about 180 parts per million above feature 1's 114330200.
 - The board has a clock chip, a battery gauge, and an audio codec. It has no vibration motor and no Bluetooth in use.
 
 ## Watch firmware
 
 - The firmware is written in C with ESP-IDF v6.1. Its version macros give ESP-IDF v6.1.0. Waveshare tests its examples on v5.5.5 and v6.0.2 only, so a build problem in a Waveshare example may come from the version.
-- The firmware starts from Waveshare's repo github.com/waveshareteam/ESP32-S3-Touch-AMOLED-2.06 at commit 30f3b23b3d4bb38d32f7d0cddffb66759668a855. It uses the board support package waveshare/esp32_s3_touch_amoled_2_06 at version 2.0.0 and the QMI8658 driver waveshare/qmi8658 at version 2.0.2.
+- The firmware starts from Waveshare's repo github.com/waveshareteam/ESP32-S3-Touch-AMOLED-2.06 at commit 30f3b23b3d4bb38d32f7d0cddffb66759668a855. It uses the board support package waveshare/esp32_s3_touch_amoled_2_06 at version 2.0.0 and the QMI8658 driver waveshare/qmi8658 at version 2.0.2. The screen task starts the display with bsp_display_new() and lvgl_port_add_disp() and the touch with bsp_touch_new() and lvgl_port_add_touch(). It does not call bsp_display_start(), because that function in version 2.0.0 adds the SH8601 panel as an RGB panel and corrupts the heap.
 - The face uses LVGL 9.5.0, which is the version in Waveshare's LVGL example for this board.
 - The font is Red Hat Display bold, converted for LVGL at 28, 40, 56, and 96 pixels only.
 - The layout, colours, and icons come from the design file context/Tremor Watch Light.html, with the changes that the plan's Watch face section lists. The design's colours are #111315 for text, #5C6265 for second-level text, #1B2E42 for Tremor, #3F2559 for Dose due, #173A28 for the "Took it" button and Logged, and #C9CDD0 for empty blocks.
@@ -19,6 +19,7 @@
 - firmware/ holds the ESP-IDF project for the watch, and the five tasks live in firmware/main/. firmware/bringup/ stays as feature 1's record.
 - The power driver is an unchanged copy of XPowersLib from Waveshare's examples/esp-idf/01_AXP2101/components/XPowersLib/ in firmware/components/XPowersLib/.
 - The IMU raises its buffer interrupt on INT1, which the board wires to GPIO21.
+- printf goes to UART0 at 115200 baud as the main console and to the USB Serial/JTAG port as the second console. ESP-IDF's own log runs at level INFO, so its lines from other tasks also reach the serial port. Feature 9 makes the USB task the only writer on the port that carries the recording.
 - ESP-IDF loads with `. ~/.espressif/tools/activate_idf_v6.1.sh`, because the plain export.sh fails on this laptop unless IDF_TOOLS_PATH is `~/.espressif/tools`.
 - The dose schedule and the tone setting live in the chip's settings store. Answers and doses stay in memory, and nothing else is written to flash.
 
