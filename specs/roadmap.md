@@ -33,7 +33,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
 6. Windows, share, and state rules
    - The goal is to build the rules that turn answers into the face state, the session share, and dose due timing.
    - It covers step 9 and the Windows, Response time, Firmware design, and Dose schedule sections. It includes the result codes, the two-in-a-row rule, and unit tests for every state change.
-   - The status is planned.
+   - The status is in progress.
 
 7. Commit checks, firmware base, and sensor task
    - The goal is to run every check that needs no toolbox with one make command, strip Waveshare's example to the five tasks, and read the IMU into timed stretches.
