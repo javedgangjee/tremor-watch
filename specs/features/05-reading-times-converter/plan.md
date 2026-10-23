@@ -49,3 +49,15 @@ The steps run in this order. Every command runs from the repo root. No step chan
 10. Update specs/tech-stack.md as in requirement 32. Under Shared C library, add that the time rule and the converter live in core/, that a rate is a whole number of millionths of a reading per second, and the converter's block, margin, ring, and rate range. Under Tests and checks, add the command `reference/.venv/bin/python tests/converter/make_cases.py`, which makes the saved converter cases in tests/converter/.
 
 11. Set the status of feature 5 to in progress in specs/roadmap.md. This step is done in plan mode.
+
+## Changes during implement
+
+The plan left a few details open, and the agent filled them as below.
+
+- The first burst after rt_init() returns RT_NEW_STRETCH, because it starts stretch 0. Validation check 1 case 10 already counts it as the first burst that starts a stretch.
+- reading_time.h also defines rt_burst_t, which holds one burst's first reading number, reading count, and stamp. rt_state_t holds a flag that says whether the first burst has come.
+- A measured rate that rounds to 0 or does not fit in a `uint32_t` leaves the rate unknown. Real sensor rates never come near these ends.
+- rt_reading_time_us() returns NAN for a stretch with no rate.
+- In make_cases.py, the 45 Hz and 55 Hz parts of stretch above_50hz each have a seeded size from 50 to 100 degrees per second on each axis, the tremor burst in each mix stretch starts at phase 0, and stretch number i uses seed i + 1.
+
+The agent decided this on 22 October 2026, and the user has not reviewed it yet.
