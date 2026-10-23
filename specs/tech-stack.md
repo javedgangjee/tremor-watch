@@ -23,7 +23,11 @@
 - The library in core/ holds everything the watch computes. It builds as an ESP-IDF component for the watch and as a plain C library on the laptop.
 - It includes no ESP-IDF headers and allocates no memory at run time.
 - It uses 32-bit floats and builds with -ffp-contract=off on both sides.
-- It uses KISS FFT, which has a BSD licence and handles the 400 and 200 point sizes. Feature 4 pins the KISS FFT commit here.
+- It uses KISS FFT, which has a BSD licence and handles the 400 and 200 point sizes. The copy in core/kissfft/ is release tag 131.2.0, which is commit 7bce4153c6bc8aba2db0e889e576f9d00505cbe1 of github.com/mborgerding/kissfft, and its files stay unchanged.
+- The detector runs every step in 32-bit floats except the scoring step, which runs in 64-bit doubles as the 32-bit run of plain_detector.py does.
+- The detector adds its two window sums and its low-frequency sum in the order numpy 2.5.4 uses. numpy adds blocks of up to 128 values in eight running sums and splits longer arrays in two. It multiplies the coarse spectrum by the float 1 / (sum of the window), because numpy divides that way. These two choices give the same floats as plain_detector.py, so a numpy update in the reference venv could change the last bit of a value.
+- KISS FFT builds with KISS_FFT_MALLOC and KISS_FFT_FREE set as compiler options that do nothing, and det_init() builds both FFT setups in fixed static buffers.
+- The detector keeps its work buffers in static memory, so only one task may call it. That task is the pipeline task.
 - The generated tables are in core/detector_tables.h, and the command `reference/.venv/bin/python tools/gen_tables.py` makes them. The model numbers in it are 64-bit values, and the tables are 32-bit values.
 - The laptop build includes replay, a command-line program that reads a recording or a PADS file and prints an answer for every window.
 
@@ -33,15 +37,19 @@
 - The Python reference runs in its own venv with Python 3.13, ParaDigMa 1.1.2, and scikit-learn 1.6.0. The toolbox's model file needs scikit-learn below 1.6.1.
 - The pinned Python requirements live in reference/.
 - The tools in tools/ are gen_tables.py, watch_cli.py, and compare_session.py.
-- The tests for gen_tables.py need the toolbox, so they run in the reference venv with `reference/.venv/bin/python -m pytest tests/tools -q`.
+- The Python tests in tests/ need the toolbox, so they run in the reference venv with `reference/.venv/bin/python -m pytest tests -q`.
 - New Python code follows the user's Python rules. The scripts in reference/ stay as they are, because the measured results come from them. In feature 2, compare.py, rate_test.py, latency_test.py, spline_test.py, and demo_test.py changed their import line to `from plain_detector import build_tables, detect` when they moved from context/, and nothing else changed.
 - reference/pads_counts.py runs the toolbox on every PADS recording. Its results in reference/results/ are pads_windows.csv, pads_counts.csv, and pads_counts.md, and they are committed as the counts the C port must reproduce.
 - PADS 1.0.0 lives in data/pads/ and is never committed.
 
 ## Tests and checks
 
-- The C unit tests use Unity and run on the laptop through CTest.
-- The Python tests for tools/ use pytest.
+- The C unit tests use Unity v2.6.1, which is commit cbcd08fa7de711053a3deec6339ee89cad5d2697 of github.com/ThrowTheSwitch/Unity, and they run on the laptop through CTest. Unity has an MIT licence, and its files in tests/unity/ stay unchanged.
+- The command `cmake -S . -B build && cmake --build build && ctest --test-dir build --output-on-failure` builds core/ and replay on the laptop and runs the C unit tests.
+- The command `build/core/replay --pads FILE` runs the C detector on one PADS recording and prints one answer for every window.
+- The command `reference/.venv/bin/python tests/pads/pads_match.py` runs the full PADS match after the C build and writes tests/pads/pads_match.md.
+- The Python tests for tools/, the saved windows, and the PADS match use pytest.
+- The command `reference/.venv/bin/python tests/detector/make_windows.py` makes the 322 saved windows in tests/detector/windows.csv and tests/detector/answers.csv. The C unit tests read these files, so they need no toolbox.
 - A Makefile at the repo root holds the checks that run on every commit. They build core/ on the laptop, run the unit tests, the saved windows, and the saved converter cases, check the model file's hash against the committed tables, and build the firmware. None of them needs the toolbox.
 - The full PADS match test needs the toolbox, so it runs before each release and not on every commit.
 - The test data is PADS from PhysioNet, which holds 100 Hz gyroscope recordings in radians per second.
