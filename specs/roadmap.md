@@ -44,7 +44,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
    - Feature 4 made the laptop CMake build, and its CTest run already checks the saved windows. This feature sets up core/ as an ESP-IDF component. The component must build with -ffp-contract=off and with the KISS_FFT_MALLOC and KISS_FFT_FREE options from core/CMakeLists.txt, so that KISS FFT never touches the heap on the watch.
    - The sensor task calls rt_burst() from core/reading_time.h once for each burst. It passes the first reading's number counted from power-on, the number of readings, the stamp taken inside the interrupt, and the overflow flag. It turns the raw gyroscope counts into degrees per second, as requirement 27 of feature 5 says.
    - This feature counts how often stretches end on the watch and how long they last, with the watch on a table only. It counts two kinds of stretch end apart. The first kind loses readings, because the sensor's buffer overflowed or a reading number was skipped. The second kind loses no readings and comes from the time rule alone, which points to drift. Feature 5 modelled the time rule with the measured drift of -80.8 parts per million, and the rule started a new stretch every 2.5 to 5 minutes. Since feature 6, every stretch end shows Waiting until two answers in the new stretch agree, which takes about 6 seconds, so frequent drift ends would make the face flicker. The user keeps the build spec's fixed-rate rule for now and decides on a drift fix after this count. Feature 12 makes the same count with the watch on the wrist.
-   - The status is planned.
+   - The status is in progress.
 
 8. Pipeline and state tasks
    - The goal is to run the converter and the detector on the watch and hold the state for the session.
