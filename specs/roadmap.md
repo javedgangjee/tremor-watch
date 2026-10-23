@@ -27,7 +27,8 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
 5. Reading times and converter
    - The goal is to give each reading its time and convert the readings to 100 a second as the toolbox does.
    - It covers steps 7 and 8 and the Sensor and converter section. It saves converter cases, and the C converter must agree within 0.001 degrees per second outside window 0. Feature 1 measured 114.33 readings a second on this board, so no code or test may assume 112.1, and each stretch takes its rate from the reading times as the plan says.
-   - The status is in progress.
+   - Requirements 21, 22, and 24 in specs/features/05-reading-times-converter/requirements.md go beyond the build spec's words, and they wait for the user's review. Requirement 21 lets a stretch measure its own rate when the stretch before it lasted less than 10 seconds. Requirement 22 adds more ways to end a stretch. Requirement 24 drops a part block at the end of a stretch. The Results section of validation.md in the same folder explains each one.
+   - The status is done.
 
 6. Windows, share, and state rules
    - The goal is to build the rules that turn answers into the face state, the session share, and dose due timing.
@@ -38,6 +39,8 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
    - The goal is to run every check that needs no toolbox with one make command, strip Waveshare's example to the five tasks, and read the IMU into timed stretches.
    - It covers steps 10 to 12 and the Firmware design and Sensor and converter sections. The firmware build is one of the make checks. The hash check compares the model file's SHA-256 hash with DET_MODEL_SHA256 in core/detector_tables.h.
    - Feature 4 made the laptop CMake build, and its CTest run already checks the saved windows. This feature sets up core/ as an ESP-IDF component. The component must build with -ffp-contract=off and with the KISS_FFT_MALLOC and KISS_FFT_FREE options from core/CMakeLists.txt, so that KISS FFT never touches the heap on the watch.
+   - The sensor task calls rt_burst() from core/reading_time.h once for each burst. It passes the first reading's number counted from power-on, the number of readings, the stamp taken inside the interrupt, and the overflow flag. It turns the raw gyroscope counts into degrees per second, as requirement 27 of feature 5 says.
+   - This feature counts how often stretches end on the watch and how long they last, with the watch on the wrist and with the watch on a table. Feature 5 modelled the time rule with the measured drift of -80.8 parts per million, and the rule started a new stretch every 2.5 to 5 minutes. Each new stretch loses its 4-second warm-up window. The user keeps the build spec's fixed-rate rule for now and decides on a change after this measurement.
    - The status is planned.
 
 8. Pipeline and state tasks
@@ -45,16 +48,19 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
    - It covers steps 13 and 14 and the Windows and Firmware design sections. It measures how long each detector run takes on the chip.
    - Feature 4 checked the numpy-order float32 sums and the 64-bit scoring step on the laptop only. This feature runs the saved windows in tests/detector/ on the chip and checks them with the same rule as tests/detector/test_detector.c. The chip has no hardware for doubles, so the measured run time includes the 64-bit scoring step in software.
    - The pipeline task is the only task that calls the detector, because the detector's work buffers are static. It calls det_init() once before the first window.
+   - The pipeline task owns a conv_t from core/converter.h. It calls conv_start() at each new stretch and conv_set_rate() when the time rule gives the stretch its rate. When conv_push() returns false, the stretch must end, and this feature decides how the pipeline task tells the sensor task.
    - The status is planned.
 
 9. USB recording and commands
    - The goal is to write every reading and answer to the laptop and accept the laptop's commands.
    - It covers step 15 and the USB recording section. It adds the recording format document to core/, the boot line, and the commands for the clock, the dose schedule, a new session, and the tone. The table hash in the boot line is DET_MODEL_SHA256 from core/detector_tables.h, which is the model file's SHA-256 hash.
+   - The S line writes the rate as the whole number of millionths of a reading per second that the time rule holds, as requirement 18 of feature 5 says. A first stretch has no rate until its first 10 seconds of stamps pass, so this feature decides when the S line of such a stretch goes out.
    - The status is planned.
 
 10. Laptop tools
     - The goal is to drive the watch from the laptop and compare each session with replay and the toolbox.
     - It covers steps 16 and 17. It writes tools/watch_cli.py and tools/compare_session.py, and it adds recording input to replay.
+    - replay gives each reading its time with core/reading_time.c from the T lines. compare_session.py gives the toolbox the reading times as n * 1e6 / rate_uhz seconds counted from each stretch's t0 with no rounding, as requirement 30 of feature 5 says. The build spec's T line holds no overflow flag, so this feature decides how replay finds a stretch that an overflow ended.
     - The status is planned.
 
 11. Watch face
