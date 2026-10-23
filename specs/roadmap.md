@@ -129,7 +129,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
     - Feature 10's tools/watch_cli.py sets up the dose flow checks. `clock` sets the dose clock after a restart, `schedule NAME HH:MM ...` sets the medicine name and times, and `tone on` and `tone off` change the tone setting. The tool refuses a name or a time that the watch would refuse before it opens the port, and a command exits with code 0 only when its A line gives result 0.
     - `watch_cli.py record` resets the watch, so each recording starts a new session. It sends the clock command after the first B line, and the schedule and the tone survive the reset in the settings store.
     - replay and compare_session.py do not use the values of the F and D lines. replay counts an F or D line that breaks its pattern in core/recording_format.md as a bad line, so the D line that this feature sends must keep that pattern.
-    - The status is planned.
+    - The status is in progress.
 
 12. Wrist tests, demo, and deliverables
     - The goal is to measure false alarms, response time, and readability with the builder wearing the watch, then record the demo and produce the deliverables.
