@@ -60,7 +60,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
    - The pipeline task owns a win_t from core/window.h. It calls win_start() at each new stretch and gives each answer its result code with res_from_answer().
    - The state task owns a share_t, a face_t, and a dose_t from core/share.h, core/face.h, and core/dose.h. It passes every answer's code unchanged to share_add() and face_answer(), and it calls dose_tick() at least once a second. It calls face_gap() at each new stretch after a gap, so the face shows Waiting while the watch warms up. The first stretch after power-on or a new session needs no call.
    - The pipeline task sends each answer, so this feature decides when an answer carries the sensor fault code and how a failed sensor reaches the face. The validate stage of feature 6 found that a single sensor fault answer never shows Waiting, because one answer never changes the face.
-   - The status is planned.
+   - The status is in progress.
 
 9. USB recording and commands
    - The goal is to write every reading and answer to the laptop and accept the laptop's commands.
