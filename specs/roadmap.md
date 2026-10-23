@@ -80,7 +80,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
    - The new session command calls sess_new_session() from core/session.h. The dose clock and the schedule stay unset on the watch until this feature's commands set them, and this feature adds the settings store that keeps the schedule.
    - In feature 8's table run, the pipeline task kept 2240 of its 4096 bytes of stack free, and the state task kept 2488. If this feature makes either task format recording lines, it measures the free stack of that task again.
    - No stretch ended in feature 8's table run, so the gap path with face_gap() and the sensor task's side of the end request never ran on the watch. This feature decides whether a test command forces a stretch end through the end request queue, so that one check on the watch runs both. Such a command goes beyond the four commands in the build spec, so it waits for the user's review.
-   - The status is planned.
+   - The status is in progress.
 
 10. Laptop tools
     - The goal is to drive the watch from the laptop and compare each session with replay and the toolbox.
