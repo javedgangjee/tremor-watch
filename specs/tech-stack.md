@@ -23,7 +23,8 @@
 - The library in core/ holds everything the watch computes. It builds as an ESP-IDF component for the watch and as a plain C library on the laptop.
 - It includes no ESP-IDF headers and allocates no memory at run time.
 - It uses 32-bit floats and builds with -ffp-contract=off on both sides.
-- It uses KISS FFT, which has a BSD licence and handles the 400 and 200 point sizes. Feature 4 pins the KISS FFT commit here.
+- It uses KISS FFT, which has a BSD licence and handles the 400 and 200 point sizes. The copy in core/kissfft/ is release tag 131.2.0, which is commit 7bce4153c6bc8aba2db0e889e576f9d00505cbe1 of github.com/mborgerding/kissfft, and its files stay unchanged.
+- The detector runs every step in 32-bit floats except the scoring step, which runs in 64-bit doubles as the 32-bit run of plain_detector.py does.
 - The generated tables are in core/detector_tables.h, and the command `reference/.venv/bin/python tools/gen_tables.py` makes them. The model numbers in it are 64-bit values, and the tables are 32-bit values.
 - The laptop build includes replay, a command-line program that reads a recording or a PADS file and prints an answer for every window.
 
@@ -40,7 +41,10 @@
 
 ## Tests and checks
 
-- The C unit tests use Unity and run on the laptop through CTest.
+- The C unit tests use Unity v2.6.1, which is commit cbcd08fa7de711053a3deec6339ee89cad5d2697 of github.com/ThrowTheSwitch/Unity, and they run on the laptop through CTest. Unity has an MIT licence, and its files in tests/unity/ stay unchanged.
+- The command `cmake -S . -B build && cmake --build build && ctest --test-dir build --output-on-failure` builds core/ and replay on the laptop and runs the C unit tests.
+- The command `build/core/replay --pads FILE` runs the C detector on one PADS recording and prints one answer for every window.
+- The command `reference/.venv/bin/python tests/pads/pads_match.py` runs the full PADS match after the C build and writes tests/pads/pads_match.md.
 - The Python tests for tools/ use pytest.
 - A Makefile at the repo root holds the checks that run on every commit. They build core/ on the laptop, run the unit tests, the saved windows, and the saved converter cases, check the model file's hash against the committed tables, and build the firmware. None of them needs the toolbox.
 - The full PADS match test needs the toolbox, so it runs before each release and not on every commit.

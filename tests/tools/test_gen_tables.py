@@ -7,7 +7,10 @@ They need the toolbox, so they run in the reference venv with this command.
 from __future__ import annotations
 
 import ast
+import copy
 import hashlib
+import importlib.util
+import logging
 import math
 import re
 import shutil
@@ -21,6 +24,8 @@ import numpy as np
 import pandas as pd
 import pytest
 from scipy.signal import get_window
+from sklearn.linear_model import LogisticRegression
+from sklearn.tree import DecisionTreeClassifier
 
 REPO = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO / "reference"))
@@ -327,3 +332,65 @@ def test_16_python_rules() -> None:
     assert "print(" not in source
     assert "os.path" not in source
     assert "except Exception" not in source
+
+
+def run_main_on(package: ClassifierPackage, tmp_path: Path, caplog: pytest.LogCaptureFixture) -> tuple[int, Path]:
+    """Save the package, run gen_tables.main() on it with its hash expected, and return the exit code and --out."""
+    model = tmp_path / "model.pkl"
+    package.save(model)
+    out = tmp_path / "detector_tables.h"
+    spec = importlib.util.spec_from_file_location("gen_tables_under_test", GEN)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    module.EXPECTED_SHA256 = hashlib.sha256(model.read_bytes()).hexdigest()
+    with caplog.at_level(logging.INFO), pytest.raises(SystemExit) as stopped:
+        module.main(["--model", str(model), "--out", str(out)])
+    return int(stopped.value.code), out
+
+
+def seeded_rows(n: int, seed: int) -> pd.DataFrame:
+    """Return n seeded rows with the feature names mfcc_1 to mfcc_12."""
+    rng = np.random.default_rng(seed)
+    return pd.DataFrame(rng.normal(0, 1, (n, 12)), columns=[f"mfcc_{i}" for i in range(1, 13)])
+
+
+def test_17_wrong_feature_names_stop_the_run(
+    package: ClassifierPackage, tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    changed = copy.deepcopy(package)
+    names = np.array([f"mfcc_{i}" for i in range(12, 0, -1)], dtype=object)
+    changed.scaler.feature_names_in_ = names
+    changed.classifier.feature_names_in_ = names.copy()
+    code, out = run_main_on(changed, tmp_path, caplog)
+    assert code == 1
+    assert str(list(names)) in caplog.text
+    assert not out.exists()
+
+
+def test_18_other_classifier_stops_the_run(
+    package: ClassifierPackage, tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    changed = copy.deepcopy(package)
+    rows = seeded_rows(20, 18)
+    changed.classifier = DecisionTreeClassifier(random_state=18).fit(rows, np.arange(20) % 2)
+    code, out = run_main_on(changed, tmp_path, caplog)
+    assert code == 1
+    assert "DecisionTreeClassifier" in caplog.text
+    assert not out.exists()
+
+
+def test_19_three_rows_of_weights_stop_the_run(
+    package: ClassifierPackage, tmp_path: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    changed = copy.deepcopy(package)
+    rows = seeded_rows(30, 19)
+    with warnings.catch_warnings():
+        # scikit-learn 1.6.0 passes an option that newer scipy no longer knows, and scipy warns about it.
+        warnings.simplefilter("ignore")
+        changed.classifier = LogisticRegression().fit(rows, np.arange(30) % 3)
+    assert changed.classifier.coef_.shape == (3, 12)
+    code, out = run_main_on(changed, tmp_path, caplog)
+    assert code == 1
+    assert "(3, 12)" in caplog.text
+    assert not out.exists()
