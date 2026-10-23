@@ -20,9 +20,9 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
 4. C detector and the PADS match
    - The goal is to port the detector to C and show that it agrees with the toolbox on saved windows and on every PADS file.
    - It covers steps 4 to 6, the Detector recipe section, and the replay program in the Shared C library section. It uses KISS FFT and 32-bit floats, and it saves a few hundred test windows with the toolbox's answers, including windows close to each cut-off. It produces the match report with the largest difference in the probability.
-   - Feature 3 stores the model numbers in core/detector_tables.h as 64-bit values, and the 32-bit run of plain_detector.py scores the window against them in 64-bit floats. This feature decides whether the C scoring step runs in 64-bit or 32-bit floats. Only the detector's C file includes the header, because the header holds static arrays.
+   - Feature 3 stores the model numbers in core/detector_tables.h as 64-bit values, and the 32-bit run of plain_detector.py scores the window against them in 64-bit floats. This feature chose 64-bit doubles for the C scoring step. Only the detector's C file includes the header, because the header holds static arrays.
    - This feature also adds the two tests that feature 3 left out. They give tools/gen_tables.py a model whose feature names are not mfcc_1 to mfcc_12, and a classifier that is not a logistic regression with one row of 12 weights, and each test checks that the script stops and writes no file. The toolbox stores the 12 weights as a flat array, and the script accepts that shape as one row.
-   - The status is in progress.
+   - The status is done.
 
 5. Reading times and converter
    - The goal is to give each reading its time and convert the readings to 100 a second as the toolbox does.
@@ -37,11 +37,14 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
 7. Commit checks, firmware base, and sensor task
    - The goal is to run every check that needs no toolbox with one make command, strip Waveshare's example to the five tasks, and read the IMU into timed stretches.
    - It covers steps 10 to 12 and the Firmware design and Sensor and converter sections. The firmware build is one of the make checks. The hash check compares the model file's SHA-256 hash with DET_MODEL_SHA256 in core/detector_tables.h.
+   - Feature 4 made the laptop CMake build, and its CTest run already checks the saved windows. This feature sets up core/ as an ESP-IDF component. The component must build with -ffp-contract=off and with the KISS_FFT_MALLOC and KISS_FFT_FREE options from core/CMakeLists.txt, so that KISS FFT never touches the heap on the watch.
    - The status is planned.
 
 8. Pipeline and state tasks
    - The goal is to run the converter and the detector on the watch and hold the state for the session.
    - It covers steps 13 and 14 and the Windows and Firmware design sections. It measures how long each detector run takes on the chip.
+   - Feature 4 checked the numpy-order float32 sums and the 64-bit scoring step on the laptop only. This feature runs the saved windows in tests/detector/ on the chip and checks them with the same rule as tests/detector/test_detector.c. The chip has no hardware for doubles, so the measured run time includes the 64-bit scoring step in software.
+   - The pipeline task is the only task that calls the detector, because the detector's work buffers are static. It calls det_init() once before the first window.
    - The status is planned.
 
 9. USB recording and commands

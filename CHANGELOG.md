@@ -22,6 +22,14 @@ This file records each change to Tremor log that a person who reads or runs the 
 - Feature 3 makes tools/gen_tables.py stop and write no file when the model file's hash, its feature names, or its classifier differ from the ParaDigMa 1.1.2 model.
 - Feature 3 adds 16 tests in tests/tools/test_gen_tables.py, which compile the header with tests/tools/dump_tables.c, compare every value with the toolbox and plain_detector.py, and run with pytest in the reference venv.
 - Feature 3 confirms that the header gives plain_detector.py the same answers as its own tables, and that the tremor answer agrees with the toolbox on 200 of 200 windows in float32.
+- Feature 4 adds the C detector in core/detector.h and core/detector.c, which follows detect() in reference/plain_detector.py step for step in 32-bit floats and scores each window in 64-bit doubles.
+- Feature 4 adds unchanged copies of KISS FFT release 131.2.0 in core/kissfft/ and Unity v2.6.1 in tests/unity/.
+- Feature 4 adds a CMake build that makes the library tremor_core, the replay program, and the C unit tests on the laptop, and the command `cmake -S . -B build && cmake --build build && ctest --test-dir build --output-on-failure` runs it.
+- Feature 4 adds core/replay.c, which runs as `build/core/replay --pads FILE` and prints the C detector's numbers and answers for every window of one PADS recording.
+- Feature 4 adds tests/detector/make_windows.py, which writes 322 saved windows with the toolbox's answers to tests/detector/windows.csv and tests/detector/answers.csv, and 120 of these windows sit close to a cut-off or test the ends of the peak band.
+- Feature 4 adds tests/detector/test_detector.c, which checks the C detector on the saved windows, and its largest difference from the toolbox is 3.6e-06 in the 12 numbers and 2.71e-07 in the probability.
+- Feature 4 adds tests/pads/pads_match.py and its committed report tests/pads/pads_match.md, which show that the C detector agrees with the toolbox on all 26,264 windows of the 10,318 PADS recordings and on all 99 count rows, with a largest difference of 5.63e-07 in the probability.
+- Feature 4 adds pytest tests for make_windows.py and pads_match.py, and three cases in tests/tools/test_gen_tables.py that check that tools/gen_tables.py stops and writes no file when the feature names or the classifier are wrong.
 
 ### Changed
 
@@ -37,3 +45,8 @@ This file records each change to Tremor log that a person who reads or runs the 
 - The tech stack now names core/detector_tables.h, the command that makes it, the types of its values, and the command that runs the tests for gen_tables.py.
 - The roadmap entry for feature 4 now says that feature 4 decides whether the C scoring step runs in 64-bit or 32-bit floats, and that it adds the two stop case tests for tools/gen_tables.py that feature 3 left out.
 - The roadmap entries for features 7 and 9 now say that the hash check and the boot line's table hash use DET_MODEL_SHA256 from core/detector_tables.h.
+- The .gitignore file now leaves out the build/ folder.
+- The tech stack now names the KISS FFT and Unity commits, says that the detector scores in 64-bit doubles, and gives the commands for the CMake build, replay, the saved windows, and the PADS match.
+- The tech stack now says that the detector adds its sums in numpy's order, that KISS FFT never touches the heap, and that only the pipeline task may call the detector.
+- The roadmap entry for feature 7 now says that the ESP-IDF component for core/ must keep the -ffp-contract=off flag and the KISS FFT heap options from core/CMakeLists.txt.
+- The roadmap entry for feature 8 now says that feature 8 runs the saved windows on the chip, because feature 4 checked the numpy-order sums and the 64-bit scoring step on the laptop only.
