@@ -30,6 +30,12 @@ This file records each change to Tremor log that a person who reads or runs the 
 - Feature 4 adds tests/detector/test_detector.c, which checks the C detector on the saved windows, and its largest difference from the toolbox is 3.6e-06 in the 12 numbers and 2.71e-07 in the probability.
 - Feature 4 adds tests/pads/pads_match.py and its committed report tests/pads/pads_match.md, which show that the C detector agrees with the toolbox on all 26,264 windows of the 10,318 PADS recordings and on all 99 count rows, with a largest difference of 5.63e-07 in the probability.
 - Feature 4 adds pytest tests for make_windows.py and pads_match.py, and three cases in tests/tools/test_gen_tables.py that check that tools/gen_tables.py stops and writes no file when the feature names or the classifier are wrong.
+- Feature 5 adds the time rule in core/reading_time.h and core/reading_time.c, which gives each reading a time from one fixed rate per stretch, takes every rate from at least 10 seconds of burst stamps, and starts a new stretch after a gap or a buffer overflow.
+- Feature 5 adds the converter in core/converter.h and core/converter.c, which converts each stretch to 100 samples a second one block at a time with a natural cubic spline and 16 extra readings on each side.
+- Feature 5 adds tests/converter/make_cases.py, which saves eight 30-second converter cases with the toolbox's own conversion at 100 Hz to stretches.csv, readings.csv, and expected.csv in tests/converter/.
+- Feature 5 adds tests/converter/test_converter.c, which shows that the C converter agrees with the saved toolbox cases within 0.00016 degrees per second from sample 100 on, and the limit is 0.001.
+- Feature 5 adds tests/reading_time/test_reading_time.c, which checks the time rule on made-up burst streams and on the twenty one-minute rates from feature 1, where the rule made 6 stretches in twenty minutes.
+- Feature 5 adds the two C tests to the CMake build and five pytest cases for make_cases.py in tests/converter/test_make_cases.py.
 
 ### Changed
 
@@ -50,3 +56,7 @@ This file records each change to Tremor log that a person who reads or runs the 
 - The tech stack now says that the detector adds its sums in numpy's order, that KISS FFT never touches the heap, and that only the pipeline task may call the detector.
 - The roadmap entry for feature 7 now says that the ESP-IDF component for core/ must keep the -ffp-contract=off flag and the KISS FFT heap options from core/CMakeLists.txt.
 - The roadmap entry for feature 8 now says that feature 8 runs the saved windows on the chip, because feature 4 checked the numpy-order sums and the 64-bit scoring step on the laptop only.
+- The tech stack now names the time rule and converter files, says that a rate is a whole number of millionths of a reading per second, and gives the converter's block, ring, and rate range and the command that makes the saved converter cases.
+- The tech stack and the roadmap entry for feature 5 now point to requirements 21, 22, and 24 of feature 5, which go beyond the build spec's words and wait for the user's review.
+- The roadmap entry for feature 7 now says that feature 7 counts how often stretches end on the watch and how long they last, on the wrist and on a table, because the time rule with the measured drift started a new stretch every 2.5 to 5 minutes.
+- The roadmap entries for features 7 to 10 now say how the sensor task, the pipeline task, the S line, and replay use the time rule and the converter.

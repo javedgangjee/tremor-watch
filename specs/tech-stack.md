@@ -30,6 +30,9 @@
 - The detector keeps its work buffers in static memory, so only one task may call it. That task is the pipeline task.
 - The generated tables are in core/detector_tables.h, and the command `reference/.venv/bin/python tools/gen_tables.py` makes them. The model numbers in it are 64-bit values, and the tables are 32-bit values.
 - The laptop build includes replay, a command-line program that reads a recording or a PADS file and prints an answer for every window.
+- The time rule lives in core/reading_time.h and core/reading_time.c, and the converter lives in core/converter.h and core/converter.c. The caller owns the state of each, so neither file has static data that changes. The time rule ends a stretch when a burst's stamp lies more than half a reading period from the stretch's prediction or the sensor's buffer overflowed, and every rate comes from at least 10 seconds of stamps. Requirements 21 and 22 of feature 5 add rules that go beyond the build spec's words, and they wait for the user's review.
+- A rate is a whole number of millionths of a reading per second, held as a `uint32_t`. For example, 114.3302 readings a second is 114330200.
+- Each converter block makes 100 samples at 100 Hz and fits its natural cubic spline over its readings plus 16 extra readings on each side. A block holds at most 192 readings. The converter keeps readings in a ring of 2048, and it accepts rates from 50 to 150 readings a second. At the end of a stretch it drops a block whose readings are not all in, as requirement 24 of feature 5 says, and that requirement waits for the user's review too.
 
 ## Reference and laptop tools
 
@@ -50,6 +53,7 @@
 - The command `reference/.venv/bin/python tests/pads/pads_match.py` runs the full PADS match after the C build and writes tests/pads/pads_match.md.
 - The Python tests for tools/, the saved windows, and the PADS match use pytest.
 - The command `reference/.venv/bin/python tests/detector/make_windows.py` makes the 322 saved windows in tests/detector/windows.csv and tests/detector/answers.csv. The C unit tests read these files, so they need no toolbox.
+- The command `reference/.venv/bin/python tests/converter/make_cases.py` makes the saved converter cases in tests/converter/. The C unit tests read these files, so they need no toolbox.
 - A Makefile at the repo root holds the checks that run on every commit. They build core/ on the laptop, run the unit tests, the saved windows, and the saved converter cases, check the model file's hash against the committed tables, and build the firmware. None of them needs the toolbox.
 - The full PADS match test needs the toolbox, so it runs before each release and not on every commit.
 - The test data is PADS from PhysioNet, which holds 100 Hz gyroscope recordings in radians per second.
