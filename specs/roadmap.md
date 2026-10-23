@@ -22,7 +22,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
    - It covers steps 4 to 6, the Detector recipe section, and the replay program in the Shared C library section. It uses KISS FFT and 32-bit floats, and it saves a few hundred test windows with the toolbox's answers, including windows close to each cut-off. It produces the match report with the largest difference in the probability.
    - Feature 3 stores the model numbers in core/detector_tables.h as 64-bit values, and the 32-bit run of plain_detector.py scores the window against them in 64-bit floats. This feature decides whether the C scoring step runs in 64-bit or 32-bit floats. Only the detector's C file includes the header, because the header holds static arrays.
    - This feature also adds the two tests that feature 3 left out. They give tools/gen_tables.py a model whose feature names are not mfcc_1 to mfcc_12, and a classifier that is not a logistic regression with one row of 12 weights, and each test checks that the script stops and writes no file. The toolbox stores the 12 weights as a flat array, and the script accepts that shape as one row.
-   - The status is planned.
+   - The status is in progress.
 
 5. Reading times and converter
    - The goal is to give each reading its time and convert the readings to 100 a second as the toolbox does.
