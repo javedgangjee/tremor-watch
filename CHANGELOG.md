@@ -63,6 +63,16 @@ This file records each change to Tremor log that a person who reads or runs the 
 - Feature 8 adds tests/firmware/chip_windows.py with its pytest cases, and its committed log and report show that the chip agrees with the toolbox on all 322 saved windows with a largest difference of 2.66e-07 in the probability.
 - Feature 8 adds tests/firmware/pipeline_run.py with its pytest cases, and its committed log and report show 1796 answers in 30 minutes on a table with no tremor answer, no sensor fault, and no drop.
 - Feature 8 measures the detector at about 6.6 milliseconds a window on the chip, and each answer comes about 113 milliseconds after its window's last 100 Hz sample.
+- Feature 9 adds core/record.h and core/record.c, which write the record lines B, S, T, R, W, F, D, and A and parse the laptop's commands, and core/recording_format.md, which describes the lines, the commands, and the answers.
+- Feature 9 adds tests/record/test_record.c with 14 cases, so `make check` now runs 12 CTest tests.
+- Feature 9 makes the USB task write the recording over the USB Serial/JTAG port through ESP-IDF's usb_serial_jtag driver, and the recording starts each boot with a B line that holds a random boot ID, the reset cause, the firmware version, and the model file's hash.
+- Feature 9 makes the USB task drop and count each line that does not fit in its send buffer, so no task waits on a laptop, and after a drop it writes the B line and the latest S line again.
+- Feature 9 makes the sensor task send the USB task a copy of each burst part through a record queue of 32 items in PSRAM.
+- Feature 9 adds the commands CLOCK, SCHEDULE, SESSION, and TONE, and the watch answers each command with an A line.
+- Feature 9 adds firmware/main/settings.c, which keeps the dose schedule and the tone setting in ESP-IDF's NVS, so both survive a restart.
+- Feature 9 adds the diagnostic lines SETTINGS, CLOCK, and SESSION.
+- Feature 9 adds tests/firmware/record_run.py, tests/firmware/command_run.py, and tests/firmware/drop_run.py with their pytest cases, so pytest now runs 75 cases.
+- Feature 9 adds the committed logs and reports of the three scripts, which show about 4,400 bytes and 127 lines a second with no dropped line in 30 minutes, every command answered within about 21 milliseconds, and the settings kept across a restart.
 
 ### Changed
 
@@ -107,3 +117,11 @@ This file records each change to Tremor log that a person who reads or runs the 
 - The roadmap entry for feature 8 now records the end request, the sensor fault rule, the results on the chip and the table, the weak case 5 in tests/session/test_session.c, and that manual checks 10 and 11 wait for the user.
 - The roadmap entry for feature 9 now says that feature 9 decides the recording lines from feature 8's lines, measures the free stack again if a task formats recording lines, and decides whether a test command forces a stretch end.
 - The roadmap entries for features 10 to 12 now say how compare_session.py times the answers, that feature 11 replaces the holding screen and plays the tone, and that feature 12 checks the gap path if feature 9 adds no test command.
+- Feature 9 turns off ESP-IDF's second console on the USB Serial/JTAG port and removes the ROM's print channel to that port, so ESP-IDF's log and crash text go to UART0 only and the USB task is the only writer on the USB port.
+- Feature 9 makes the state task write a W line after each ANSWER line and an F line after each FACE line.
+- Feature 9 changes the TONE line to give the tone setting and adds fields at the ends of the SENSOR_MINUTE, STATE_MINUTE, and USB_MINUTE lines, so table_run.py and pipeline_run.py read them unchanged.
+- The tech stack now records the console change, the usb_serial_jtag driver and its drop rule, the record queue, the settings store, the dose clock, core/record.h, core/recording_format.md, and the commands of the three new watch scripts.
+- The tech stack now gives the bytes and lines a second that feature 9 measured on the USB port, the rule for the firmware version, and why core/record.c finds the shortest text of a double itself.
+- The roadmap entry for feature 7 now records the drift end in feature 9's first table run, and the user still decides on a drift fix.
+- The roadmap entry for feature 9 now records the recording lines, the console change, the drop test, the results on the table, the items that wait for the user's review, the two checks that fail as written, and that manual checks 11 and 12 wait for the user.
+- The roadmap entries for features 10 to 12 now say how a reader reads the recording and opens the port, that feature 11 sends the D line and plays the tone only when the setting is on, and that feature 12 still checks the gap path on the watch.

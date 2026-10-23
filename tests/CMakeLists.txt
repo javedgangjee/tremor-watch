@@ -61,3 +61,8 @@ add_executable(test_session session/test_session.c)
 target_compile_options(test_session PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
 target_link_libraries(test_session PRIVATE tremor_core unity)
 add_test(NAME test_session COMMAND test_session)
+
+add_executable(test_record record/test_record.c)
+target_compile_options(test_record PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
+target_link_libraries(test_record PRIVATE tremor_core unity)
+add_test(NAME test_record COMMAND test_record)

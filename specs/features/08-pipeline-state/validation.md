@@ -175,7 +175,7 @@ The largest run time in pass 1 came on window 0, the first run after start. The 
 ### Manual checks
 
 10. Check 10 waits for the user. The log shows that the screen task took 1800 messages and that its face field matches the last FACE line, but nobody looked at the screen.
-11. Check 11 waits for the user. Nobody wore or shook the watch, so nothing yet shows a tremor answer on the watch.
+11. The screen part of check 11 passed on 2026-10-23. The user rested the forearm on a table, shook the hand from the wrist, and the screen showed "Tremor". A first try that moved the whole arm showed "Arm moving", as the build spec says it should. The log part of check 11 did not run, and the user moved it to feature 12, which measures the shake response on the wrist with logs.
 
 ### Requirement coverage
 

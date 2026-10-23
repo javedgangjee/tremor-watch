@@ -12,6 +12,11 @@ CONFIG_ESP32S3_DATA_CACHE_LINE_64B=y
 
 CONFIG_FREERTOS_HZ=1000
 
+# The USB task is the only writer on the USB Serial/JTAG port, which carries
+# the recording. With no second console, ESP-IDF's log and its crash text go
+# to UART0 only and never reach that port.
+CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
+
 # LVGL settings from the same example.
 CONFIG_LV_USE_CLIB_MALLOC=y
 CONFIG_LV_USE_CLIB_STRING=y
