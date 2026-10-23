@@ -43,6 +43,16 @@ This file records each change to Tremor log that a person who reads or runs the 
 - Feature 6 adds Unity tests in tests/window/, tests/share/, tests/face/, and tests/dose/ for every state change, the two-in-a-row rule, and the dose due timing.
 - Feature 6 adds tests/response/test_response.c, which runs eight simulated shake cases at 114.3302 readings a second through the C converter, the C detector, and the face rule, and checks the delays against the build spec's numbers plus one answer step.
 - Feature 6 adds tests/share/test_share_toolbox.py, which shows that the toolbox's aggregate_tremor() gives the same share as the C tests for the same window counts.
+- Feature 7 adds a Makefile at the repo root, where `make check` builds core/ and replay, runs the C unit tests, compares the model file's hash with DET_MODEL_SHA256 in core/detector_tables.h, and builds the firmware, all with no toolbox.
+- Feature 7 adds an unchanged copy of the ParaDigMa 1.1.2 model file and its licence in tests/model/, and tests/model/test_model_copy.py checks the copy against the toolbox's file.
+- Feature 7 makes core/CMakeLists.txt register core/ as the ESP-IDF component core with the same flags as the laptop build, so KISS FFT never touches the heap on the watch.
+- Feature 7 adds the gyroscope unit rule in core/imu_units.h and core/imu_units.c, which divides a raw count by 32 to give degrees a second, and its Unity test in tests/imu_units/.
+- Feature 7 adds the watch firmware in firmware/, which starts from Waveshare's LVGL example without the demo apps and runs the sensor, pipeline, state, screen, and USB tasks from firmware/main/.
+- Feature 7 adds an unchanged copy of Waveshare's XPowersLib in firmware/components/XPowersLib/, and the firmware reads the power chip once at start.
+- Feature 7 adds the sensor task, which reads the QMI8658's buffer on each INT1 interrupt, stamps each burst inside the interrupt, passes it to the time rule, and writes a line for each stretch end with its kind.
+- Feature 7 adds a holding screen that shows "Tremor log" and the uptime, and holding versions of the pipeline and state tasks that count the readings and send the uptime.
+- Feature 7 adds tests/firmware/table_run.py and its pytest cases in tests/firmware/test_table_run.py, and the script runs the watch on a table for 30 minutes and judges the log.
+- Feature 7 adds tests/firmware/table_log.txt and tests/firmware/table_report.md, which show 2 stretches in 30 minutes, no lost readings, and one drift end after 746.958 seconds.
 
 ### Changed
 
@@ -73,3 +83,10 @@ This file records each change to Tremor log that a person who reads or runs the 
 - The roadmap entry for feature 8 now says that the state task calls face_gap() at each new stretch after a gap, and that feature 8 decides how a failed sensor reaches the face.
 - The roadmap entries for features 9 and 11 now say how the recording lines and the screens use the codes, the face states, the share blocks, and the dose rules from feature 6.
 - The roadmap entry for feature 12 now holds the stretch count with the watch on the wrist, which moved from feature 7.
+- The tech stack now records the `make check` command, the firmware layout, the ESP-IDF activate script, XPowersLib, the core component, the unit rule, the model copy, and the table run command.
+- The tech stack now gives feature 7's measured rates beside feature 1's rate, and it says how the firmware starts the display and where printf and ESP-IDF's log lines go.
+- The roadmap entry for feature 7 now records the table run's single drift end, the accelerometer reading at rest, and that manual checks 10 and 11 wait for the user.
+- The roadmap entry for feature 8 now says that feature 8 replaces feature 7's holding pipeline and state tasks.
+- The roadmap entry for feature 9 now says that feature 9 makes the USB task the only writer on the recording's port, checks that the port can carry the full recording, and tests that the watch drops the recording lines with no laptop.
+- The roadmap entry for feature 11 now says that the screen task must not call bsp_display_start(), because that function in board support package 2.0.0 corrupts the heap.
+- The roadmap entry for feature 12 now says that the battery needs a check before the demo, because the power chip found no battery in feature 7's table run.
