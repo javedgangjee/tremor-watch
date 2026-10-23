@@ -15,7 +15,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
 3. Generated tables
    - The goal is to write the detector's fixed numbers into a committed C header.
    - It covers step 3 and the Detector recipe section. tools/gen_tables.py writes the model numbers, both Hann windows, the filter table, the cosine table, and the model file's hash.
-   - The status is planned.
+   - The status is in progress.
 
 4. C detector and the PADS match
    - The goal is to port the detector to C and show that it agrees with the toolbox on saved windows and on every PADS file.
