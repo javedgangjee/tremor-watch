@@ -46,3 +46,8 @@ add_executable(test_response response/test_response.c)
 target_compile_options(test_response PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
 target_link_libraries(test_response PRIVATE tremor_core unity)
 add_test(NAME test_response COMMAND test_response)
+
+add_executable(test_imu_units imu_units/test_imu_units.c)
+target_compile_options(test_imu_units PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
+target_link_libraries(test_imu_units PRIVATE tremor_core unity)
+add_test(NAME test_imu_units COMMAND test_imu_units)

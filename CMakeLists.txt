@@ -2,7 +2,8 @@
 #
 #     cmake -S . -B build && cmake --build build && ctest --test-dir build --output-on-failure
 #
-# The ESP-IDF component setup for core/ comes with the firmware base.
+# core/CMakeLists.txt also registers core/ as an ESP-IDF component for the
+# watch firmware in firmware/.
 
 cmake_minimum_required(VERSION 3.20)
 project(tremor_log C)

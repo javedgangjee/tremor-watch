@@ -63,3 +63,18 @@ No step changes a file in reference/, context/, core/kissfft/, tests/unity/, too
 13. Update specs/tech-stack.md as in requirement 34. Under Watch firmware, add that firmware/ holds the ESP-IDF project, that the five tasks live in firmware/main/, that the power driver is the unchanged copy of XPowersLib in firmware/components/XPowersLib/, that the IMU interrupt is INT1 on GPIO21, and that ESP-IDF loads with `. ~/.espressif/tools/activate_idf_v6.1.sh`. Under Shared C library, add that core/CMakeLists.txt registers core/ as the ESP-IDF component core and that core/imu_units.h holds the gyroscope's unit rule. Under Tests and checks, replace "A Makefile at the repo root holds the checks" with the `make check` command and its three parts, add the model copy in tests/model/, and add the table run command.
 
 14. Set the status of feature 7 to in progress in specs/roadmap.md. This step is done in plan mode.
+
+## Changes during implement
+
+1. The screen task does not call bsp_display_start(). Waveshare's board support package 2.0.0 adds its SH8601 panel with lvgl_port_add_disp_rgb(). That function calls esp_lcd_rgb_panel_register_event_callbacks() on a panel that is not an RGB panel, which writes five pointers past the panel's memory. On the watch this broke the heap at every boot, and the screen task crashed inside the board support package. firmware/main/screen_task.c now starts the display with the package's own bsp_display_new() and bsp_touch_new(), adds the panel with lvgl_port_add_disp() and the touch with lvgl_port_add_touch(), adds the same rounder as the package, and sets the brightness to 100 with bsp_display_brightness_set(). Every other setting matches bsp_display_start(). firmware/main/CMakeLists.txt adds espressif__esp_lcd_touch to PRIV_REQUIRES for the touch header.
+2. The sensor task resets the QMI8658 after qmi8658_init(), as SensorLib's reset() does, and then writes CTRL1 back to 0x60. Without the reset the sensor never answered a CTRL9 command. It also writes 0x80 to CTRL8 before the first CTRL9 command, as SensorLib's setup does, so the handshake uses STATUS_INT bit 7 and not INT1.
+3. INT1 drops about 90 microseconds after the buffer read ends, so the sensor task gives it up to 1 millisecond before it counts the burst as late.
+4. firmware/sdkconfig.defaults leaves out CONFIG_SPIRAM_FETCH_INSTRUCTIONS and CONFIG_SPIRAM_RODATA from the example. With them the watch hung after a software restart, and the USB port stopped answering until the laptop reset the USB link.
+5. firmware/main/CMakeLists.txt turns the attributes and cpp warnings back from errors for the LVGL library, as 02_lvgl_demo_v9's CMakeLists.txt does. LVGL's fast memory option otherwise stops the build.
+6. core/CMakeLists.txt marks ESP-IDF's esp_libc platform_include folder as a system folder for the core component. Its stdio.h uses #include_next, which -pedantic turns into an error. The project's own files still build with -pedantic.
+7. The `firmware` target in the Makefile runs `$IDF_PATH/tools/idf.py` after it loads the activate script. The activate script makes idf.py a shell function, which make's shell cannot call.
+8. A line holds up to 255 characters and not 191, because the SENSOR_MINUTE line is about 210 characters long.
+9. main.c installs the GPIO interrupt service before any task starts, because the touch driver and the sensor task both add GPIO interrupts. The touch driver then logs that the service is already installed, which does no harm.
+10. sensor_task.c does not include math.h, because qmi8658.h defines M_PI again and the build stops on the warning.
+
+The agent decided this on 23 October 2026, and the user has not reviewed it yet.

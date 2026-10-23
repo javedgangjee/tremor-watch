@@ -1,3 +1,36 @@
+# On the watch, ESP-IDF builds core/ as the component core. The branch below
+# registers every library source and returns before the laptop part, so the
+# source list stays in this one file. The flags are the same flags as the
+# laptop build in the root CMakeLists.txt. replay stays a laptop program.
+if(ESP_PLATFORM)
+    set(TREMOR_SOURCES
+        detector.c
+        reading_time.c
+        converter.c
+        window.c
+        share.c
+        face.c
+        dose.c
+        imu_units.c
+    )
+    idf_component_register(
+        SRCS ${TREMOR_SOURCES} kissfft/kiss_fft.c kissfft/kiss_fftr.c
+        INCLUDE_DIRS ".")
+    target_compile_options(${COMPONENT_LIB} PRIVATE
+        -ffp-contract=off
+        "-DKISS_FFT_MALLOC(n)=((void *)0)"
+        "-DKISS_FFT_FREE(p)=((void)0)"
+    )
+    set_source_files_properties(${TREMOR_SOURCES} PROPERTIES
+        COMPILE_OPTIONS "-Wall;-Wextra;-Werror;-pedantic")
+    # ESP-IDF wraps stdio.h with #include_next, which -pedantic reports as an
+    # error. Marking the wrapper folder as a system folder keeps -pedantic for
+    # the project's own code.
+    idf_component_get_property(libc_dir esp_libc COMPONENT_DIR)
+    target_compile_options(${COMPONENT_LIB} PRIVATE -isystem "${libc_dir}/platform_include")
+    return()
+endif()
+
 # tremor_core is the shared C library. KISS FFT builds into it with its heap
 # calls turned into no-ops, so nothing in the library allocates memory.
 
@@ -9,6 +42,7 @@ add_library(tremor_core STATIC
     share.c
     face.c
     dose.c
+    imu_units.c
     kissfft/kiss_fft.c
     kissfft/kiss_fftr.c
 )
@@ -20,7 +54,7 @@ target_compile_options(tremor_core PRIVATE
     "-DKISS_FFT_MALLOC(n)=((void *)0)"
     "-DKISS_FFT_FREE(p)=((void)0)"
 )
-set_source_files_properties(detector.c reading_time.c converter.c window.c share.c face.c dose.c PROPERTIES COMPILE_OPTIONS "${TREMOR_WARNINGS}")
+set_source_files_properties(detector.c reading_time.c converter.c window.c share.c face.c dose.c imu_units.c PROPERTIES COMPILE_OPTIONS "${TREMOR_WARNINGS}")
 target_link_libraries(tremor_core PUBLIC m)
 
 add_executable(replay replay.c)

@@ -16,11 +16,17 @@
 - The layout, colours, and icons come from the design file context/Tremor Watch Light.html, with the changes that the plan's Watch face section lists. The design's colours are #111315 for text, #5C6265 for second-level text, #1B2E42 for Tremor, #3F2559 for Dose due, #173A28 for the "Took it" button and Logged, and #C9CDD0 for empty blocks.
 - The icons in the design file are Lucide icons. They must be converted to LVGL images.
 - The firmware has five tasks, which are sensor, pipeline, state, screen, and USB. They talk through queues, and only the screen task uses LVGL.
+- firmware/ holds the ESP-IDF project for the watch, and the five tasks live in firmware/main/. firmware/bringup/ stays as feature 1's record.
+- The power driver is an unchanged copy of XPowersLib from Waveshare's examples/esp-idf/01_AXP2101/components/XPowersLib/ in firmware/components/XPowersLib/.
+- The IMU raises its buffer interrupt on INT1, which the board wires to GPIO21.
+- ESP-IDF loads with `. ~/.espressif/tools/activate_idf_v6.1.sh`, because the plain export.sh fails on this laptop unless IDF_TOOLS_PATH is `~/.espressif/tools`.
 - The dose schedule and the tone setting live in the chip's settings store. Answers and doses stay in memory, and nothing else is written to flash.
 
 ## Shared C library
 
 - The library in core/ holds everything the watch computes. It builds as an ESP-IDF component for the watch and as a plain C library on the laptop.
+- core/CMakeLists.txt also registers core/ as the ESP-IDF component core, with the same flags as the laptop build.
+- core/imu_units.h holds the gyroscope's unit rule. A raw count divided by 32 gives degrees a second at the range of plus or minus 1024 degrees a second.
 - It includes no ESP-IDF headers and allocates no memory at run time.
 - It uses 32-bit floats and builds with -ffp-contract=off on both sides.
 - It uses KISS FFT, which has a BSD licence and handles the 400 and 200 point sizes. The copy in core/kissfft/ is release tag 131.2.0, which is commit 7bce4153c6bc8aba2db0e889e576f9d00505cbe1 of github.com/mborgerding/kissfft, and its files stay unchanged.
@@ -55,7 +61,9 @@
 - The Python tests for tools/, the saved windows, and the PADS match use pytest.
 - The command `reference/.venv/bin/python tests/detector/make_windows.py` makes the 322 saved windows in tests/detector/windows.csv and tests/detector/answers.csv. The C unit tests read these files, so they need no toolbox.
 - The command `reference/.venv/bin/python tests/converter/make_cases.py` makes the saved converter cases in tests/converter/. The C unit tests read these files, so they need no toolbox.
-- A Makefile at the repo root holds the checks that run on every commit. They build core/ on the laptop, run the unit tests, the saved windows, and the saved converter cases, check the model file's hash against the committed tables, and build the firmware. None of them needs the toolbox.
+- The command `make check` runs the checks for every commit from the Makefile at the repo root. Its three parts are `make laptop`, which builds core/ and replay and runs the C unit tests with the saved windows and the saved converter cases, `make hash`, which compares the SHA-256 hash of the model file copy with DET_MODEL_SHA256 in core/detector_tables.h, and `make firmware`, which builds firmware/. None of them needs the toolbox, and nothing runs them by itself.
+- tests/model/ holds an unchanged copy of the ParaDigMa 1.1.2 model file and its licence, so the hash check needs no toolbox. tests/model/test_model_copy.py checks the copy against the toolbox's file.
+- The command `caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/table_run.py` runs the 30-minute table run on the watch and judges it.
 - The full PADS match test needs the toolbox, so it runs before each release and not on every commit.
 - The test data is PADS from PhysioNet, which holds 100 Hz gyroscope recordings in radians per second.
 
