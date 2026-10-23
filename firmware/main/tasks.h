@@ -4,9 +4,11 @@
  * through these queues.
  *
  * The sensor task reads the IMU and sends readings to the pipeline task.
- * The pipeline task takes the readings. Feature 8 adds the converter and the
- * detector to it.
- * The state task sends the screen task what to draw.
+ * The pipeline task runs the converter and the detector, and it sends each
+ * new stretch and each answer to the state task. It asks the sensor task to
+ * end a stretch through the end queue.
+ * The state task owns the face state, the session share, and the doses, and
+ * it sends the screen task what to draw.
  * The screen task owns LVGL, and no other task calls LVGL.
  * The USB task owns the serial port, and no other task writes to it.
  */
@@ -23,8 +25,9 @@
 
 /* A sensor message holds at most this many readings. */
 #define SENSOR_MSG_READINGS 16
-/* A text line holds at most this many characters before its end. */
-#define LINE_CHARS 255
+/* A text line holds at most this many characters before its end. The
+ * PIPELINE_MINUTE line is about 300 characters long. */
+#define LINE_CHARS 319
 /* One minute of uptime in microseconds. */
 #define MINUTE_US 60000000LL
 
@@ -70,12 +73,54 @@ typedef struct {
 /* screen_msg_t tells the screen task what to draw. */
 typedef struct {
     uint32_t uptime_s;
+    /* The shown face state, as a face_state_t from core/face.h. */
+    uint8_t face;
 } screen_msg_t;
 
-/* The queues. main.c makes them before any task starts. */
+/* The kinds of state message. */
+typedef enum {
+    STATE_MSG_STRETCH,
+    STATE_MSG_ANSWER
+} state_msg_kind_t;
+
+/*
+ * state_msg_t carries a new stretch or an answer from the pipeline task to
+ * the state task. A stretch message uses only kind and stretch. A sensor fault
+ * answer has no window and no detector numbers.
+ */
+typedef struct {
+    state_msg_kind_t kind;
+    /* The stretch number. */
+    uint32_t stretch;
+    /* has_window is true when the answer comes from a window. */
+    bool has_window;
+    uint32_t window;
+    /* The result code, as a res_code_t from core/window.h. */
+    uint8_t code;
+    /* The detector's probability, low-frequency sum, and peak in Hz. */
+    double prob;
+    double below;
+    float peak_hz;
+    /* The time of the window's last 100 Hz sample, or the time a fault answer
+     * became due. */
+    int64_t time_us;
+    /* The detector's run time. */
+    int64_t run_us;
+    /* The timer value at the end of the run. */
+    int64_t at_us;
+    /* The end of the run minus the stamp of the burst that completed the
+     * window. */
+    int64_t delay_us;
+} state_msg_t;
+
+/* The queues. main.c makes them before any task starts. The end queue holds
+ * one stretch number, which the pipeline task writes with xQueueOverwrite()
+ * when a stretch must end. */
 extern QueueHandle_t g_sensor_queue;
 extern QueueHandle_t g_line_queue;
 extern QueueHandle_t g_screen_queue;
+extern QueueHandle_t g_state_queue;
+extern QueueHandle_t g_end_queue;
 
 /* The number of lines that the other tasks dropped since boot, because the
  * line queue was full. */

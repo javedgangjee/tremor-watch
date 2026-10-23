@@ -105,12 +105,15 @@ typedef enum {
     LOSS_READ_ERROR,
     LOSS_STALL,
     LOSS_LATE,
+    LOSS_PIPELINE,
     LOSS_KINDS
 } loss_t;
 
 /* The reason names on the STRETCH line. A stretch end with no loss comes
- * from the time rule alone. */
-static const char *const LOSS_NAMES[LOSS_KINDS] = {"time", "overflow", "full", "read_error", "stall", "late"};
+ * from the time rule alone. A pipeline end comes when the pipeline task lost
+ * readings and asked through the end queue. */
+static const char *const LOSS_NAMES[LOSS_KINDS] = {"time", "overflow", "full", "read_error", "stall", "late",
+                                                   "pipeline"};
 
 typedef struct {
     uint64_t readings;
@@ -474,13 +477,14 @@ static void send_minute_line(uint32_t minute)
     uint32_t stretches = s_rt.started ? rt_current(&s_rt)->number + 1 : 0;
     usb_send("SENSOR_MINUTE minute=%lu readings=%llu bursts=%lu bursts_at_wtm=%lu largest_burst=%lu overflow=%lu "
              "full=%lu read_error=%lu stall=%lu late=%lu msg_drops=%lu largest_delay_us=%lld stretches=%lu "
-             "kind1_ends=%lu kind2_ends=%lu",
+             "kind1_ends=%lu kind2_ends=%lu pipeline=%lu",
              (unsigned long)minute, (unsigned long long)c->readings, (unsigned long)c->bursts,
              (unsigned long)c->bursts_at_wtm, (unsigned long)c->largest_burst,
              (unsigned long)c->losses[LOSS_OVERFLOW], (unsigned long)c->losses[LOSS_FULL],
              (unsigned long)c->losses[LOSS_READ_ERROR], (unsigned long)c->losses[LOSS_STALL],
              (unsigned long)c->losses[LOSS_LATE], (unsigned long)c->msg_drops, (long long)c->largest_delay_us,
-             (unsigned long)stretches, (unsigned long)c->kind1_ends, (unsigned long)c->kind2_ends);
+             (unsigned long)stretches, (unsigned long)c->kind1_ends, (unsigned long)c->kind2_ends,
+             (unsigned long)c->losses[LOSS_PIPELINE]);
 }
 
 void sensor_task(void *arg)
@@ -530,6 +534,16 @@ void sensor_task(void *arg)
             overflow = true;
             reason = loss;
         } else if (count > 0) {
+            /* The pipeline task asks to end a stretch when it lost readings.
+             * The burst then carries the overflow flag, so the time rule ends
+             * the stretch as it does after a lost burst. */
+            uint32_t end_stretch = 0;
+            if (xQueueReceive(g_end_queue, &end_stretch, 0) == pdTRUE && s_rt.started &&
+                end_stretch == rt_current(&s_rt)->number && !overflow) {
+                overflow = true;
+                reason = LOSS_PIPELINE;
+                s_counts.losses[LOSS_PIPELINE]++;
+            }
             take_burst(count, stamp_us, overflow, reason);
             overflow = false;
             reason = LOSS_NONE;
