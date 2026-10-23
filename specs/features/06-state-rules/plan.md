@@ -70,3 +70,14 @@ The steps run in this order. Every command runs from the repo root. No step chan
 11. Update specs/tech-stack.md as in requirement 37. Under Shared C library, add that core/window.h holds the result codes and the window rule, core/share.h holds the session share and the Session screen's blocks, core/face.h holds the face state and the two-in-a-row rule, and core/dose.h holds the dose schedule and the due rule, and that the caller owns the state of each.
 
 12. Set the status of feature 6 to in progress in specs/roadmap.md. This step is done in plan mode.
+
+## Changes during implement
+
+- The plan does not say what dose_tick() returns when a due dose reaches its 15 minutes on the same tick that a later time becomes due. The tick returns DOSE_BECAME_DUE only, because a dose is still due and the tone must play.
+- The plan does not say where share_add() puts a window whose block has already dropped out of the 12 kept blocks. Such a window counts in the session share only.
+- dose_set_schedule() counts as a tick only when it accepts the schedule, because a refused schedule changes nothing.
+- tests/response/test_response.c runs the sessions before the Unity tests. A failed converter or detector call there is recorded, and case 1 checks it first, because Unity cannot check a value outside a test.
+- tests/response/test_response.c counts a single odd answer as an answer whose state differs from the state the face shows after it, when the next answer does not agree with it. The plan does not define the count, and the count is for information only.
+- tests/share/test_share_toolbox.py checks its own text for the banned words in case 3, so it builds those words from two parts and does not hold them whole.
+
+The agent decided this on 22 October 2026, and the user has not reviewed it yet.
