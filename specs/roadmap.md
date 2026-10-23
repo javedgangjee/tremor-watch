@@ -15,11 +15,13 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
 3. Generated tables
    - The goal is to write the detector's fixed numbers into a committed C header.
    - It covers step 3 and the Detector recipe section. tools/gen_tables.py writes the model numbers, both Hann windows, the filter table, the cosine table, and the model file's hash.
-   - The status is in progress.
+   - The status is done.
 
 4. C detector and the PADS match
    - The goal is to port the detector to C and show that it agrees with the toolbox on saved windows and on every PADS file.
    - It covers steps 4 to 6, the Detector recipe section, and the replay program in the Shared C library section. It uses KISS FFT and 32-bit floats, and it saves a few hundred test windows with the toolbox's answers, including windows close to each cut-off. It produces the match report with the largest difference in the probability.
+   - Feature 3 stores the model numbers in core/detector_tables.h as 64-bit values, and the 32-bit run of plain_detector.py scores the window against them in 64-bit floats. This feature decides whether the C scoring step runs in 64-bit or 32-bit floats. Only the detector's C file includes the header, because the header holds static arrays.
+   - This feature also adds the two tests that feature 3 left out. They give tools/gen_tables.py a model whose feature names are not mfcc_1 to mfcc_12, and a classifier that is not a logistic regression with one row of 12 weights, and each test checks that the script stops and writes no file. The toolbox stores the 12 weights as a flat array, and the script accepts that shape as one row.
    - The status is planned.
 
 5. Reading times and converter
@@ -34,7 +36,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
 
 7. Commit checks, firmware base, and sensor task
    - The goal is to run every check that needs no toolbox with one make command, strip Waveshare's example to the five tasks, and read the IMU into timed stretches.
-   - It covers steps 10 to 12 and the Firmware design and Sensor and converter sections. The firmware build is one of the make checks.
+   - It covers steps 10 to 12 and the Firmware design and Sensor and converter sections. The firmware build is one of the make checks. The hash check compares the model file's SHA-256 hash with DET_MODEL_SHA256 in core/detector_tables.h.
    - The status is planned.
 
 8. Pipeline and state tasks
@@ -44,7 +46,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
 
 9. USB recording and commands
    - The goal is to write every reading and answer to the laptop and accept the laptop's commands.
-   - It covers step 15 and the USB recording section. It adds the recording format document to core/, the boot line, and the commands for the clock, the dose schedule, a new session, and the tone.
+   - It covers step 15 and the USB recording section. It adds the recording format document to core/, the boot line, and the commands for the clock, the dose schedule, a new session, and the tone. The table hash in the boot line is DET_MODEL_SHA256 from core/detector_tables.h, which is the model file's SHA-256 hash.
    - The status is planned.
 
 10. Laptop tools
