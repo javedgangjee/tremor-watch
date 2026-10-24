@@ -416,24 +416,10 @@ static void build_root(look_screen_t screen)
 static void build_home(look_screen_t screen)
 {
     screen_objs_t *o = &s_objs[screen];
-    const look_box_t *bat = look_box(screen, LOOK_ITEM_BATTERY);
     const look_box_t *c = look_box(screen, LOOK_ITEM_CIRCLE);
     const look_box_t *icon = look_box(screen, LOOK_ITEM_CIRCLE_ICON);
-    o->time = label_box(o->root, screen, LOOK_ITEM_TIME);
-    o->date = label_box(o->root, screen, LOOK_ITEM_DATE);
-
-    int body_w = bat->w - BATTERY_NUB_W - 1;
-    lv_obj_t *body = plain(o->root, bat->x, bat->y, body_w, bat->h);
-    if (body != NULL) {
-        lv_obj_set_style_border_color(body, colour(LOOK_TEXT), 0);
-        lv_obj_set_style_border_width(body, BATTERY_BORDER, 0);
-        lv_obj_set_style_border_opa(body, LV_OPA_COVER, 0);
-    }
-    filled(o->root, bat->x + body_w + 1, bat->y + (bat->h - BATTERY_NUB_H) / 2, BATTERY_NUB_W, BATTERY_NUB_H,
-           LOOK_TEXT, 0);
-    int line_h = look_line_height(28);
-    o->battery = label_at(o->root, bat->x, bat->y + (bat->h - line_h) / 2, body_w, line_h, 28, LOOK_ALIGN_CENTER,
-                          LOOK_TEXT);
+    /* The user removed the top row of time, date, and battery on 2026-10-24,
+     * so o->time, o->date, and o->battery stay NULL and set_text() skips them. */
 
     o->pulse = plain(o->root, c->x, c->y, c->w, c->h);
     if (o->pulse != NULL) {

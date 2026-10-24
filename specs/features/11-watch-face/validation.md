@@ -37,7 +37,7 @@ In the view cases, O is 1792713600000000, which is 2026-10-23 00:00:00 in micros
      21. sess_took_it() at 16:03:02.999999 after case 20 gives 0, and dose_count() stays 1. sess_took_it() at 16:03:03 gives SESS_DOSE_LOGGED only, and dose_count() is 2. This is the three second lock, and the second dose stays logged.
      22. With the schedule off and the clock unset, sess_took_it() at 5 seconds gives SESS_DOSE_LOGGED, and rec_dose() gives "D,5000000,".
    - tests/view/test_view.c holds these cases.
-     23. With no clock, the view gives the time "--:--", the date "--- -- ---", the last tremor line "Last tremor none", the first Medication entry "Last dose" with "None yet", and the second "Next dose" with "Levodopa, --:--".
+     23. With no clock, the view gives the time "--:--", the date "--- -- ---", the last tremor line empty, which hides it, as the user chose on 2026-10-24, the first Medication entry "Last dose" with "None yet", and the second "Next dose" with "Levodopa, --:--".
      24. At 15:58 the view gives the time "15:58" and the date "Fri 23 Oct", which is the design file's time. At 24:01, which is the timer value 86460000000, it gives "00:01" and "Sat 24 Oct".
      25. Two tremor answers with times at 14:32:05 and 14:32:10 give "Last tremor 14:32", which is the plan's Home example. The same answers with no clock give "Last tremor --:--".
      26. At 13:00 with no dose the entries are "Last dose" with "None yet" and "Next dose" with "Levodopa, 16:00", which is the plan's Medication example.

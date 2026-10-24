@@ -172,7 +172,13 @@ static void build_tremor(view_t *v, const sess_t *s)
     } else {
         local_or_dashes(v->last_tremor_short, sizeof v->last_tremor_short, &s->dose, last_us);
     }
-    snprintf(v->last_tremor, sizeof v->last_tremor, "Last tremor %s", v->last_tremor_short);
+    /* With no tremor yet the line is empty, so Home hides it. The user chose
+     * this on 2026-10-24. last_tremor_short keeps "none" for the record line. */
+    if (strcmp(v->last_tremor_short, "none") == 0) {
+        v->last_tremor[0] = '\0';
+    } else {
+        snprintf(v->last_tremor, sizeof v->last_tremor, "Last tremor %s", v->last_tremor_short);
+    }
 }
 
 static void build_share(view_t *v, const sess_t *s)

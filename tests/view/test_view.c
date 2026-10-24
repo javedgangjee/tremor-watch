@@ -127,7 +127,7 @@ static void test_23_no_clock(void)
     build(AT(9, 0, 0));
     TEST_ASSERT_EQUAL_STRING("--:--", view.time);
     TEST_ASSERT_EQUAL_STRING("--- -- ---", view.date);
-    TEST_ASSERT_EQUAL_STRING("Last tremor none", view.last_tremor);
+    TEST_ASSERT_EQUAL_STRING("", view.last_tremor);
     entries("Last dose", "None yet", "Next dose", "Levodopa, --:--");
     check_fits();
 }
