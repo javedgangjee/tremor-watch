@@ -14,7 +14,7 @@
 
 /* The circle's centre on Home and Logged. */
 #define CIRCLE_X 75
-#define CIRCLE_Y 146
+#define CIRCLE_Y 94
 #define CIRCLE_CX (CIRCLE_X + LOOK_CIRCLE / 2)
 #define CIRCLE_CY (CIRCLE_Y + LOOK_CIRCLE / 2)
 /* The word box is as wide as "Arm moving" at 40 pixels, the widest state
@@ -39,20 +39,16 @@ static const look_state_t LOGGED = {true, LOOK_TOOK_IT, LOOK_WHITE, LOOK_ICON_LO
 #define SHAPE(x_, y_, w_, h_, colour_) {(x_), (y_), (w_), (h_), LOOK_KIND_SHAPE, 0, 0, LOOK_ALIGN_LEFT, (colour_)}
 #define ICON(x_, y_, colour_) \
     {(x_), (y_), LOOK_ICON_PX, LOOK_ICON_PX, LOOK_KIND_ICON, 0, 0, LOOK_ALIGN_CENTER, (colour_)}
-#define BATTERY {316, 58, 88, 40, LOOK_KIND_BATTERY, 28, 28, LOOK_ALIGN_CENTER, LOOK_TEXT}
 #define STATUS_ROW(i) [LOOK_ITEM_STATUS_1 + (i)] = TEXT(34, 64 + 42 * (i), 342, 28, 28, LOOK_ALIGN_LEFT, LOOK_TEXT)
 
 /* The Home layout, which the Logged view shares. The circle and its icon
  * and word take their colours from look_state(). */
 #define HOME_ITEMS                                                                      \
-    [LOOK_ITEM_CARD] = SHAPE(14, 138, 382, 314, LOOK_CARD),                             \
-    [LOOK_ITEM_TIME] = TEXT(22, 26, 290, 96, 96, LOOK_ALIGN_LEFT, LOOK_TEXT),           \
-    [LOOK_ITEM_DATE] = TEXT(22, 100, 200, 28, 28, LOOK_ALIGN_LEFT, LOOK_TEXT2),         \
-    [LOOK_ITEM_BATTERY] = BATTERY,                                                      \
+    [LOOK_ITEM_CARD] = SHAPE(0, 0, LOOK_W, LOOK_H, LOOK_CARD),                          \
     [LOOK_ITEM_CIRCLE] = SHAPE(CIRCLE_X, CIRCLE_Y, LOOK_CIRCLE, LOOK_CIRCLE, 0),        \
     [LOOK_ITEM_CIRCLE_ICON] = ICON(CIRCLE_CX - LOOK_ICON_PX / 2, ICON_Y, 0),            \
     [LOOK_ITEM_CIRCLE_WORD] = TEXT(CIRCLE_CX - WORD_W / 2, WORD_Y, WORD_W, 40, 40, LOOK_ALIGN_CENTER, 0), \
-    [LOOK_ITEM_LINE] = TEXT(12, 412, 386, 28, 28, LOOK_ALIGN_CENTER, LOOK_TEXT2)
+    [LOOK_ITEM_LINE] = TEXT(12, CIRCLE_Y + LOOK_CIRCLE + 24, 386, 28, 28, LOOK_ALIGN_CENTER, LOOK_TEXT2)
 
 static const look_box_t BOXES[LOOK_SCREEN_COUNT][LOOK_ITEM_COUNT] = {
     [LOOK_HOME] = {HOME_ITEMS},

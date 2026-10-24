@@ -131,7 +131,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
     - `watch_cli.py record` resets the watch, so each recording starts a new session. It sends the clock command after the first B line, and the schedule and the tone survive the reset in the settings store.
     - replay and compare_session.py do not use the values of the F and D lines. replay counts an F or D line that breaks its pattern in core/recording_format.md as a bad line, so the D line that this feature sends must keep that pattern.
     - Check 10 of validate failed three times because the watch was handled during the run. A fourth run on 2026-10-24 with nobody touching the watch passed all 29 pass checks, and check 11 passed on its log.
-    - On 2026-10-24 the user had Home's top row of time, date, and battery removed, which goes against the build spec's description of Home, and had the last tremor line hidden until a tremor is recorded.
+    - On 2026-10-24 the user had Home's top row of time, date, and battery removed, which goes against the build spec's description of Home, had the last tremor line hidden until a tremor is recorded, and had the Home card fill the screen.
     - The status is in progress.
 
 12. Wrist tests, demo, and deliverables
