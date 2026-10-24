@@ -257,3 +257,13 @@ The app image leaves 0xac9a0 bytes, which is 46 percent of the smallest app part
 ### State of the watch
 
 The watch runs the firmware of this feature from the clean build of check 4. The last run, the second run of check 10, sends no command, and its SETTINGS line with source=boot gives store=ok, tone=1, times=none, and an empty name, so the schedule is off and the tone is on.
+
+### Check 10 run again, 2026-10-24
+
+A third run of check 10 also failed, because the watch was handled. Its first two minutes hold about 40 seconds of a steady 4.5 Hz shake, which gave Arm moving and then 7 Tremor answers while the forearm held still, and minute 14 shows the watch moving again. Those answers came from a real shake, so they are not false alarms on a still table.
+
+A fourth run, with nobody touching the watch, passed. record_run.py exited with code 0, and all 29 pass checks held, including "still on the table" for 30 minutes. The B line is `B,199521654,11,11,4be2ac2b...`, so it gives version 11 and the hash of core/detector_tables.h. The screen made 1821 updates against a need of 1620. There were no drops, no faults, and 0 tremor answers. The detector run time had a median of 6826 microseconds and a maximum of 9156. The free stack was 2240 to 2528 bytes for the pipeline task, 2204 for the state task, and 2636 to 2700 for the USB task.
+
+Check 11 on the fourth run's log also passed. compare_session.py exited with code 0, 1751 windows matched replay with a largest probability difference of 4.05e-10, and the toolbox agreed on 435 of 435 windows.
+
+Check 10 now passes. The logs of all four runs stay in the session scratchpad, and the committed tests/firmware/record_log.txt.gz did not change. Check 8 still waits for the files of manual check 13.
