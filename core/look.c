@@ -17,12 +17,16 @@
 #define CIRCLE_Y ((LOOK_H - LOOK_CIRCLE) / 2)
 #define CIRCLE_CX (CIRCLE_X + LOOK_CIRCLE / 2)
 #define CIRCLE_CY (CIRCLE_Y + LOOK_CIRCLE / 2)
-/* The word box is as wide as "Arm moving" at 40 pixels, the widest state
- * word. The icon sits on top of the word, and both keep every corner at least
- * 10 pixels inside the circle's edge. */
-#define WORD_W 232
-#define ICON_Y (CIRCLE_CY - 97)
-#define WORD_Y (CIRCLE_CY - 9)
+/* The icon fills the top two thirds of the circle and the word sits in the
+ * bottom third, which the user chose on 2026-10-24. The icon's box ends at
+ * 172 pixels below the circle's top, and the word's box starts at 176. The
+ * word is 28 pixels because "Arm moving" at 40 pixels would cross the circle's
+ * edge in the bottom third. The word box is as wide as "Arm moving" at 28
+ * pixels, the widest state word. Both boxes keep every corner at least 10
+ * pixels inside the circle's edge. */
+#define WORD_W 164
+#define ICON_Y (CIRCLE_Y + 172 - LOOK_CIRCLE_ICON_PX)
+#define WORD_Y (CIRCLE_Y + 176)
 
 static const look_state_t STATES[] = {
     [FACE_TREMOR] = {true, LOOK_TREMOR, LOOK_WHITE, LOOK_ICON_TREMOR, "Tremor"},
@@ -37,8 +41,7 @@ static const look_state_t LOGGED = {true, LOOK_TOOK_IT, LOOK_WHITE, LOOK_ICON_LO
 #define TEXT(x_, y_, w_, size_, smallest_, align_, colour_) \
     {(x_), (y_), (w_), FACE_LINE_##size_, LOOK_KIND_TEXT, (size_), (smallest_), (align_), (colour_)}
 #define SHAPE(x_, y_, w_, h_, colour_) {(x_), (y_), (w_), (h_), LOOK_KIND_SHAPE, 0, 0, LOOK_ALIGN_LEFT, (colour_)}
-#define ICON(x_, y_, colour_) \
-    {(x_), (y_), LOOK_ICON_PX, LOOK_ICON_PX, LOOK_KIND_ICON, 0, 0, LOOK_ALIGN_CENTER, (colour_)}
+#define ICON(x_, y_, px_, colour_) {(x_), (y_), (px_), (px_), LOOK_KIND_ICON, 0, 0, LOOK_ALIGN_CENTER, (colour_)}
 #define STATUS_ROW(i) [LOOK_ITEM_STATUS_1 + (i)] = TEXT(34, 64 + 42 * (i), 342, 28, 28, LOOK_ALIGN_LEFT, LOOK_TEXT)
 
 /* The Home layout, which the Logged view shares. The circle and its icon
@@ -46,8 +49,8 @@ static const look_state_t LOGGED = {true, LOOK_TOOK_IT, LOOK_WHITE, LOOK_ICON_LO
 #define HOME_ITEMS                                                                      \
     [LOOK_ITEM_CARD] = SHAPE(0, 0, LOOK_W, LOOK_H, LOOK_CARD),                          \
     [LOOK_ITEM_CIRCLE] = SHAPE(CIRCLE_X, CIRCLE_Y, LOOK_CIRCLE, LOOK_CIRCLE, 0),        \
-    [LOOK_ITEM_CIRCLE_ICON] = ICON(CIRCLE_CX - LOOK_ICON_PX / 2, ICON_Y, 0),            \
-    [LOOK_ITEM_CIRCLE_WORD] = TEXT(CIRCLE_CX - WORD_W / 2, WORD_Y, WORD_W, 40, 40, LOOK_ALIGN_CENTER, 0), \
+    [LOOK_ITEM_CIRCLE_ICON] = ICON(CIRCLE_CX - LOOK_CIRCLE_ICON_PX / 2, ICON_Y, LOOK_CIRCLE_ICON_PX, 0), \
+    [LOOK_ITEM_CIRCLE_WORD] = TEXT(CIRCLE_CX - WORD_W / 2, WORD_Y, WORD_W, 28, 28, LOOK_ALIGN_CENTER, 0), \
     [LOOK_ITEM_LINE] = TEXT(12, CIRCLE_Y + LOOK_CIRCLE + 24, 386, 28, 28, LOOK_ALIGN_CENTER, LOOK_TEXT2)
 
 static const look_box_t BOXES[LOOK_SCREEN_COUNT][LOOK_ITEM_COUNT] = {
@@ -60,7 +63,7 @@ static const look_box_t BOXES[LOOK_SCREEN_COUNT][LOOK_ITEM_COUNT] = {
         [LOOK_ITEM_DOSE_LABEL_2] = TEXT(34, 125, 342, 28, 28, LOOK_ALIGN_LEFT, LOOK_TEXT2),
         [LOOK_ITEM_DOSE_VALUE_2] = TEXT(34, 157, 342, 40, 28, LOOK_ALIGN_LEFT, LOOK_TEXT),
         [LOOK_ITEM_BUTTON] = SHAPE(0, LOOK_TOOK_IT_Y, LOOK_W, LOOK_H - LOOK_TOOK_IT_Y, LOOK_TOOK_IT),
-        [LOOK_ITEM_BUTTON_ICON] = ICON(LOOK_W / 2 - LOOK_ICON_PX / 2, 294, LOOK_WHITE),
+        [LOOK_ITEM_BUTTON_ICON] = ICON(LOOK_W / 2 - LOOK_ICON_PX / 2, 294, LOOK_ICON_PX, LOOK_WHITE),
         [LOOK_ITEM_BUTTON_WORD] = TEXT(105, 396, 200, 56, 56, LOOK_ALIGN_CENTER, LOOK_WHITE),
     },
     [LOOK_SESSION] = {

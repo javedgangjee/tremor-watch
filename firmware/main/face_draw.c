@@ -192,7 +192,7 @@ static lv_obj_t *label_box(lv_obj_t *parent, look_screen_t screen, look_item_t i
     return label_at(parent, b->x, b->y, b->w, b->h, b->size, b->align, b->colour);
 }
 
-static lv_obj_t *icon_at(lv_obj_t *parent, int x, int y, look_icon_t icon, uint32_t rgb)
+static lv_obj_t *icon_at(lv_obj_t *parent, int x, int y, int px, look_icon_t icon, uint32_t rgb)
 {
     lv_obj_t *obj = check(lv_image_create(parent));
     if (obj == NULL) {
@@ -202,7 +202,7 @@ static lv_obj_t *icon_at(lv_obj_t *parent, int x, int y, look_icon_t icon, uint3
     lv_obj_remove_flag(obj, LV_OBJ_FLAG_CLICKABLE);
     lv_image_set_src(obj, ICONS[icon]);
     lv_obj_set_pos(obj, x, y);
-    lv_obj_set_size(obj, LOOK_ICON_PX, LOOK_ICON_PX);
+    lv_obj_set_size(obj, px, px);
     lv_obj_set_style_image_recolor(obj, colour(rgb), 0);
     lv_obj_set_style_image_recolor_opa(obj, LV_OPA_COVER, 0);
     return obj;
@@ -366,7 +366,7 @@ static void start_logged(void)
     lv_anim_init(&a);
     lv_anim_set_var(&a, o->tick_clip);
     lv_anim_set_exec_cb(&a, anim_width_cb);
-    lv_anim_set_values(&a, 0, LOOK_ICON_PX);
+    lv_anim_set_values(&a, 0, LOOK_CIRCLE_ICON_PX);
     lv_anim_set_duration(&a, TICK_MS);
     lv_anim_set_path_cb(&a, lv_anim_path_ease_out);
     lv_anim_start(&a);
@@ -434,11 +434,11 @@ static void build_home(look_screen_t screen)
         lv_obj_set_style_border_opa(o->circle, LV_OPA_COVER, 0);
     }
     const look_state_t *l = screen == LOOK_LOGGED ? look_logged() : look_state(FACE_WAITING);
-    o->icon = icon_at(o->root, icon->x, icon->y, l->icon, l->ink);
+    o->icon = icon_at(o->root, icon->x, icon->y, icon->w, l->icon, l->ink);
     if (screen == LOOK_LOGGED) {
-        o->tick_clip = plain(o->root, icon->x, icon->y, LOOK_ICON_PX, LOOK_ICON_PX);
+        o->tick_clip = plain(o->root, icon->x, icon->y, icon->w, icon->h);
         if (o->tick_clip != NULL) {
-            icon_at(o->tick_clip, 0, 0, LOOK_ICON_LOGGED_TICK, l->ink);
+            icon_at(o->tick_clip, 0, 0, icon->w, LOOK_ICON_LOGGED_TICK, l->ink);
         }
     }
     o->word = label_box(o->root, screen, LOOK_ITEM_CIRCLE_WORD);
@@ -457,7 +457,7 @@ static void build_medication(void)
     o->button = filled(o->root, b->x, b->y, b->w, b->h, b->colour, 0);
     keep_home(o->button, &s_home_area[LOOK_MEDICATION][1], b->x, b->y, b->w, b->h);
     const look_box_t *icon = look_box(LOOK_MEDICATION, LOOK_ITEM_BUTTON_ICON);
-    icon_at(o->root, icon->x, icon->y, LOOK_ICON_CHECK, icon->colour);
+    icon_at(o->root, icon->x, icon->y, icon->w, LOOK_ICON_CHECK, icon->colour);
     lv_obj_t *word = label_box(o->root, LOOK_MEDICATION, LOOK_ITEM_BUTTON_WORD);
     set_text(word, LOOK_MEDICATION, LOOK_ITEM_BUTTON_WORD, "Took it", NULL);
 }

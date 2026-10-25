@@ -64,10 +64,14 @@ FONT_RANGES: dict[int, str] = {
 FIRST_CHAR = 0x20
 LAST_CHAR = 0x7E
 
-ICON_PX = 88
+# The circle's icons are 136 pixels square, so they fill the top two thirds of
+# the circle, which the user chose on 2026-10-24. The "Took it" button's check
+# stays 88 pixels square.
+ICON_PX = 136
+BUTTON_ICON_PX = 88
+BUTTON_ICONS = ("face_icon_check",)
 LUCIDE_GRID = 24.0
 LUCIDE_STROKE = 1.5
-ICON_STROKE = ICON_PX * LUCIDE_STROKE / LUCIDE_GRID
 # Curves and arcs turn into pieces of at most this length on Lucide's grid.
 PIECE_LEN = 0.1
 # The distances are found for this many pieces at a time, which bounds the memory.
@@ -517,7 +521,7 @@ def icons_texts() -> tuple[str, str]:
     """Return the texts of face_icons.c and face_icons.h."""
     body = [
         generated_comment(f"face_icons.c holds the face's Lucide 0.469.0 icons as {ICON_PX} by {ICON_PX} "
-                          "images with the A8 colour format."),
+                          f"images, and the check as {BUTTON_ICON_PX} by {BUTTON_ICON_PX}, with the A8 colour format."),
         '#include "face_icons.h"',
         "",
     ]
@@ -530,7 +534,8 @@ def icons_texts() -> tuple[str, str]:
         "",
     ]
     for name, elements in LUCIDE_ICONS.items():
-        body.append(write_image_c(name, draw_icon(elements, ICON_PX, ICON_STROKE)))
+        px = BUTTON_ICON_PX if name in BUTTON_ICONS else ICON_PX
+        body.append(write_image_c(name, draw_icon(elements, px, px * LUCIDE_STROKE / LUCIDE_GRID)))
         header.append(f"extern const lv_image_dsc_t {name};")
     header += ["", "#endif /* FACE_ICONS_H */"]
     return "\n".join(body), "\n".join(header) + "\n"

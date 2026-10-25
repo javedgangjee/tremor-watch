@@ -268,16 +268,18 @@ static void test_6_circle(void)
         TEST_ASSERT_NOT_NULL(c);
         TEST_ASSERT_EQUAL_INT(260, c->w);
         TEST_ASSERT_EQUAL_INT(260, c->h);
-        TEST_ASSERT_EQUAL_INT(88, icon->w);
-        TEST_ASSERT_EQUAL_INT(88, icon->h);
-        TEST_ASSERT_EQUAL_INT(40, word->size);
+        TEST_ASSERT_EQUAL_INT(136, icon->w);
+        TEST_ASSERT_EQUAL_INT(136, icon->h);
+        TEST_ASSERT_EQUAL_INT(28, word->size);
+        TEST_ASSERT_TRUE(icon->y + icon->h <= c->y + c->h * 2 / 3);
+        TEST_ASSERT_TRUE(word->y >= c->y + c->h * 2 / 3);
         check_in_circle(c, icon->x, icon->y, icon->w, icon->h);
         check_in_circle(c, word->x, word->y, word->w, word->h);
         for (int s = 0; s < 5; s++) {
-            int w = look_text_width(look_state((face_state_t)s)->word, 40);
+            int w = look_text_width(look_state((face_state_t)s)->word, 28);
             TEST_ASSERT_TRUE(w > 0 && w <= word->w);
         }
-        TEST_ASSERT_TRUE(look_text_width(look_logged()->word, 40) <= word->w);
+        TEST_ASSERT_TRUE(look_text_width(look_logged()->word, 28) <= word->w);
     }
 }
 

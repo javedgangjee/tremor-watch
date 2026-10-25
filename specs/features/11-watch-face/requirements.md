@@ -80,3 +80,4 @@
 - The card that holds the circle on Home and the Logged view fills the whole screen, and the circle and its line are centred in it.
 - The circle's centre sits at the middle of the screen, both across and up and down.
 - The fonts are stored uncompressed. With compression, LVGL 9.5.0 unpacks each letter through one shared state, and the face's two drawing threads overwrote each other's state, which drew stripes like a barcode through the letters. The user reported the stripes on 2026-10-24.
+- The icon in the circle fills the top two thirds of the circle, and the word sits in the bottom third. The icon is 136 pixels square and the word is 28 pixels. The word had to shrink from 40 pixels, because "Arm moving" at 40 pixels is 232 pixels wide and would cross the circle's edge in the bottom third.

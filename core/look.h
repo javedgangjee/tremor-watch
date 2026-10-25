@@ -33,8 +33,11 @@
 #define LOOK_TOOK_IT_Y 251
 /* The cards have corners of this radius. */
 #define LOOK_CARD_RADIUS 40
-/* The icons are this many pixels square. */
+/* The "Took it" check is this many pixels square. */
 #define LOOK_ICON_PX 88
+/* The circle's icons are this many pixels square, so they fill the top two
+ * thirds of the circle. The user chose this on 2026-10-24. */
+#define LOOK_CIRCLE_ICON_PX 136
 
 /* The colours as 0xRRGGBB values. LOOK_DOSE is the design file's purple
  * #3F2559, which the user chose on 2026-10-23. */
