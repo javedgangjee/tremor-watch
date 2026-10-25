@@ -140,8 +140,8 @@ static void check_state(face_state_t s, bool filled, uint32_t circle, uint32_t i
 static void test_3_states(void)
 {
     check_state(FACE_TREMOR, true, 0x1B2E42, 0xFFFFFF, LOOK_ICON_TREMOR, "Tremor");
-    check_state(FACE_NO_TREMOR, true, 0x2A7242, 0xFFFFFF, LOOK_ICON_NO_TREMOR, "No tremor");
-    check_state(FACE_ARM_MOVING, false, 0x26292B, 0x111315, LOOK_ICON_ARM_MOVING, "Arm moving");
+    check_state(FACE_NO_TREMOR, false, 0x26292B, 0x111315, LOOK_ICON_NO_TREMOR, "Rest");
+    check_state(FACE_ARM_MOVING, true, 0x2A7242, 0xFFFFFF, LOOK_ICON_ARM_MOVING, "Arm moving");
     check_state(FACE_WAITING, false, 0x5C6265, 0x111315, LOOK_ICON_WAITING, "Waiting");
     check_state(FACE_DOSE_DUE, true, 0x3F2559, 0xFFFFFF, LOOK_ICON_DOSE_DUE, "Dose due");
     check_state((face_state_t)9, false, 0x5C6265, 0x111315, LOOK_ICON_WAITING, "Waiting");

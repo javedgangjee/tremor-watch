@@ -69,7 +69,7 @@ def table_hash() -> str:
 
 def view(at: int, screen: str, face: int = 1, due: int = 0) -> str:
     """Give a SCREEN_VIEW line."""
-    look = {1: "fill colour=2a7242", 4: "fill colour=3f2559"}[face]
+    look = {1: "outline colour=26292b", 4: "fill colour=3f2559"}[face]
     return (f"SCREEN_VIEW at_us={at} screen={screen} face={face} circle={look} time=10:00 due={due} "
             f"next=10:02 last_tremor=none share=0 blocks=1 hollow=1")
 

@@ -30,8 +30,8 @@
 
 static const look_state_t STATES[] = {
     [FACE_TREMOR] = {true, LOOK_TREMOR, LOOK_WHITE, LOOK_ICON_TREMOR, "Tremor"},
-    [FACE_NO_TREMOR] = {true, LOOK_NO_TREMOR, LOOK_WHITE, LOOK_ICON_NO_TREMOR, "No tremor"},
-    [FACE_ARM_MOVING] = {false, LOOK_ARM, LOOK_TEXT, LOOK_ICON_ARM_MOVING, "Arm moving"},
+    [FACE_NO_TREMOR] = {false, LOOK_REST, LOOK_TEXT, LOOK_ICON_NO_TREMOR, "Rest"},
+    [FACE_ARM_MOVING] = {true, LOOK_ARM, LOOK_WHITE, LOOK_ICON_ARM_MOVING, "Arm moving"},
     [FACE_WAITING] = {false, LOOK_WAITING, LOOK_TEXT, LOOK_ICON_WAITING, "Waiting"},
     [FACE_DOSE_DUE] = {true, LOOK_DOSE, LOOK_WHITE, LOOK_ICON_DOSE_DUE, "Dose due"},
 };

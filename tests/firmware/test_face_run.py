@@ -83,7 +83,7 @@ class Fields:
     hollow: str = "none"
 
 
-LOOKS = {0: ("fill", "1b2e42"), 1: ("fill", "2a7242"), 2: ("outline", "26292b"), 3: ("outline", "5c6265"),
+LOOKS = {0: ("fill", "1b2e42"), 1: ("outline", "26292b"), 2: ("fill", "2a7242"), 3: ("outline", "5c6265"),
          4: ("fill", "3f2559")}
 
 

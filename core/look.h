@@ -46,9 +46,12 @@
 #define LOOK_TEXT 0x111315
 #define LOOK_TEXT2 0x5C6265
 #define LOOK_TREMOR 0x1B2E42
-#define LOOK_NO_TREMOR 0x2A7242
+/* The user swapped the No tremor and Arm moving looks on 2026-10-25, and
+ * renamed No tremor to Rest. Rest is now the charcoal outline, and Arm moving
+ * is the filled green circle. */
+#define LOOK_ARM 0x2A7242
 #define LOOK_DOSE 0x3F2559
-#define LOOK_ARM 0x26292B
+#define LOOK_REST 0x26292B
 #define LOOK_WAITING 0x5C6265
 #define LOOK_TOOK_IT 0x173A28
 #define LOOK_WHITE 0xFFFFFF
