@@ -8,7 +8,7 @@ the SHA-256 hash bac4990e2845c796ad0cfc47c3121b09df9285858ba841f7eab8bcdea87b74f
 and the tool stops when the font file has another hash.
 
 lv_font_conv 1.5.3 converts the font through npx at 28, 40, 56, and 96 pixels,
-with 4 bits a pixel, compression, and no kerning. The tool reads each output's
+with 4 bits a pixel, no compression, and no kerning. The tool reads each output's
 line height, base line, and advance widths, and it writes core/face_metrics.h,
 so the laptop can measure a text as LVGL 9.5.0 does.
 
@@ -476,7 +476,7 @@ def run_font_conv(work: Path, size: int) -> str:
     """Run lv_font_conv for one size in the scratch folder and return its output text."""
     out_name = f"face_font_{size}.c"
     command = FONT_CONV + [
-        "--size", str(size), "--bpp", "4", "--format", "lvgl", "--no-kerning", "--lv-include", "lvgl.h",
+        "--size", str(size), "--bpp", "4", "--no-compress", "--format", "lvgl", "--no-kerning", "--lv-include", "lvgl.h",
         "--font", FONT_IN_RUN, "-r", FONT_RANGES[size], "-o", f"{OUT_IN_RUN}/{out_name}",
     ]
     logger.info("running %s", " ".join(command))
