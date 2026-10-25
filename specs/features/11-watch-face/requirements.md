@@ -78,3 +78,4 @@
 - Home and the Logged view no longer show the top row of time, date, and battery. This goes against the build spec's description of Home, and the user chose it. It changes requirement 48 and the parts of requirement 49 about how the time and date look on the face.
 - Home hides the last tremor line while no tremor has been recorded. The text "Last tremor none" no longer shows.
 - The card that holds the circle on Home and the Logged view fills the whole screen, and the circle and its line are centred in it.
+- The circle's centre sits at the middle of the screen, both across and up and down.

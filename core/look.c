@@ -12,9 +12,9 @@
 
 #define DOTS "..."
 
-/* The circle's centre on Home and Logged. */
+/* The circle sits at the centre of the screen on Home and Logged. */
 #define CIRCLE_X 75
-#define CIRCLE_Y 94
+#define CIRCLE_Y ((LOOK_H - LOOK_CIRCLE) / 2)
 #define CIRCLE_CX (CIRCLE_X + LOOK_CIRCLE / 2)
 #define CIRCLE_CY (CIRCLE_Y + LOOK_CIRCLE / 2)
 /* The word box is as wide as "Arm moving" at 40 pixels, the widest state
