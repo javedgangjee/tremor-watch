@@ -43,6 +43,10 @@ NAME_PATTERN = re.compile(r"[A-Za-z0-9./+-]{1,20}")
 TIME_PATTERN = re.compile(r"([01][0-9]|2[0-3]):([0-5][0-9])")
 ANSWER_PATTERN = re.compile(r"A,([0-9]+),([0-9]+)")
 MAX_TIMES = 6
+# record sends the clock command up to this many times in a row while the
+# watch answers busy or gives no answer.
+CLOCK_TRIES = 3
+RESULT_BUSY = 5
 RESULTS = {
     0: "The watch applied the command.",
     1: "The watch does not know the command.",
@@ -216,10 +220,13 @@ def record(port: str, out: Path, minutes: float | None) -> int:
     """Reset the watch and save every line it writes to a gzip text file.
 
     Each line is saved as the laptop's seconds since the port opened, a tab,
-    and the text. Right after the first B line the clock command follows as a
-    line that starts with "> ". It stops after the given minutes, or at
-    KeyboardInterrupt when no minutes are given. It gives 1 when the file
-    exists or the clock command did not get result 0, and 0 otherwise.
+    and the text. Right after the first B line of each boot the clock command
+    follows as a line that starts with "> ", so a watch that restarts during
+    the recording gets its clock again. A busy answer or no answer sends the
+    command again, up to CLOCK_TRIES times. It stops after the given minutes,
+    or at KeyboardInterrupt when no minutes are given. It gives 1 when the file
+    exists or the last boot's clock command did not get result 0, and 0
+    otherwise.
     """
     if out.exists():
         LOG.error("%s exists already. The tool does not write over a saved recording.", out)
@@ -232,6 +239,8 @@ def record(port: str, out: Path, minutes: float | None) -> int:
     end = None if minutes is None else started + minutes * 60
     clock_sent = False
     clock_result: int | None = None
+    # The boot ID whose clock the watch set.
+    clock_boot: str | None = None
     lines = 0
     with gzip.open(out, "xt") as saved:
 
@@ -253,19 +262,29 @@ def record(port: str, out: Path, minutes: float | None) -> int:
                     continue
                 text = text_of(raw)
                 save(text)
-                if clock_sent or not text.startswith("B,"):
+                if not text.startswith("B,"):
                     continue
+                boot = text.split(",")[1]
+                # The watch repeats its B line after lines are lost, and a
+                # boot whose clock is set needs no second command.
+                if boot == clock_boot:
+                    continue
+                LOG.info("The watch %s with %s. Sending the clock.", "restarted" if clock_sent else "booted", text)
                 clock_sent = True
-                command = laptop_clock_command()
-                LOG.info("The watch booted with %s. Sending %s.", text, command)
-                save(f"> {command}")
                 try:
-                    clock_result = send_command(ser, command, first_line_s=0, on_line=save)
+                    for _ in range(CLOCK_TRIES):
+                        command = laptop_clock_command()
+                        save(f"> {command}")
+                        clock_result = send_command(ser, command, first_line_s=0, on_line=save)
+                        if clock_result not in (None, RESULT_BUSY):
+                            break
+                        LOG.warning("The clock command got %s", answer_text(clock_result))
                 except OSError:
                     ser.close()
                     ser = reopen(port)
                     continue
                 if clock_result == 0:
+                    clock_boot = boot
                     LOG.info("The watch set its clock.")
                 else:
                     LOG.error("The clock command got %s", answer_text(clock_result))

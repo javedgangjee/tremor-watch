@@ -309,6 +309,27 @@ def test_20_record_failures(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> 
     assert kept.read_bytes() == b"saved before"
 
 
+def test_20b_record_sets_the_clock_after_each_restart(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    first = boot_lines("A,1,0")
+    second = [line.replace("B,305419896,", "B,2271560481,") for line in boot_lines("A,1,5")]
+    second.insert(second.index("A,1,5") + 1, "A,1,0")
+    # A repeated B line of a boot whose clock is set gets no command.
+    again = next(line for line in second if line.startswith("B,"))
+    port = FakePort([*first, *second, again], interrupt=True)
+    monkeypatch.setattr(watch_cli, "open_port", PortOpener([port]))
+    assert watch_cli.record("/dev/fake", tmp_path / "rec.txt.gz", None) == 0
+    assert len(port.writes) == 3
+    assert all(write.startswith(b"CLOCK,") for write in port.writes)
+
+    busy = [line.replace("B,305419896,", "B,2271560481,") for line in boot_lines("A,1,5")]
+    index = busy.index("A,1,5")
+    busy[index + 1:index + 1] = ["A,1,5", "A,1,5"]
+    port = FakePort([*first, *busy], interrupt=True)
+    monkeypatch.setattr(watch_cli, "open_port", PortOpener([port]))
+    assert watch_cli.record("/dev/fake", tmp_path / "busy.txt.gz", None) == 1
+    assert len(port.writes) == 1 + watch_cli.CLOCK_TRIES
+
+
 def test_21_python_rules() -> None:
     for path in TYPED_FILES:
         source = path.read_text(encoding="utf-8")
