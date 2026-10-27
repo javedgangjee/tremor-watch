@@ -1,6 +1,7 @@
-# The five tasks and the start code. The C files build with -Wall -Wextra
-# -Werror. power.cpp includes XPowersLib's headers, so it builds with
-# ESP-IDF's own flags.
+# The five tasks, the face, the tone output, and the start code. The C files
+# build with -Wall -Wextra -Werror. power.cpp includes XPowersLib's headers,
+# and the fonts and icons in assets/ come from tools/gen_face_assets.py, so
+# they build with ESP-IDF's own flags.
 set(TASK_SOURCES
     main.c
     sensor_task.c
@@ -9,13 +10,22 @@ set(TASK_SOURCES
     screen_task.c
     usb_task.c
     settings.c
+    face_draw.c
+    tone_out.c
+)
+set(ASSET_SOURCES
+    assets/face_font_28.c
+    assets/face_font_40.c
+    assets/face_font_56.c
+    assets/face_font_96.c
+    assets/face_icons.c
 )
 
 idf_component_register(
-    SRCS ${TASK_SOURCES} power.cpp
-    INCLUDE_DIRS "."
+    SRCS ${TASK_SOURCES} power.cpp ${ASSET_SOURCES}
+    INCLUDE_DIRS "." "assets"
     PRIV_REQUIRES core esp_timer esp_driver_gpio esp_driver_i2c XPowersLib espressif__esp_lcd_touch nvs_flash
-        esp_driver_usb_serial_jtag)
+        esp_driver_usb_serial_jtag espressif__esp_codec_dev)
 
 set_source_files_properties(${TASK_SOURCES} PROPERTIES
     COMPILE_OPTIONS "-Wall;-Wextra;-Werror")

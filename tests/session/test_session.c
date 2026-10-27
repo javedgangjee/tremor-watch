@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include "record.h"
 #include "session.h"
 #include "unity.h"
 
@@ -218,6 +219,66 @@ static void test_7_new_session(void)
     TEST_ASSERT_EQUAL_INT64(LOCAL(1, 8, 0), next);
 }
 
+/* Cases 20 to 22 of feature 11 use the clock of tests/view/test_view.c. The
+ * offset O is 2026-10-23 00:00:00 in microseconds since 1970, so timer value
+ * 0 is local midnight at the start of 23 October 2026. */
+#define F11_O INT64_C(1792713600000000)
+#define F11_AT(h, m, s) (((INT64_C(h) * 60 + (m)) * 60 + (s)) * SECOND_US)
+
+/* due_at_four() starts a session at 0 with the clock set and "Levodopa" at
+ * 12:00, 16:00, and 20:00, and ticks until the 16:00 dose is due. */
+static void due_at_four(void)
+{
+    sess_init(&sess, 0);
+    dose_set_clock(&sess.dose, F11_O, 0);
+    dose_schedule_t s;
+    memset(&s, 0, sizeof s);
+    strcpy(s.name, "Levodopa");
+    s.count = 3;
+    s.minutes[0] = 12 * 60;
+    s.minutes[1] = 16 * 60;
+    s.minutes[2] = 20 * 60;
+    TEST_ASSERT_TRUE(dose_set_schedule(&sess.dose, &s, 0));
+    TEST_ASSERT_EQUAL_UINT(0u, sess_tick(&sess, F11_AT(15, 59, 59)));
+    TEST_ASSERT_EQUAL_UINT(SESS_TONE | SESS_FACE_CHANGED, sess_tick(&sess, F11_AT(16, 0, 0)));
+    TEST_ASSERT_EQUAL_INT(FACE_DOSE_DUE, face_shown(&sess.face));
+}
+
+static void test_20_took_it(void)
+{
+    due_at_four();
+    TEST_ASSERT_EQUAL_UINT(SESS_DOSE_LOGGED | SESS_FACE_CHANGED, sess_took_it(&sess, F11_AT(16, 3, 0)));
+    TEST_ASSERT_EQUAL_INT(face_detector(&sess.face), face_shown(&sess.face));
+    dose_entry_t last;
+    TEST_ASSERT_TRUE(dose_last(&sess.dose, &last));
+    TEST_ASSERT_EQUAL_INT64(INT64_C(57780000000), last.time_us);
+    TEST_ASSERT_EQUAL_INT64(F11_O + INT64_C(57600000000), last.answers_local_us);
+    char line[REC_LINE_MAX];
+    TEST_ASSERT_TRUE(rec_dose(line, sizeof line, &last) > 0);
+    TEST_ASSERT_EQUAL_STRING("D,57780000000,1792771200000000", line);
+}
+
+static void test_21_lock(void)
+{
+    due_at_four();
+    TEST_ASSERT_EQUAL_UINT(SESS_DOSE_LOGGED | SESS_FACE_CHANGED, sess_took_it(&sess, F11_AT(16, 3, 0)));
+    TEST_ASSERT_EQUAL_UINT(0u, sess_took_it(&sess, F11_AT(16, 3, 3) - 1));
+    TEST_ASSERT_EQUAL_UINT32(1u, dose_count(&sess.dose));
+    TEST_ASSERT_EQUAL_UINT(SESS_DOSE_LOGGED, sess_took_it(&sess, F11_AT(16, 3, 3)));
+    TEST_ASSERT_EQUAL_UINT32(2u, dose_count(&sess.dose));
+}
+
+static void test_22_no_schedule(void)
+{
+    sess_init(&sess, 0);
+    TEST_ASSERT_EQUAL_UINT(SESS_DOSE_LOGGED, sess_took_it(&sess, 5 * SECOND_US));
+    dose_entry_t last;
+    TEST_ASSERT_TRUE(dose_last(&sess.dose, &last));
+    char line[REC_LINE_MAX];
+    TEST_ASSERT_TRUE(rec_dose(line, sizeof line, &last) > 0);
+    TEST_ASSERT_EQUAL_STRING("D,5000000,", line);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -228,5 +289,8 @@ int main(void)
     RUN_TEST(test_5_fault);
     RUN_TEST(test_6_dose_due);
     RUN_TEST(test_7_new_session);
+    RUN_TEST(test_20_took_it);
+    RUN_TEST(test_21_lock);
+    RUN_TEST(test_22_no_schedule);
     return UNITY_END();
 }

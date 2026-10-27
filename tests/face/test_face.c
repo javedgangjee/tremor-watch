@@ -69,8 +69,8 @@ static void test_1_states_names_and_codes(void)
     TEST_ASSERT_EQUAL_INT(2, FACE_ARM_MOVING);
     TEST_ASSERT_EQUAL_INT(3, FACE_WAITING);
     TEST_ASSERT_EQUAL_INT(4, FACE_DOSE_DUE);
-    TEST_ASSERT_EQUAL_STRING("Tremor", face_name(FACE_TREMOR));
-    TEST_ASSERT_EQUAL_STRING("No tremor", face_name(FACE_NO_TREMOR));
+    TEST_ASSERT_EQUAL_STRING("Tremor Detected", face_name(FACE_TREMOR));
+    TEST_ASSERT_EQUAL_STRING("Rest", face_name(FACE_NO_TREMOR));
     TEST_ASSERT_EQUAL_STRING("Arm moving", face_name(FACE_ARM_MOVING));
     TEST_ASSERT_EQUAL_STRING("Waiting", face_name(FACE_WAITING));
     TEST_ASSERT_EQUAL_STRING("Dose due", face_name(FACE_DOSE_DUE));

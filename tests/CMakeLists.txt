@@ -66,3 +66,23 @@ add_executable(test_record record/test_record.c)
 target_compile_options(test_record PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
 target_link_libraries(test_record PRIVATE tremor_core unity)
 add_test(NAME test_record COMMAND test_record)
+
+add_executable(test_look look/test_look.c)
+target_compile_options(test_look PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
+target_link_libraries(test_look PRIVATE tremor_core unity)
+add_test(NAME test_look COMMAND test_look)
+
+add_executable(test_screens screens/test_screens.c)
+target_compile_options(test_screens PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
+target_link_libraries(test_screens PRIVATE tremor_core unity)
+add_test(NAME test_screens COMMAND test_screens)
+
+add_executable(test_view view/test_view.c)
+target_compile_options(test_view PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
+target_link_libraries(test_view PRIVATE tremor_core unity)
+add_test(NAME test_view COMMAND test_view)
+
+add_executable(test_tone tone/test_tone.c)
+target_compile_options(test_tone PRIVATE ${TREMOR_WARNINGS} ${TREMOR_FP})
+target_link_libraries(test_tone PRIVATE tremor_core unity)
+add_test(NAME test_tone COMMAND test_tone)

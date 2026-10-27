@@ -27,6 +27,8 @@
 #define SESS_COUNTED 2u
 /* sess_tick() sets this flag when a dose becomes due, so the tone plays. */
 #define SESS_TONE 4u
+/* sess_took_it() sets this flag when it logs a dose. */
+#define SESS_DOSE_LOGGED 8u
 
 typedef struct {
     share_t share;
@@ -60,5 +62,11 @@ unsigned sess_answer(sess_t *s, bool has_window, uint32_t window, res_code_t cod
 
 /* sess_tick() ticks the doses at now_us and returns the flags. */
 unsigned sess_tick(sess_t *s, int64_t now_us);
+
+/* sess_took_it() takes a "Took it" tap at now_us. It calls dose_took_it(),
+ * and when that accepts, it clears the face's dose due flag. It returns 0 when
+ * dose_took_it() refuses the tap. Otherwise it returns SESS_DOSE_LOGGED, with
+ * SESS_FACE_CHANGED when the shown state changes. */
+unsigned sess_took_it(sess_t *s, int64_t now_us);
 
 #endif /* SESSION_H */

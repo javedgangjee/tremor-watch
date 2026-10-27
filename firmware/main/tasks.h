@@ -9,9 +9,10 @@
  * new stretch and each answer to the state task. It asks the sensor task to
  * end a stretch through the end queue.
  * The state task owns the face state, the session share, the doses, and the
- * settings, and it sends the screen task what to draw. It applies the
- * laptop's commands.
- * The screen task owns LVGL, and no other task calls LVGL.
+ * settings, and it sends the screen task the view to draw. It applies the
+ * laptop's commands and the "Took it" taps.
+ * The screen task owns LVGL and the audio codec, and no other task calls
+ * LVGL. It sends each "Took it" tap to the state task.
  * The USB task owns the USB port, and no other task writes to it. It writes
  * the recording and reads the laptop's commands.
  */
@@ -27,10 +28,11 @@
 #include "freertos/queue.h"
 
 #include "record.h"
+#include "view.h"
 
 /* The firmware version that the B line carries. Each later feature that
  * changes the firmware sets its own number. */
-#define FIRMWARE_VERSION 9
+#define FIRMWARE_VERSION 11
 
 /* A sensor message holds at most this many readings. */
 #define SENSOR_MSG_READINGS 16
@@ -103,30 +105,28 @@ typedef struct {
     char text[LINE_CHARS + 1];
 } line_t;
 
-/* screen_msg_t tells the screen task what to draw. */
-typedef struct {
-    uint32_t uptime_s;
-    /* The shown face state, as a face_state_t from core/face.h. */
-    uint8_t face;
-} screen_msg_t;
-
 /* The kinds of state message. */
 typedef enum {
     STATE_MSG_STRETCH,
     STATE_MSG_ANSWER,
-    STATE_MSG_COMMAND
+    STATE_MSG_COMMAND,
+    STATE_MSG_TOOK_IT
 } state_msg_kind_t;
 
 /*
  * state_msg_t carries a new stretch or an answer from the pipeline task to
- * the state task, or a command from the USB task. A stretch message uses only
- * kind and stretch. A sensor fault answer has no window and no detector
- * numbers. A command message uses only kind, command, and at_us.
+ * the state task, a command from the USB task, or a "Took it" tap from the
+ * screen task. A stretch message uses only kind, stretch, and rate_uhz. A
+ * sensor fault answer has no window and no detector numbers. A command
+ * message uses only kind, command, and at_us. A "Took it" message uses only
+ * kind and at_us, which is the tap's timer value.
  */
 typedef struct {
     state_msg_kind_t kind;
-    /* The stretch number. */
+    /* The stretch number and the stretch's rate in millionths of a reading
+     * per second, which is 0 while the stretch has no rate. */
     uint32_t stretch;
+    uint32_t rate_uhz;
     /* has_window is true when the answer comes from a window. */
     bool has_window;
     uint32_t window;
@@ -151,7 +151,8 @@ typedef struct {
     rec_command_t command;
 } state_msg_t;
 
-/* The queues. main.c makes them before any task starts. The end queue holds
+/* The queues. main.c makes them before any task starts. The screen queue
+ * carries view_t items from core/view.h and lives in PSRAM. The end queue holds
  * one stretch number, which the pipeline task writes with xQueueOverwrite()
  * when a stretch must end. The record queue carries record_msg_t items from
  * the sensor task to the USB task. */
@@ -165,6 +166,15 @@ extern QueueHandle_t g_record_queue;
 /* The number of lines that the other tasks dropped since boot, because the
  * line queue was full. */
 extern atomic_uint g_line_drops;
+
+/* g_recording_on is true while the last line that the USB task wrote fitted
+ * in the port's send buffer. The USB task sets it. */
+extern atomic_bool g_recording_on;
+
+/* screen_took_it() sends a "Took it" tap at the timer value at_us to the
+ * state task with no wait, and counts a drop. firmware/main/face_draw.c calls
+ * it. */
+void screen_took_it(int64_t at_us);
 
 /*
  * usb_send() formats one line and places it on the line queue with no wait.

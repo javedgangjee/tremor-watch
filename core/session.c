@@ -74,3 +74,11 @@ unsigned sess_tick(sess_t *s, int64_t now_us)
     }
     return flags;
 }
+
+unsigned sess_took_it(sess_t *s, int64_t now_us)
+{
+    if (!dose_took_it(&s->dose, now_us)) {
+        return 0;
+    }
+    return SESS_DOSE_LOGGED | changed(s, face_set_dose_due(&s->face, false));
+}

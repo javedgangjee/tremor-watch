@@ -24,9 +24,10 @@
 #define LINE_QUEUE_LEN 48
 #define SCREEN_QUEUE_LEN 4
 #define STATE_QUEUE_LEN 8
-/* The record queue holds about 3 seconds of burst parts. It lives in PSRAM,
- * because the display's transfers need the internal memory that it would
- * take. */
+/* The record queue holds about 3 seconds of burst parts. It, the line queue,
+ * the sensor queue, and the screen queue live in PSRAM, because each display
+ * transfer needs a block of about 82 KB of internal memory, which they would
+ * break up. */
 #define RECORD_QUEUE_LEN 32
 
 /* The stack sizes in bytes. */
@@ -78,9 +79,9 @@ void app_main(void)
 
     /* The line queue comes first, so every line waits in it until the USB
      * task runs. */
-    g_line_queue = xQueueCreate(LINE_QUEUE_LEN, sizeof(line_t));
-    g_sensor_queue = xQueueCreate(SENSOR_QUEUE_LEN, sizeof(sensor_msg_t));
-    g_screen_queue = xQueueCreate(SCREEN_QUEUE_LEN, sizeof(screen_msg_t));
+    g_line_queue = xQueueCreateWithCaps(LINE_QUEUE_LEN, sizeof(line_t), MALLOC_CAP_SPIRAM);
+    g_sensor_queue = xQueueCreateWithCaps(SENSOR_QUEUE_LEN, sizeof(sensor_msg_t), MALLOC_CAP_SPIRAM);
+    g_screen_queue = xQueueCreateWithCaps(SCREEN_QUEUE_LEN, sizeof(view_t), MALLOC_CAP_SPIRAM);
     g_state_queue = xQueueCreate(STATE_QUEUE_LEN, sizeof(state_msg_t));
     g_end_queue = xQueueCreate(1, sizeof(uint32_t));
     g_record_queue = xQueueCreateWithCaps(RECORD_QUEUE_LEN, sizeof(record_msg_t), MALLOC_CAP_SPIRAM);

@@ -59,8 +59,9 @@ def table_hash() -> str:
 def watch_lines(port_drops: int) -> list[tuple[int, str]]:
     """Give every line the watch writes in 200 seconds, with its watch time."""
     restarts = 1 if port_drops > 0 else 0
+    version = load("record_run", HERE / "record_run.py").FIRMWARE_VERSION
     lines = [
-        (0, f"B,305419896,11,9,{table_hash()}"),
+        (0, f"B,305419896,11,{version},{table_hash()}"),
         (1, "START uptime_us=61369"),
         (2, "TASK name=usb core=0 priority=3"),
         (T0, f"STRETCH number=0 first=0 t0_us={T0} kind=start reason=start prev_span_us=0 prev_readings=0 "
@@ -97,7 +98,7 @@ def watch_lines(port_drops: int) -> list[tuple[int, str]]:
                         "stack_free=2668"),
         ]
     if port_drops > 0:
-        lines += [(BACK_US - 2, f"B,305419896,11,9,{table_hash()}"), (BACK_US - 1, f"S,0,0,{T0},{RATE_UHZ},1024")]
+        lines += [(BACK_US - 2, f"B,305419896,11,{version},{table_hash()}"), (BACK_US - 1, f"S,0,0,{T0},{RATE_UHZ},1024")]
     return sorted(lines, key=lambda e: e[0])
 
 

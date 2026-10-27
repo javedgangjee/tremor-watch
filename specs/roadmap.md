@@ -117,6 +117,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
 11. Watch face
     - The goal is to build the four screens, the state circle, and the dose flow for a wearer with tremor.
     - It covers steps 18 and 19 and the Watch face section. It starts from context/Tremor Watch Light.html and makes the changes that the Watch face section lists. It also picks the No tremor green and the Waiting outline colour, which the design file does not have.
+    - The user chose on 2026-10-23 to keep the design file's Dose due purple #3F2559 and rejected the plan's change to #6A3D9A. The user knew that #3F2559 is close to the Tremor navy for people who confuse red and green, so the colour check leaves out that one pair.
     - The three second lock after a dose also lives in dose_took_it() from core/dose.h, and the dose flow uses its refusal, as requirement 32 of feature 6 says. The Session screen draws the blocks that share_block() in core/share.h gives, and share_block_hollow() says which block is hollow.
     - This feature builds on feature 7's screen task in firmware/main/screen_task.c. That task starts the display with bsp_display_new() and lvgl_port_add_disp() and the touch with bsp_touch_new() and lvgl_port_add_touch(). It does not call bsp_display_start(), because that function in board support package 2.0.0 adds the SH8601 panel as an RGB panel and corrupts the heap. This feature must not call bsp_display_start() either.
     - Feature 7's manual checks of the screen and the touch wait for the user, so nothing yet shows that a tap reaches the screen task.
@@ -129,7 +130,9 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
     - Feature 10's tools/watch_cli.py sets up the dose flow checks. `clock` sets the dose clock after a restart, `schedule NAME HH:MM ...` sets the medicine name and times, and `tone on` and `tone off` change the tone setting. The tool refuses a name or a time that the watch would refuse before it opens the port, and a command exits with code 0 only when its A line gives result 0.
     - `watch_cli.py record` resets the watch, so each recording starts a new session. It sends the clock command after the first B line, and the schedule and the tone survive the reset in the settings store.
     - replay and compare_session.py do not use the values of the F and D lines. replay counts an F or D line that breaks its pattern in core/recording_format.md as a bad line, so the D line that this feature sends must keep that pattern.
-    - The status is planned.
+    - Check 10 of validate failed three times because the watch was handled during the run. A fourth run on 2026-10-24 with nobody touching the watch passed all 29 pass checks, and check 11 passed on its log.
+    - On 2026-10-24 the user had Home's top row of time, date, and battery removed, which goes against the build spec's description of Home, had the last tremor line hidden until a tremor is recorded, had the Home card fill the screen, and had the circle centred on the screen. On 2026-10-25 the user swapped the No tremor and Arm moving looks and renamed No tremor to Rest, which goes against the build spec's rule that Arm moving is an outline. On 2026-10-26 the user had the Tremor circle word read "Tremor Detected" on two lines, which shrank the circle icon to 128 pixels, and had the design file say Tremor in place of Dyskinesia.
+    - The status is in progress.
 
 12. Wrist tests, demo, and deliverables
     - The goal is to measure false alarms, response time, and readability with the builder wearing the watch, then record the demo and produce the deliverables.

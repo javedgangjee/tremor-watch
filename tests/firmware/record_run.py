@@ -43,11 +43,11 @@ LOG = logging.getLogger("record_run")
 REPO = HERE.parents[1]
 FORMAT_DOC = REPO / "core" / "recording_format.md"
 TABLES_HEADER = REPO / "core" / "detector_tables.h"
+TASKS_HEADER = REPO / "firmware" / "main" / "tasks.h"
 DEFAULT_PORT = "/dev/cu.usbmodem101"
 DEFAULT_LOG = REPO / "tests" / "firmware" / "record_log.txt.gz"
 DEFAULT_REPORT = REPO / "tests" / "firmware" / "record_report.md"
 
-FIRMWARE_VERSION = 9
 RANGE_DPS = 1024
 COUNT_MIN = -32768
 COUNT_MAX = 32767
@@ -71,6 +71,17 @@ def record_patterns(doc: Path = FORMAT_DOC) -> dict[str, re.Pattern[str]]:
 
 
 PATTERNS = record_patterns()
+
+
+def firmware_version(header: Path = TASKS_HEADER) -> int:
+    """Read FIRMWARE_VERSION from firmware/main/tasks.h."""
+    match = re.search(r"^#define FIRMWARE_VERSION (\d+)", header.read_text(), re.MULTILINE)
+    if match is None:
+        raise ValueError(f"{header} gives no FIRMWARE_VERSION")
+    return int(match.group(1))
+
+
+FIRMWARE_VERSION = firmware_version()
 
 
 @dataclass

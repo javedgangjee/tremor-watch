@@ -27,8 +27,8 @@ A record line starts with one upper-case letter and a comma. Its fields are sepa
 - The R line holds the raw counts of one reading. A gyroscope count divided by 32 gives degrees per second. An accelerometer count divided by 4096 gives g.
 - The W line records one answer. The result codes are 0 for tremor, 1 for no tremor, 2 for arm moving, 3 for warming up, and 4 for sensor fault, as in core/window.h. The probability and the low-frequency sum are the shortest decimal text that reads back as the same 64-bit double. The peak is a 32-bit float with up to 9 significant digits. A number may use an exponent, as in 7.817677252158094e-05.
 - A sensor fault answer has no window. Its W line leaves the window and the three numbers empty, as in `W,3,,4,,,`, and its stretch is the pipeline task's current stretch.
-- The F line records a change of the shown face state. The states are 0 for Tremor, 1 for No tremor, 2 for Arm moving, 3 for Waiting, and 4 for Dose due, as in core/face.h. The time is the moment the state task changed the state.
-- The D line records a dose taken. The second value is local time in microseconds since 1970, and it is empty when the dose answers no scheduled time.
+- The F line records a change of the shown face state. The states are 0 for Tremor, 1 for Rest, which is the No tremor state, 2 for Arm moving, 3 for Waiting, and 4 for Dose due, as in core/face.h. The time is the moment the state task changed the state.
+- The D line records a dose taken. The second value is local time in microseconds since 1970, and it is empty when the dose answers no scheduled time. Since firmware version 11 the watch writes it when the state task accepts a "Took it" tap. The time is the tap's timer value, and the second value is the scheduled time that dose_took_it() in core/dose.h answers. A tap that the three second lock refuses writes no D line.
 - The A line answers one command, as the Commands section says.
 
 ## Stretches and the S line
@@ -94,7 +94,7 @@ The reset cause of the B line is the number of esp_reset_reason_t in ESP-IDF v6.
 
 ## Diagnostic lines
 
-The watch also writes diagnostic lines, such as START, TASK, STRETCH, ANSWER, FACE, SETTINGS, and the minute lines. They exist for the checks in tests/firmware/, and a reader of the recording skips them. A diagnostic line starts with an upper-case word of at least three characters, which holds upper-case letters, digits, and underscores and no comma. Its other fields have the form `key=value` with a space between them. The pattern `^[A-Z][A-Z0-9_]{2,}( |$)` tells a diagnostic line apart from a record line, because a record line has a comma after its first letter.
+The watch also writes diagnostic lines, such as START, TASK, STRETCH, ANSWER, FACE, SETTINGS, and the minute lines. Since firmware version 11 they also include SCREEN_START, which says whether the display, the touch, and the audio codec started, SCREEN_VIEW, which gives what the face shows each time it changes, TONE_PLAY, which marks the start of a tone, BUTTON, which marks a press of the BOOT button, DOSE, which marks an accepted "Took it" tap, and DOSE_REFUSED, which marks a tap that the three second lock refused. TOUCH marks every tap. They exist for the checks in tests/firmware/, and a reader of the recording skips them. A diagnostic line starts with an upper-case word of at least three characters, which holds upper-case letters, digits, and underscores and no comma. Its other fields have the form `key=value` with a space between them. The pattern `^[A-Z][A-Z0-9_]{2,}( |$)` tells a diagnostic line apart from a record line, because a record line has a comma after its first letter.
 
 ## Saved recordings
 

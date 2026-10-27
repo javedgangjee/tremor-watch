@@ -55,10 +55,11 @@ def table_hash() -> str:
 
 def boot_start(boot_id: int, settings: str) -> list[tuple[int, str]]:
     """Give the first lines of a boot from the ROM text on, with a few T and R lines."""
+    version = load("record_run", HERE / "record_run.py").FIRMWARE_VERSION
     lines = [
         (0, "ESP-ROM:esp32s3-20210327"),
         (0, "rst:0x15 (USB_UART_CHIP_RESET),boot:0x2b (SPI_FAST_FLASH_BOOT)"),
-        (600_000, f"B,{boot_id},11,9,{table_hash()}"),
+        (600_000, f"B,{boot_id},11,{version},{table_hash()}"),
         (600_001, "START uptime_us=61335"),
         (600_002, "TASK name=usb core=0 priority=3"),
         (600_003, "TASK name=state core=0 priority=6"),
