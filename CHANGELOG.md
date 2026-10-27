@@ -86,6 +86,9 @@ This file records each change to Tremor log that a person who reads or runs the 
 - Feature 11 adds tools/gen_face_assets.py, which converts Red Hat Display bold at 28, 40, 56, and 96 pixels and the Lucide icons for LVGL, and a test that the committed font and icon files equal what the tool makes.
 - Feature 11 adds tests/firmware/face_run.py and tests/firmware/tap_run.py, which check the face states and the dose flow on the watch from its log.
 - The README now shows the face screens, drawn on the laptop with face_draw.c and LVGL and placed in a drawing of the watch case.
+- LICENSE puts the project's own code under MIT, and THIRD_PARTY.md lists every part from another project with its licence. reference/results/LICENSE.md says the PADS results are under CC BY-NC-SA 4.0.
+- `make python` runs the Python tests, and `make full` runs `make check` and then `make python`.
+- .github/workflows/check.yml runs the laptop build and tests, the model hash check, the Python tests, and the firmware build on every push.
 
 ### Changed
 
@@ -149,3 +152,16 @@ This file records each change to Tremor log that a person who reads or runs the 
 - The roadmap entries for features 11 and 12 now say how watch_cli.py sets up the dose flow and records a session, how compare_session.py makes the session report, and what the two tools do not check.
 - The user had three checks reworded that failed as written while the code met the requirement. Feature 9's check 4 item 9 now leaves out ESP-IDF's "# default:" marker lines, and its check 10 item 6 now allows the laptop's loss at the port close, so tests/firmware/drop_run.py and its tests changed and the drop log and report were made again. Feature 10's check 5 case 27 now counts only the toolbox windows whose watch window 4k exists, which is 9.
 - Feature 10's check 7 item 3 now names the boot 3492590314 of the refreshed drop log, so check 7 passes as written.
+
+### Fixed
+
+- A "Took it" tap in the second after a dose time now answers that dose, and the dose no longer becomes due a moment later.
+- A due dose now ends when a schedule change drops its time.
+- The Session percent and the block bars now round halves up, so 23 of 40 shows 58 percent where it showed 57.
+- The GPIO interrupt service now runs from IRAM, so a settings store write can no longer delay the sensor's stamp and end a stretch. The touch handler waits for the next screen round while the flash cache is off.
+- A diagnostic line that is too long is now sent as a LINE_CUT line and counted, where before it was cut without a trace. Lines can hold 639 characters, up from 319.
+- The five tasks now join the task watchdog, so a stuck task restarts the chip. A failed sensor setup is tried again, lost sensor settings are set up again, and a failed detector start keeps the pipeline giving fault answers. The firmware version is now 12.
+- The judges in tests/firmware/ now judge a saved log by the firmware version in its B line, so every committed report comes out again from its log.
+- tools/watch_cli.py record now closes its file whole on SIGTERM and SIGHUP as well as Ctrl-C, and it waits for the port when the cable is out. The readers accept a gzip file that was cut short.
+- tools/compare_session.py now checks the probability within 1e-6, down from 0.0001, and checks the low-frequency sum, which it did not check before.
+- test_detector now checks each of the detector's cut-offs exactly, through the new det_decide().
