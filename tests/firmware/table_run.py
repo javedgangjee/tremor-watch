@@ -348,17 +348,7 @@ def capture(port: str, minutes: int, log_path: Path) -> None:
     """Reset the watch, then save every line until the last minute lines arrive."""
     import serial
 
-    ser = serial.Serial()
-    ser.port = port
-    ser.baudrate = 115200
-    ser.timeout = 0.5
-    ser.dtr = False
-    ser.rts = False
-    ser.open()
-    # A pulse on RTS resets the chip, as esptool's hard reset does.
-    ser.rts = True
-    time.sleep(0.1)
-    ser.rts = False
+    ser = open_port(port, reset=True)
     started = time.monotonic()
     deadline = started + (minutes + EXTRA_MINUTES) * 60
     needed = {(kind, str(minutes)) for kind in MINUTE_KINDS}
@@ -382,14 +372,45 @@ def capture(port: str, minutes: int, log_path: Path) -> None:
     ser.close()
 
 
+def open_port(port: str, reset: bool) -> Any:
+    """Open the port with DTR and RTS low. With reset, pulse RTS to reset the
+    chip as esptool's hard reset does.
+
+    Every run in tests/firmware opens the port through this function.
+    """
+    import serial
+
+    ser = serial.Serial()
+    ser.port = port
+    ser.baudrate = 115200
+    ser.timeout = 0.5
+    # The chip resets while RTS is high and DTR is low. pyserial sets DTR
+    # before RTS when it opens the port, so a port opened with both low passes
+    # through that state and resets the chip. Opening with DTR high and RTS low
+    # and then dropping DTR never passes through it.
+    ser.dtr = not reset
+    ser.rts = False
+    ser.open()
+    ser.dtr = False
+    if reset:
+        ser.rts = True
+        time.sleep(0.1)
+        ser.rts = False
+    return ser
+
+
 def reopen(port: str) -> Any:
-    """Open the port again after the reset, waiting up to PORT_WAIT_S seconds."""
+    """Open the port again with no reset, waiting up to PORT_WAIT_S seconds.
+
+    It opens the port as open_port() does, so the control lines never pass
+    through the reset state, and a later RTS pulse still resets the chip.
+    """
     import serial
 
     end = time.monotonic() + PORT_WAIT_S
     while True:
         try:
-            return serial.Serial(port, 115200, timeout=0.5)
+            return open_port(port, reset=False)
         except (serial.SerialException, OSError):
             if time.monotonic() > end:
                 raise

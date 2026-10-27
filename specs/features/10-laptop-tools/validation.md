@@ -45,8 +45,9 @@ The expected toolbox counts of check 7 come from a planning run on 2026-10-23. I
      18. open_port() with a fake serial module in sys.modules and reset False opens the port with dtr True and rts False, then sets dtr False, and never sets rts True. With reset True it opens with dtr False and rts False, then sets rts True and then False.
      19. record() on a fake port with the lines "ESP-ROM:esp32s3-20210327", "T,500,11,123", "B,305419896,11,9,<hash>", "S,0,0,250000,0,1024", "A,1,0", "T,0,11,250000", and 11 R lines, which then raises KeyboardInterrupt, returns 0. open_port() was called once with reset True. The gzip file holds the seven lines, the 11 R lines, and one line `> CLOCK,<utc_us>,<offset_min>`, each as a time with three decimals, a tab, and the text, with times that do not fall. The lines keep the port's order, and the `> CLOCK` line comes right after the B line. The port's writes are exactly that command and a newline.
      20. record() on the same lines with "A,1,3" in place of "A,1,0" returns 1, and the file is kept and reads back whole. record() to a file that exists returns 1, never calls open_port(), and leaves the file's bytes unchanged.
+     20b. record() on the case 19 lines followed by a second boot with a new boot ID, whose clock command first gets "A,1,5" and then "A,1,0", and then that boot's B line once more, returns 0 and writes the clock command three times. A second boot that gets "A,1,5" to every try returns 1 after CLOCK_TRIES tries.
      21. Every function in tools/watch_cli.py, tools/compare_session.py, tests/replay/recording_maker.py, tests/replay/test_replay_recording.py, tests/tools/test_watch_cli.py, and tests/tools/test_compare_session.py has a type hint on each argument and on its return. The two tools contain no `print(`, no `os.path`, and no `except Exception`, and no line in tools/watch_cli.py starts with `import serial` or `from serial`.
-   - The expected result is 10 passed.
+   - The expected result is 11 passed.
 
 5. compare_session.py compares a recording with replay and the toolbox.
    - The command is `reference/.venv/bin/python -m pytest tests/tools/test_compare_session.py -q`.

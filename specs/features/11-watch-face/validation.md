@@ -73,9 +73,9 @@ In the view cases, O is 1792713600000000, which is 2026-10-23 00:00:00 in micros
      45. write_image_c() of a 2 by 2 image with the bytes 0, 128, 255, and 1 gives a text that holds LV_COLOR_FORMAT_A8, a width of 2, a height of 2, a stride of 2, a data size of 4, and the bytes 0x00, 0x80, 0xff, and 0x01 in that order.
      46. parse_font_output() of a made-up lv_font_conv text with line_height 30, base_line 6, one cmap that starts at 32 with a length of 3, and advances of 64, 128, and 200 gives the line height 30, the base line 6, the widths 4, 8, and 13 for space, `!`, and `"`, and 0 for `#`. A made-up sparse cmap from 32 with the offsets 0, 13, and 16 maps its three advances to space, `-`, and `0`.
      47. A run with `--font` set to a copy of the font with one byte changed exits with code 1 and writes no file in its temporary `--assets` and `--metrics` paths.
-     48. In the committed core/face_metrics.h, every character from `!` to `~` has a width above 0 at 28, 40, and 56 pixels. At 96 pixels the digits, `:`, and `-` have widths above 0 and `A` has 0. FACE_LINE_28 is below FACE_LINE_40, which is below FACE_LINE_56. Each committed face_font_*.c holds the lv_font_conv options line with `--bpp 4`, `--no-kerning`, its size, and its range from step 2 of plan.md.
+     48. In the committed core/face_metrics.h, every character from `!` to `~` has a width above 0 at 28, 40, and 56 pixels. At 96 pixels the digits, `:`, and `-` have widths above 0 and `A` has 0. FACE_LINE_28 is below FACE_LINE_40, which is below FACE_LINE_56. Each committed face_font_*.c holds the lv_font_conv options line with `--bpp 4`, `--no-kerning`, its size, and its range from step 2 of plan.md. The committed face_icons.c and face_icons.h equal icons_texts() byte for byte, and core/face_metrics.h equals metrics_text() of parse_font_output() on each committed font file.
      49. Every function in tools/gen_face_assets.py and the test file has a type hint on each argument and on its return. The tool holds no `print(`, no `os.path`, and no `except Exception`.
-   - The expected result is 9 passed.
+   - The expected result is 10 passed.
    - Then `reference/.venv/bin/python tools/gen_face_assets.py && git status --porcelain -- firmware/main/assets core/face_metrics.h` prints nothing, and `shasum -a 256 firmware/main/assets/RedHatDisplay-Bold.ttf` gives the hash in the tool's header comment.
 
 4. The commit checks and both ESP-IDF projects build.
@@ -96,7 +96,7 @@ In the view cases, O is 1792713600000000, which is 2026-10-23 00:00:00 in micros
      53. The clean log gives exit code 0.
      54. Nine changed copies each give exit code 1. One gives accepted=1 to the tap on the upper half of Medication. One adds a DOSE line after that tap. One gives two D lines in step 5. One gives the second tap of step 4 accepted=1. One puts the Home SCREEN_VIEW 3.5 seconds after the Logged one. One gives the D line of step 6 an answered time 1 minute off the dose time. One removes the F line that ends the due state after that D line. One puts the Home SCREEN_VIEW of step 8 290 seconds after the last BUTTON line. One adds a TONE_PLAY line after the tap of step 9.
      55. Every function in face_run.py, tap_run.py, and their test files has a type hint on each argument and on its return. The two scripts contain no `print(` apart from the prompts of tap_run.py, which go through one function, no `os.path`, and no `except Exception`, and no line in them starts with `import serial`.
-   - The expected result is 120 passed, which is the 105 earlier tests, the 9 of check 3, and the 6 above.
+   - The expected result is 123 passed, which is the 105 earlier tests, the 10 of check 3, the 6 above, and the 2 that the review fixes of 2026-10-27 added to tests/tools/test_watch_cli.py and tests/firmware/test_table_run.py.
 
 6. The firmware source follows the design.
    1. `grep -rn 'bsp_display_start' firmware/main core` prints nothing.

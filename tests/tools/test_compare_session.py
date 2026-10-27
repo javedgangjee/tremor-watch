@@ -25,6 +25,8 @@ sys.path.insert(0, str(REPO / "tools"))
 sys.path.insert(0, str(REPO / "tests" / "replay"))
 sys.path.insert(0, str(REPO / "tests" / "pads"))
 sys.path.insert(0, str(REPO / "tests" / "detector"))
+sys.path.insert(0, str(REPO / "tests" / "firmware"))
+import chip_windows  # noqa: E402
 import compare_session as cs  # noqa: E402
 import make_windows  # noqa: E402
 import pads_match  # noqa: E402
@@ -91,11 +93,15 @@ def replace_w(lines: list[str], stretch: int, window: int, field: int, value: st
     return out
 
 
-def test_22_limits_equal_the_pads_match() -> None:
+def test_22_limits_equal_the_other_copies() -> None:
     assert (cs.LIMIT, cs.PROB_NEAR, cs.BELOW_NEAR, cs.GAP_NEAR) == (
         pads_match.LIMIT, pads_match.PROB_NEAR, pads_match.BELOW_NEAR, pads_match.GAP_NEAR)
     assert (cs.LIMIT, cs.PROB_NEAR, cs.BELOW_NEAR, cs.GAP_NEAR) == (0.0001, 0.0001, 0.005, 0.0001)
-    assert cs.CUT_OFF == make_windows.CUT_OFF
+    assert (cs.LIMIT, cs.PROB_NEAR, cs.BELOW_NEAR, cs.GAP_NEAR) == (
+        chip_windows.LIMIT, chip_windows.PROB_NEAR, chip_windows.BELOW_NEAR, chip_windows.GAP_NEAR)
+    assert cs.CUT_OFF == make_windows.CUT_OFF == chip_windows.CUT_OFF
+    assert cs.MOVEMENT_THRESHOLD == pads_match.MOVEMENT_THRESHOLD == make_windows.MOVEMENT_THRESHOLD
+    assert cs.MOVEMENT_THRESHOLD == chip_windows.MOVEMENT_THRESHOLD == 50.0
     assert abs(cs.CUT_OFF - 0.029570239921802) < 1e-15
 
 
@@ -195,11 +201,16 @@ def test_28_changed_copies_fail(tmp_path: Path, clean: tuple[list[str], rm.Burst
         "rate": [*lines[:s0_last], ",".join([*rate0[:4], str(int(rate0[4]) + 1), rate0[5]]), *lines[s0_last + 1:]],
         "no_s1": [line for line in lines if not line.startswith("S,1,")],
         "t0": [*lines[:s1], ",".join([*t0_1[:3], str(int(t0_1[3]) + 1), *t0_1[4:]]), *lines[s1 + 1:]],
+        # These two fit the W pattern, but their numbers do not read.
+        "empty_numbers": [line if not line.startswith("W,0,11,") else "W,0,11,1,,," for line in lines],
+        "bad_number": replace_w(lines, 0, 12, 4, "1.2.3"),
     }
     assert copies["code"] != lines and copies["rate"] != lines and copies["t0"] != lines
+    assert copies["empty_numbers"] != lines
     for name, copy in copies.items():
-        code, _ = run_main(tmp_path, copy, f"{name}.txt")
+        code, report = run_main(tmp_path, copy, f"{name}.txt")
         assert code == 1, name
+        assert report, name
 
 
 def test_29_gaps_lines_before_b_and_a_missing_last_w_line_pass(

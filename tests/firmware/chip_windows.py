@@ -18,6 +18,7 @@ from __future__ import annotations
 import argparse
 import csv
 import logging
+import re
 import statistics
 import struct
 import sys
@@ -41,13 +42,25 @@ DEFAULT_LOG = REPO / "tests" / "firmware" / "chip_windows_log.txt"
 DEFAULT_REPORT = REPO / "tests" / "firmware" / "chip_windows_report.md"
 WINDOWS_CSV = REPO / "tests" / "detector" / "windows.csv"
 ANSWERS_CSV = REPO / "tests" / "detector" / "answers.csv"
+TABLES_HEADER = REPO / "core" / "detector_tables.h"
 
-# The constants of tests/detector/test_detector.c.
+
+def table_cut_off(header: Path = TABLES_HEADER) -> float:
+    """Read det_threshold, the model's cut-off, from core/detector_tables.h."""
+    match = re.search(r"^static const double det_threshold = ([-+.0-9e]+);", header.read_text(), re.MULTILINE)
+    if match is None:
+        raise ValueError(f"{header} gives no det_threshold")
+    return float(match.group(1))
+
+
+# The constants of tests/detector/test_detector.c. The cut-off comes from the
+# tables, because this script runs without the toolbox.
 LIMIT = 0.0001
-CUT_OFF = 0.029570239921802
+CUT_OFF = table_cut_off()
 PROB_NEAR = 0.0001
 BELOW_NEAR = 0.005
 GAP_NEAR = 0.0001
+MOVEMENT_THRESHOLD = 50.0
 
 WINDOWS = 322
 PASSES = 2
@@ -121,7 +134,7 @@ def near_cut_off(toolbox: Row) -> bool:
     """Say whether a window is near a cut-off, as test_detector.c does."""
     return (
         abs(toolbox.prob - CUT_OFF) <= PROB_NEAR
-        or abs(toolbox.below - 50.0) <= BELOW_NEAR
+        or abs(toolbox.below - MOVEMENT_THRESHOLD) <= BELOW_NEAR
         or near_tie(toolbox)
     )
 
@@ -292,17 +305,7 @@ def capture(port: str, log_path: Path) -> None:
     """Reset the watch, then save every line until CHECK_END arrives or 5 minutes pass."""
     import serial
 
-    ser = serial.Serial()
-    ser.port = port
-    ser.baudrate = 115200
-    ser.timeout = 0.5
-    ser.dtr = False
-    ser.rts = False
-    ser.open()
-    # A pulse on RTS resets the chip, as esptool's hard reset does.
-    ser.rts = True
-    time.sleep(0.1)
-    ser.rts = False
+    ser = table_run.open_port(port, reset=True)
     started = time.monotonic()
     deadline = started + CAPTURE_S
     with log_path.open("w") as out:

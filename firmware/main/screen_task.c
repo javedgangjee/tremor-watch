@@ -295,13 +295,14 @@ void screen_task(void *arg)
         if (s_face_ok) {
             face_draw_show(scr_screen(&s_scr), now_us);
         }
-        look_screen_t shown = s_face_ok ? face_draw_shown() : scr_screen(&s_scr);
+        look_screen_t screen = scr_screen(&s_scr);
+        look_screen_t shown = s_face_ok ? face_draw_shown() : screen;
         uint32_t taps = s_face_ok ? face_draw_taps() : 0;
         uint32_t mismatches = s_face_ok ? face_draw_mismatches() : 0;
         bsp_display_unlock();
 
         if ((button & SCR_CHANGED) != 0) {
-            usb_send("BUTTON at_us=%lld screen=%s", (long long)now_us, screen_name(scr_screen(&s_scr)));
+            usb_send("BUTTON at_us=%lld screen=%s", (long long)now_us, screen_name(screen));
         }
         if (dose_tone) {
             tone_out_start(TONE_DOSE);
@@ -316,7 +317,8 @@ void screen_task(void *arg)
          * SCREEN_VIEW line comes next round, so a line never shows an older
          * view after a line that the state task wrote for the newer one. The
          * state task cannot run between the test and the line, because the
-         * scheduler is paused, and usb_send() does not wait. */
+         * scheduler is paused on this core, which tasks.h makes the state
+         * task's core too, and usb_send() does not wait. */
         vTaskSuspendAll();
         if (uxQueueMessagesWaiting(g_screen_queue) == 0 && send_view_line(shown)) {
             views++;

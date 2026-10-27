@@ -405,28 +405,8 @@ def write_report(
     path.write_text("\n".join(lines) + "\n")
 
 
-def open_port(port: str, reset: bool) -> Any:
-    """Open the port with DTR and RTS low. With reset, pulse RTS to reset the
-    chip as esptool's hard reset does, and open the port again after it."""
-    import serial
-
-    ser = serial.Serial()
-    ser.port = port
-    ser.baudrate = 115200
-    ser.timeout = 0.5
-    # The chip resets while RTS is high and DTR is low. pyserial sets DTR
-    # before RTS when it opens the port, so a port opened with both low passes
-    # through that state and resets the chip. Opening with DTR high and RTS low
-    # and then dropping DTR never passes through it.
-    ser.dtr = not reset
-    ser.rts = False
-    ser.open()
-    ser.dtr = False
-    if reset:
-        ser.rts = True
-        time.sleep(0.1)
-        ser.rts = False
-    return ser
+# The runs that read through this file open the port with table_run's helper.
+open_port = table_run.open_port
 
 
 def read_line(ser: Any, port: str) -> tuple[Any, str | None]:

@@ -97,9 +97,9 @@ void app_main(void)
 
     send_power_line();
 
-    xTaskCreatePinnedToCore(usb_task, "usb", USB_STACK, NULL, USB_PRIORITY, NULL, 0);
-    xTaskCreatePinnedToCore(sensor_task, "sensor", SENSOR_STACK, NULL, SENSOR_PRIORITY, NULL, 1);
-    xTaskCreatePinnedToCore(pipeline_task, "pipeline", PIPELINE_STACK, NULL, PIPELINE_PRIORITY, NULL, 1);
-    xTaskCreatePinnedToCore(state_task, "state", STATE_STACK, NULL, STATE_PRIORITY, NULL, 0);
-    xTaskCreatePinnedToCore(screen_task, "screen", SCREEN_STACK, NULL, SCREEN_PRIORITY, NULL, 0);
+    xTaskCreatePinnedToCore(usb_task, "usb", USB_STACK, NULL, USB_PRIORITY, NULL, USB_CORE);
+    xTaskCreatePinnedToCore(sensor_task, "sensor", SENSOR_STACK, NULL, SENSOR_PRIORITY, NULL, SENSOR_CORE);
+    xTaskCreatePinnedToCore(pipeline_task, "pipeline", PIPELINE_STACK, NULL, PIPELINE_PRIORITY, NULL, PIPELINE_CORE);
+    xTaskCreatePinnedToCore(state_task, "state", STATE_STACK, NULL, STATE_PRIORITY, NULL, STATE_CORE);
+    xTaskCreatePinnedToCore(screen_task, "screen", SCREEN_STACK, NULL, SCREEN_PRIORITY, NULL, SCREEN_CORE);
 }

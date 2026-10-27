@@ -391,7 +391,7 @@ static void reset_fifo(void)
  * SENSOR_MSG_READINGS readings. Only the first part carries the flags. It
  * sends the USB task a copy of each part through the record queue, and it
  * waits on neither queue. */
-static void send_readings(uint32_t count, unsigned flags, bool overflow, int64_t stamp_us, uint64_t first)
+static void send_readings(uint32_t count, unsigned flags, int64_t stamp_us, uint64_t first)
 {
     const rt_stretch_t *st = rt_current(&s_rt);
     for (uint32_t done = 0; done < count;) {
@@ -400,7 +400,6 @@ static void send_readings(uint32_t count, unsigned flags, bool overflow, int64_t
             part = SENSOR_MSG_READINGS;
         }
         s_msg.flags = done == 0 ? flags : 0u;
-        s_msg.overflow = done == 0 ? overflow : false;
         s_msg.stretch = st->number;
         s_msg.rate_uhz = st->rate_uhz;
         s_msg.stamp_us = stamp_us;
@@ -439,7 +438,6 @@ static void take_burst(uint32_t count, int64_t stamp_us, bool overflow, loss_t r
 {
     const rt_stretch_t *st = rt_current(&s_rt);
     uint64_t first = s_next_reading;
-    bool skipped = s_rt.started && first != s_rt.last.first_reading + s_rt.last.count;
     uint32_t old_rate = s_rt.started ? st->rate_uhz : 0;
     double error_us = old_rate != 0 ? (double)stamp_us - rt_reading_time_us(st, first) : 0.0;
 
@@ -451,8 +449,10 @@ static void take_burst(uint32_t count, int64_t stamp_us, bool overflow, loss_t r
                  "prev_rate_uhz=0 error_us=none",
                  (unsigned long long)st->first_reading, (long long)st->t0_us);
     } else if ((flags & RT_NEW_STRETCH) != 0) {
-        bool kind1 = overflow || skipped;
-        const char *why = overflow ? LOSS_NAMES[reason] : skipped ? "skip" : LOSS_NAMES[LOSS_NONE];
+        /* The readings always follow on, so a stretch ends either after a
+         * loss (kind 1) or by the time rule alone (kind 2). */
+        bool kind1 = overflow;
+        const char *why = LOSS_NAMES[overflow ? reason : LOSS_NONE];
         if (kind1) {
             s_counts.kind1_ends++;
         } else {
@@ -475,7 +475,7 @@ static void take_burst(uint32_t count, int64_t stamp_us, bool overflow, loss_t r
         usb_send("RATE number=%lu rate_uhz=%lu", (unsigned long)st->number, (unsigned long)st->rate_uhz);
     }
 
-    send_readings(count, flags, overflow, stamp_us, first);
+    send_readings(count, flags, stamp_us, first);
 
     s_next_reading += count;
     s_counts.readings += count;
