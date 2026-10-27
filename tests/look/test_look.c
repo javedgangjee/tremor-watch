@@ -127,7 +127,7 @@ static void test_2_distance(void)
 }
 
 static void check_state(face_state_t s, bool filled, uint32_t circle, uint32_t ink, look_icon_t icon,
-                        const char *word)
+                        const char *word, const char *word_2)
 {
     const look_state_t *l = look_state(s);
     TEST_ASSERT_EQUAL(filled, l->filled);
@@ -135,16 +135,21 @@ static void check_state(face_state_t s, bool filled, uint32_t circle, uint32_t i
     TEST_ASSERT_EQUAL_HEX32(ink, l->ink);
     TEST_ASSERT_EQUAL_INT(icon, l->icon);
     TEST_ASSERT_EQUAL_STRING(word, l->word);
+    if (word_2 == NULL) {
+        TEST_ASSERT_NULL(l->word_2);
+    } else {
+        TEST_ASSERT_EQUAL_STRING(word_2, l->word_2);
+    }
 }
 
 static void test_3_states(void)
 {
-    check_state(FACE_TREMOR, true, 0x1B2E42, 0xFFFFFF, LOOK_ICON_TREMOR, "Tremor");
-    check_state(FACE_NO_TREMOR, false, 0x26292B, 0x111315, LOOK_ICON_NO_TREMOR, "Rest");
-    check_state(FACE_ARM_MOVING, true, 0x2A7242, 0xFFFFFF, LOOK_ICON_ARM_MOVING, "Arm moving");
-    check_state(FACE_WAITING, false, 0x5C6265, 0x111315, LOOK_ICON_WAITING, "Waiting");
-    check_state(FACE_DOSE_DUE, true, 0x3F2559, 0xFFFFFF, LOOK_ICON_DOSE_DUE, "Dose due");
-    check_state((face_state_t)9, false, 0x5C6265, 0x111315, LOOK_ICON_WAITING, "Waiting");
+    check_state(FACE_TREMOR, true, 0x1B2E42, 0xFFFFFF, LOOK_ICON_TREMOR, "Tremor", "Detected");
+    check_state(FACE_NO_TREMOR, false, 0x26292B, 0x111315, LOOK_ICON_NO_TREMOR, "Rest", NULL);
+    check_state(FACE_ARM_MOVING, true, 0x2A7242, 0xFFFFFF, LOOK_ICON_ARM_MOVING, "Arm moving", NULL);
+    check_state(FACE_WAITING, false, 0x5C6265, 0x111315, LOOK_ICON_WAITING, "Waiting", NULL);
+    check_state(FACE_DOSE_DUE, true, 0x3F2559, 0xFFFFFF, LOOK_ICON_DOSE_DUE, "Dose due", NULL);
+    check_state((face_state_t)9, false, 0x5C6265, 0x111315, LOOK_ICON_WAITING, "Waiting", NULL);
     for (int s = 0; s <= 9; s++) {
         const char *word = look_state((face_state_t)s)->word;
         TEST_ASSERT_TRUE(strcmp(word, "Dyskinesia") != 0);
@@ -234,7 +239,8 @@ static void test_5_shape_and_overlap(void)
                     TEST_ASSERT_FALSE_MESSAGE(boxes_overlap(a, b), "two boxes overlap");
                 }
             }
-            if (circle != NULL && i != LOOK_ITEM_CIRCLE_ICON && i != LOOK_ITEM_CIRCLE_WORD) {
+            if (circle != NULL && i != LOOK_ITEM_CIRCLE_ICON && i != LOOK_ITEM_CIRCLE_WORD &&
+                i != LOOK_ITEM_CIRCLE_WORD_2) {
                 TEST_ASSERT_FALSE_MESSAGE(disc_meets_box(circle, a), "the circle overlaps a box outside it");
             }
         }
@@ -265,21 +271,30 @@ static void test_6_circle(void)
         const look_box_t *c = look_box(screens[k], LOOK_ITEM_CIRCLE);
         const look_box_t *icon = look_box(screens[k], LOOK_ITEM_CIRCLE_ICON);
         const look_box_t *word = look_box(screens[k], LOOK_ITEM_CIRCLE_WORD);
+        const look_box_t *word_2 = look_box(screens[k], LOOK_ITEM_CIRCLE_WORD_2);
         TEST_ASSERT_NOT_NULL(c);
         TEST_ASSERT_EQUAL_INT(260, c->w);
         TEST_ASSERT_EQUAL_INT(260, c->h);
-        TEST_ASSERT_EQUAL_INT(136, icon->w);
-        TEST_ASSERT_EQUAL_INT(136, icon->h);
+        TEST_ASSERT_EQUAL_INT(128, icon->w);
+        TEST_ASSERT_EQUAL_INT(128, icon->h);
         TEST_ASSERT_EQUAL_INT(28, word->size);
-        TEST_ASSERT_TRUE(icon->y + icon->h <= c->y + c->h * 2 / 3);
-        TEST_ASSERT_TRUE(word->y >= c->y + c->h * 2 / 3);
+        TEST_ASSERT_EQUAL_INT(28, word_2->size);
+        TEST_ASSERT_TRUE(icon->y + icon->h < word->y);
+        TEST_ASSERT_EQUAL_INT(word->y + word->h, word_2->y);
         check_in_circle(c, icon->x, icon->y, icon->w, icon->h);
         check_in_circle(c, word->x, word->y, word->w, word->h);
+        check_in_circle(c, word_2->x, word_2->y, word_2->w, word_2->h);
         for (int s = 0; s < 5; s++) {
-            int w = look_text_width(look_state((face_state_t)s)->word, 28);
+            const look_state_t *l = look_state((face_state_t)s);
+            int w = look_text_width(l->word, 28);
             TEST_ASSERT_TRUE(w > 0 && w <= word->w);
+            if (l->word_2 != NULL) {
+                int w_2 = look_text_width(l->word_2, 28);
+                TEST_ASSERT_TRUE(w_2 > 0 && w_2 <= word_2->w);
+            }
         }
         TEST_ASSERT_TRUE(look_text_width(look_logged()->word, 28) <= word->w);
+        TEST_ASSERT_NULL(look_logged()->word_2);
     }
 }
 

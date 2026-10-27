@@ -64,10 +64,11 @@ FONT_RANGES: dict[int, str] = {
 FIRST_CHAR = 0x20
 LAST_CHAR = 0x7E
 
-# The circle's icons are 136 pixels square, so they fill the top two thirds of
-# the circle, which the user chose on 2026-10-24. The "Took it" button's check
-# stays 88 pixels square.
-ICON_PX = 136
+# The circle's icons are 128 pixels square. The user had them fill the top two
+# thirds of the circle on 2026-10-24 at 136 pixels, and had them shrink to 128
+# on 2026-10-26 to make room for "Tremor Detected" on two lines. The "Took it"
+# button's check stays 88 pixels square.
+ICON_PX = 128
 BUTTON_ICON_PX = 88
 BUTTON_ICONS = ("face_icon_check",)
 LUCIDE_GRID = 24.0

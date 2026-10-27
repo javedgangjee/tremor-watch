@@ -89,6 +89,9 @@ static void check_fits(void)
 {
     fits(view.last_tremor, LOOK_HOME, LOOK_ITEM_LINE);
     fits(look_state(view.face)->word, LOOK_HOME, LOOK_ITEM_CIRCLE_WORD);
+    if (look_state(view.face)->word_2 != NULL) {
+        fits(look_state(view.face)->word_2, LOOK_HOME, LOOK_ITEM_CIRCLE_WORD_2);
+    }
     fits(view.label_1, LOOK_MEDICATION, LOOK_ITEM_DOSE_LABEL_1);
     fits(view.label_2, LOOK_MEDICATION, LOOK_ITEM_DOSE_LABEL_2);
     fits_cut(&view.value_1, LOOK_MEDICATION, LOOK_ITEM_DOSE_VALUE_1);

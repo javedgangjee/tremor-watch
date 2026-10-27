@@ -35,9 +35,10 @@
 #define LOOK_CARD_RADIUS 40
 /* The "Took it" check is this many pixels square. */
 #define LOOK_ICON_PX 88
-/* The circle's icons are this many pixels square, so they fill the top two
- * thirds of the circle. The user chose this on 2026-10-24. */
-#define LOOK_CIRCLE_ICON_PX 136
+/* The circle's icons are this many pixels square. The user had them fill the
+ * top two thirds of the circle at 136 pixels on 2026-10-24, and had them shrink
+ * to 128 on 2026-10-26 to make room for "Tremor Detected" on two lines. */
+#define LOOK_CIRCLE_ICON_PX 128
 
 /* The colours as 0xRRGGBB values. LOOK_DOSE is the design file's purple
  * #3F2559, which the user chose on 2026-10-23. */
@@ -89,6 +90,8 @@ typedef enum {
     LOOK_ITEM_CIRCLE,
     LOOK_ITEM_CIRCLE_ICON,
     LOOK_ITEM_CIRCLE_WORD,
+    /* The second line of a two-line circle word. */
+    LOOK_ITEM_CIRCLE_WORD_2,
     /* The last tremor line on Home, and the next dose line on Logged. */
     LOOK_ITEM_LINE,
     LOOK_ITEM_DOSE_LABEL_1,
@@ -150,6 +153,8 @@ typedef struct {
     uint32_t ink;
     look_icon_t icon;
     const char *word;
+    /* The second line of the word, or NULL for a one-line word. */
+    const char *word_2;
 } look_state_t;
 
 /* look_state() gives the look of a face state, and the Waiting look for any

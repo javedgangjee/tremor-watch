@@ -68,6 +68,7 @@ typedef struct {
     lv_obj_t *circle;
     lv_obj_t *icon;
     lv_obj_t *word;
+    lv_obj_t *word_2;
     /* Logged. */
     lv_obj_t *tick_clip;
     /* Medication. */
@@ -397,6 +398,10 @@ static void style_circle(screen_objs_t *o, const look_state_t *l)
         lv_obj_set_style_text_color(o->word, colour(l->ink), 0);
         lv_label_set_text(o->word, l->word);
     }
+    if (o->word_2 != NULL) {
+        lv_obj_set_style_text_color(o->word_2, colour(l->ink), 0);
+        lv_label_set_text(o->word_2, l->word_2 != NULL ? l->word_2 : "");
+    }
 }
 
 static void build_root(look_screen_t screen)
@@ -442,6 +447,7 @@ static void build_home(look_screen_t screen)
         }
     }
     o->word = label_box(o->root, screen, LOOK_ITEM_CIRCLE_WORD);
+    o->word_2 = label_box(o->root, screen, LOOK_ITEM_CIRCLE_WORD_2);
     style_circle(o, l);
     o->line = label_box(o->root, screen, LOOK_ITEM_LINE);
 }

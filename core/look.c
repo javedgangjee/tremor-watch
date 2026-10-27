@@ -17,26 +17,30 @@
 #define CIRCLE_Y ((LOOK_H - LOOK_CIRCLE) / 2)
 #define CIRCLE_CX (CIRCLE_X + LOOK_CIRCLE / 2)
 #define CIRCLE_CY (CIRCLE_Y + LOOK_CIRCLE / 2)
-/* The icon fills the top two thirds of the circle and the word sits in the
- * bottom third, which the user chose on 2026-10-24. The icon's box ends at
- * 172 pixels below the circle's top, and the word's box starts at 176. The
- * word is 28 pixels because "Arm moving" at 40 pixels would cross the circle's
- * edge in the bottom third. The word box is as wide as "Arm moving" at 28
- * pixels, the widest state word. Both boxes keep every corner at least 10
- * pixels inside the circle's edge. */
+/* The icon sits in the top of the circle and the word under it, which the
+ * user chose on 2026-10-24. On 2026-10-26 the user had Tremor say "Tremor
+ * Detected" on two lines, so the icon shrank from 136 to 128 pixels and its
+ * box ends 164 pixels below the circle's top. The word's first line starts at
+ * 168 and its second line at 198. The word is 28 pixels because "Arm moving"
+ * at 40 pixels would cross the circle's edge. The first line's box is as wide
+ * as "Arm moving" at 28 pixels, the widest one-line word, and the second
+ * line's box is as wide as "Detected". Every box keeps each corner at least
+ * 10 pixels inside the circle's edge. */
 #define WORD_W 164
-#define ICON_Y (CIRCLE_Y + 172 - LOOK_CIRCLE_ICON_PX)
-#define WORD_Y (CIRCLE_Y + 176)
+#define WORD_2_W 128
+#define ICON_Y (CIRCLE_Y + 164 - LOOK_CIRCLE_ICON_PX)
+#define WORD_Y (CIRCLE_Y + 168)
+#define WORD_2_Y (WORD_Y + FACE_LINE_28)
 
 static const look_state_t STATES[] = {
-    [FACE_TREMOR] = {true, LOOK_TREMOR, LOOK_WHITE, LOOK_ICON_TREMOR, "Tremor"},
-    [FACE_NO_TREMOR] = {false, LOOK_REST, LOOK_TEXT, LOOK_ICON_NO_TREMOR, "Rest"},
-    [FACE_ARM_MOVING] = {true, LOOK_ARM, LOOK_WHITE, LOOK_ICON_ARM_MOVING, "Arm moving"},
-    [FACE_WAITING] = {false, LOOK_WAITING, LOOK_TEXT, LOOK_ICON_WAITING, "Waiting"},
-    [FACE_DOSE_DUE] = {true, LOOK_DOSE, LOOK_WHITE, LOOK_ICON_DOSE_DUE, "Dose due"},
+    [FACE_TREMOR] = {true, LOOK_TREMOR, LOOK_WHITE, LOOK_ICON_TREMOR, "Tremor", "Detected"},
+    [FACE_NO_TREMOR] = {false, LOOK_REST, LOOK_TEXT, LOOK_ICON_NO_TREMOR, "Rest", NULL},
+    [FACE_ARM_MOVING] = {true, LOOK_ARM, LOOK_WHITE, LOOK_ICON_ARM_MOVING, "Arm moving", NULL},
+    [FACE_WAITING] = {false, LOOK_WAITING, LOOK_TEXT, LOOK_ICON_WAITING, "Waiting", NULL},
+    [FACE_DOSE_DUE] = {true, LOOK_DOSE, LOOK_WHITE, LOOK_ICON_DOSE_DUE, "Dose due", NULL},
 };
 
-static const look_state_t LOGGED = {true, LOOK_TOOK_IT, LOOK_WHITE, LOOK_ICON_LOGGED_RING, "Logged"};
+static const look_state_t LOGGED = {true, LOOK_TOOK_IT, LOOK_WHITE, LOOK_ICON_LOGGED_RING, "Logged", NULL};
 
 #define TEXT(x_, y_, w_, size_, smallest_, align_, colour_) \
     {(x_), (y_), (w_), FACE_LINE_##size_, LOOK_KIND_TEXT, (size_), (smallest_), (align_), (colour_)}
@@ -51,6 +55,7 @@ static const look_state_t LOGGED = {true, LOOK_TOOK_IT, LOOK_WHITE, LOOK_ICON_LO
     [LOOK_ITEM_CIRCLE] = SHAPE(CIRCLE_X, CIRCLE_Y, LOOK_CIRCLE, LOOK_CIRCLE, 0),        \
     [LOOK_ITEM_CIRCLE_ICON] = ICON(CIRCLE_CX - LOOK_CIRCLE_ICON_PX / 2, ICON_Y, LOOK_CIRCLE_ICON_PX, 0), \
     [LOOK_ITEM_CIRCLE_WORD] = TEXT(CIRCLE_CX - WORD_W / 2, WORD_Y, WORD_W, 28, 28, LOOK_ALIGN_CENTER, 0), \
+    [LOOK_ITEM_CIRCLE_WORD_2] = TEXT(CIRCLE_CX - WORD_2_W / 2, WORD_2_Y, WORD_2_W, 28, 28, LOOK_ALIGN_CENTER, 0), \
     [LOOK_ITEM_LINE] = TEXT(12, CIRCLE_Y + LOOK_CIRCLE + 24, 386, 28, 28, LOOK_ALIGN_CENTER, LOOK_TEXT2)
 
 static const look_box_t BOXES[LOOK_SCREEN_COUNT][LOOK_ITEM_COUNT] = {

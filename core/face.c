@@ -84,7 +84,7 @@ const char *face_name(face_state_t s)
 {
     switch (s) {
     case FACE_TREMOR:
-        return "Tremor";
+        return "Tremor Detected";
     case FACE_NO_TREMOR:
         return "Rest";
     case FACE_ARM_MOVING:
