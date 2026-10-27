@@ -1,19 +1,14 @@
-"""Make the saved converter cases with the toolbox's own conversion to 100 readings a second.
+"""Make the saved converter cases with the toolbox's conversion to 100 readings a second.
 
-The script runs in the reference venv, because it needs the toolbox. It uses fixed
-seeds, so every run writes the same three files. Run it from the repo root.
+Run it from the repo root in the reference venv. Fixed seeds make every run write the same files.
 
     reference/.venv/bin/python tests/converter/make_cases.py
 
-It writes stretches.csv with one row per stretch, readings.csv with one row per
-reading, and expected.csv with one row per toolbox sample. Each stretch lasts 30
-seconds and goes to the toolbox as its own recording through preprocess_imu_data
-with resampling_frequency 100. Every reading is a whole number of raw counts
-divided by 32, so it is exact in a 32-bit float. Reading n of a stretch has the
-time n * 1e6 / rate_uhz seconds, counted from the stretch's t0 and not rounded.
-
-Before it writes, the script checks that the toolbox's sample k of every stretch
-lies at k * 0.01 seconds within 1e-9 seconds. It writes no file if the check fails.
+stretches.csv has one row per stretch, readings.csv one row per reading, and
+expected.csv one row per toolbox sample. Each 30 second stretch goes to
+preprocess_imu_data as its own recording. Every reading is whole raw counts
+divided by 32, so it is exact in a 32-bit float. Reading n lies at
+n * 1e6 / rate_uhz seconds after the stretch's t0, unrounded.
 """
 from __future__ import annotations
 
@@ -37,13 +32,13 @@ DEFAULT_OUT = Path(__file__).resolve().parent
 AXES = ["gyroscope_x", "gyroscope_y", "gyroscope_z"]
 OUT_HZ = 100
 SECONDS = 30
-# A reading is a whole number of raw counts divided by 32 at the range of 1024 degrees per second.
+# Raw counts per degree per second at the 1024 dps range.
 COUNTS_PER_DPS = 32
 COUNT_MIN = -32768
 COUNT_MAX = 32767
 # The toolbox's sample k must lie at k * 0.01 seconds within this many seconds.
 GRID_LIMIT = 1e-9
-# The rate measured over twenty minutes in firmware/bringup/rate_log.txt, in millionths of a reading per second.
+# The board's rate from firmware/bringup/rate_log.txt, in millionths of a reading per second.
 BOARD_RATE_UHZ = 114330200
 
 
@@ -54,12 +49,12 @@ def fail(message: str) -> NoReturn:
 
 
 def reading_count(rate_uhz: int) -> int:
-    """Return floor(30 * rate_uhz / 1e6), the number of readings in a stretch."""
+    """Return the number of readings in a 30 second stretch."""
     return SECONDS * rate_uhz // 1_000_000
 
 
 def reading_times(rate_uhz: int) -> np.ndarray:
-    """Return the time of each reading in seconds, n * 1e6 / rate_uhz, as 64-bit floats."""
+    """Return each reading's time in seconds as 64-bit floats."""
     return np.arange(reading_count(rate_uhz)) * 1e6 / rate_uhz
 
 
@@ -107,14 +102,11 @@ def above_50hz(t: np.ndarray, rng: np.random.Generator) -> np.ndarray:
 
 
 def zeros(t: np.ndarray, rng: np.random.Generator) -> np.ndarray:  # noqa: ARG001
-    """Return only zeros."""
     return np.zeros((len(t), 3))
 
 
 @dataclass(frozen=True)
 class Stretch:
-    """One saved stretch: its name, its rate, its signal, and its seed."""
-
     name: str
     rate_uhz: int
     signal: Callable[[np.ndarray, np.random.Generator], np.ndarray]
@@ -167,7 +159,6 @@ def number(value: float) -> str:
 
 
 def write_files(cases: Sequence[tuple[Stretch, np.ndarray, pd.DataFrame]], folder: Path) -> None:
-    """Write stretches.csv, readings.csv, and expected.csv into the folder."""
     folder.mkdir(parents=True, exist_ok=True)
     stretch_lines = ["stretch,name,rate_uhz,readings"]
     reading_lines = ["stretch," + ",".join(AXES)]
@@ -183,7 +174,6 @@ def write_files(cases: Sequence[tuple[Stretch, np.ndarray, pd.DataFrame]], folde
 
 
 def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
-    """Read the command-line options."""
     parser = argparse.ArgumentParser(description="Make the saved converter cases.")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT,
                         help="the folder for stretches.csv, readings.csv, and expected.csv")
@@ -191,7 +181,6 @@ def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    """Make every stretch, convert it with the toolbox, check the grid, and write the files."""
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     args = parse_args(argv)
     cases: list[tuple[Stretch, np.ndarray, pd.DataFrame]] = []

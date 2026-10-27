@@ -1,16 +1,14 @@
 /*
  * face.h holds the face state and the two-in-a-row rule.
  *
- * The rule follows the plan's Response time section. The face changes only
- * when two answers in a row agree, so a single odd answer never shows. The
- * rule changes only what the face shows, and every answer still goes into the
- * share and the recording unchanged.
+ * The face changes only when two answers in a row agree, so a single odd
+ * answer never shows. The rule changes only what the face shows, and every
+ * answer still goes into the share and the recording unchanged.
  *
- * The face states follow the plan's Watch face section, under The state
- * circle. Waiting shows while the watch warms up after a start or a gap, or
- * when the sensor has failed. Dose due takes over the circle while a dose is
- * due, and then the detector state returns. The numbers are fixed, and the F line of the
- * recording writes them.
+ * Waiting shows while the watch warms up after a start or a gap, or when the
+ * sensor has failed. Dose due takes over the circle while a dose is due, and
+ * then the detector state returns. The numbers are fixed, and the F line of
+ * the recording writes them.
  *
  * The caller owns the state. The file has no static data that changes. On the
  * watch the state task owns the face.
@@ -76,7 +74,6 @@ bool face_set_dose_due(face_t *f, bool due);
  * otherwise. */
 face_state_t face_shown(const face_t *f);
 
-/* face_detector() gives the detector state. */
 face_state_t face_detector(const face_t *f);
 
 /* face_last_tremor() gives the last tremor time. It returns false when there

@@ -3,10 +3,11 @@
 Each case writes a made-up gzip log with the "> CLOSE" and "> OPEN" lines and
 judges it with --log-only, so no watch is needed. In the made-up log the port
 closes at 80 seconds, the lines of the next second still arrive after the port
-opens, and the lines of the 60 seconds after that are lost. Case 8's log also
-has the laptop's loss at the close. There the "> CLOSE" line follows the T line
-of burst CLOSE_BURST, and the lines from there to the middle of an R line two
-bursts later are lost, so the first text after "> OPEN" is a "> PARTIAL" line.
+opens, and the lines of the 60 seconds after that are lost. With close_loss
+the log also has the laptop's loss at the close. There the "> CLOSE" line
+follows the T line of burst CLOSE_BURST, and the lines from there to the middle
+of an R line two bursts later are lost, so the first text after "> OPEN" is a
+"> PARTIAL" line.
 They run in the reference venv with this command.
 
     reference/.venv/bin/python -m pytest tests/firmware -q
@@ -135,7 +136,7 @@ def judge(lines: list[str], tmp_path: Path) -> tuple[int, str]:
 
 
 def test_drops_with_repeated_lines(tmp_path: Path) -> None:
-    """Case 8 judges a log where the laptop lost lines at the close and the watch dropped 3 lines
+    """Judge a log where the laptop lost lines at the close and the watch dropped 3 lines
     and repeated the B and S lines."""
     code, report = judge(make_log(3, close_loss=True), tmp_path)
     assert code == 0, report
@@ -148,7 +149,7 @@ def test_drops_with_repeated_lines(tmp_path: Path) -> None:
 
 
 def test_lines_lost_on_the_laptop(tmp_path: Path) -> None:
-    """Case 9 judges a log where the watch dropped nothing and the laptop lost lines."""
+    """Judge a log where the watch dropped nothing and the laptop lost lines."""
     code, report = judge(make_log(0), tmp_path)
     assert code == 0, report
     assert "The watch dropped no line" in report
@@ -156,7 +157,7 @@ def test_lines_lost_on_the_laptop(tmp_path: Path) -> None:
 
 
 def test_changed_logs_fail(tmp_path: Path) -> None:
-    """Case 10 checks seven changed copies of case 8's log."""
+    """Check seven changed copies of the close_loss log."""
     clean = make_log(3, close_loss=True)
     assert judge(clean, tmp_path)[0] == 0
     opened = clean.index("> OPEN")

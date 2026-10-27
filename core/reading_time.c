@@ -1,7 +1,4 @@
-/*
- * reading_time.c is the time rule. reading_time.h describes it, and the
- * feature 5 requirements 17 to 22 give the details.
- */
+/* reading_time.c gives each sensor reading a time. See reading_time.h. */
 
 #include "reading_time.h"
 
@@ -9,20 +6,17 @@
 #include <stddef.h>
 #include <string.h>
 
-/* A rate comes from at least 10 seconds of stamps. The plan's Sensor and
- * converter section says the first stretch takes its rate from its first 10
- * seconds, and requirements 20 and 21 use the same span. */
+/* A rate comes from at least 10 seconds of stamps. */
 #define RATE_SPAN_US 10000000
 /* Before a stretch has its rate, the line test starts once the stretch spans
- * 1 second. This comes from requirement 22. */
+ * 1 second. */
 #define LINE_SPAN_US 1000000
-/* A rate in millionths of a reading per second times this number gives
- * microseconds per reading. This comes from requirement 19. */
+/* This number divided by a rate in micro-Hz gives microseconds per reading. */
 #define UHZ_US 1e12
-/* Half a reading period in microseconds is this number divided by the rate.
- * The plan's Sensor and converter section ends a stretch at half a period. */
+/* Half a reading period in microseconds is this number divided by the rate. A
+ * stamp more than half a period off its predicted time ends the stretch. */
 #define HALF_PERIOD_UHZ_US 5e11
-/* A 100 Hz sample lasts 10000 microseconds. This comes from requirement 19. */
+/* A 100 Hz sample lasts 10000 microseconds. */
 #define SAMPLE_US 10000
 
 void rt_init(rt_state_t *s)
@@ -30,8 +24,7 @@ void rt_init(rt_state_t *s)
     memset(s, 0, sizeof *s);
 }
 
-/* measured_rate() gives the rate from burst a to burst b as
- * floor(df * 1e12 / ds + 0.5), as requirement 18 says. */
+/* Gives the rate in micro-Hz from burst a to burst b, rounded half up. */
 static uint32_t measured_rate(const rt_burst_t *a, const rt_burst_t *b)
 {
     double df = (double)(b->first_reading - a->first_reading);
@@ -45,7 +38,7 @@ static uint32_t measured_rate(const rt_burst_t *a, const rt_burst_t *b)
     return (uint32_t)rate;
 }
 
-/* ends_stretch() says whether the burst ends the current stretch. */
+/* Says whether the burst ends the current stretch. */
 static bool ends_stretch(const rt_state_t *s, const rt_burst_t *b, bool overflow)
 {
     const rt_burst_t *first = &s->first;
@@ -67,7 +60,7 @@ static bool ends_stretch(const rt_state_t *s, const rt_burst_t *b, bool overflow
     return false;
 }
 
-/* start_stretch() starts a new stretch at the burst and returns the flags. */
+/* Starts a new stretch at the burst and returns the RT_ flags. */
 static unsigned start_stretch(rt_state_t *s, const rt_burst_t *b)
 {
     unsigned flags = RT_NEW_STRETCH;

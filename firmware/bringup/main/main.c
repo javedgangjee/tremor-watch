@@ -1,11 +1,10 @@
 /*
- * Rate program for feature 1.
- *
- * It sets the QMI8658 to output rate code 0x06 with the gyroscope and the
- * accelerometer on, which the datasheet gives as 112.1 readings a second.
- * It then counts readings with the sensor's own reading counter and times
- * them with the 64-bit microsecond timer. It prints one line a minute for
- * 20 minutes, then a summary line. The screen stays on and shows the rate.
+ * Rate program. It sets the QMI8658 to output rate code 0x06 with the
+ * gyroscope and the accelerometer on, which the datasheet gives as 112.1
+ * readings a second. It then counts readings with the sensor's own reading
+ * counter and times them with the 64-bit microsecond timer. It prints one line
+ * a minute for 20 minutes, then a summary line. The screen stays on and shows
+ * the rate.
  */
 #include <inttypes.h>
 #include <stdbool.h>

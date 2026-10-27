@@ -1,10 +1,9 @@
-"""Run the table run of feature 7 and judge it.
+"""Run the watch still on a table and judge the log.
 
-The watch lies still on a table on USB power. The script resets the watch
-through the port, saves every line with the laptop's time in seconds, and
-judges the log by the pass checks in check 9 of
-specs/features/07-firmware-base/validation.md. It runs with the ESP-IDF
-Python, which has pyserial.
+Runs check 9 of specs/features/07-firmware-base/validation.md. The watch lies
+still on a table on USB power. The script resets the watch through the port
+and saves every line with the laptop's time in seconds. It runs with the
+ESP-IDF Python, which has pyserial.
 
     caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/table_run.py
 
@@ -29,7 +28,8 @@ DEFAULT_PORT = "/dev/cu.usbmodem101"
 DEFAULT_LOG = REPO / "tests" / "firmware" / "table_log.txt"
 DEFAULT_REPORT = REPO / "tests" / "firmware" / "table_report.md"
 
-# Feature 1 measured this rate over twenty minutes with the sensor's own counter.
+# The sensor's reading rate in microhertz, measured over twenty minutes with its own
+# counter. Every RATE line must lie within RATE_TOLERANCE_PPM of it.
 FEATURE1_RATE_UHZ = 114330200
 RATE_TOLERANCE_PPM = 1000
 TASK_NAMES = ("sensor", "pipeline", "state", "screen", "usb")
@@ -96,7 +96,7 @@ def minute_record(parsed: Parsed, kind: str, minute: int) -> dict[str, str] | No
 
 
 def check_start(parsed: Parsed) -> Check:
-    """Item 1 checks for one START line and no reset or error after it."""
+    """Check for one START line and no reset or error after it."""
     starts = [i for i, text in enumerate(parsed.texts) if text.startswith("START ")]
     if len(starts) != 1:
         return Check("one start, no reset or error", False, f"{len(starts)} START lines")
@@ -109,7 +109,7 @@ def check_start(parsed: Parsed) -> Check:
 
 
 def check_setup(parsed: Parsed) -> Check:
-    """Item 2 checks the sensor settings that the watch read back."""
+    """Check the sensor settings that the watch read back."""
     setups = parsed.records.get("SENSOR_SETUP", [])
     if len(setups) != 1:
         return Check("sensor settings", False, f"{len(setups)} SENSOR_SETUP lines")
@@ -131,14 +131,14 @@ def check_setup(parsed: Parsed) -> Check:
 
 
 def check_power(parsed: Parsed) -> Check:
-    """Item 3 checks that the power chip answered and USB power is in."""
+    """Check that the power chip answered and USB power is in."""
     lines = parsed.records.get("POWER", [])
     ok = len(lines) == 1 and lines[0].get("pmu") == "ok" and lines[0].get("vbus") == "1"
     return Check("power chip", ok, str(lines))
 
 
 def check_tasks(parsed: Parsed) -> Check:
-    """Item 4 checks the five TASK lines, their cores, and their priorities."""
+    """Check the five TASK lines, their cores, and their priorities."""
     tasks: dict[str, dict[str, str]] = {}
     for record in parsed.records.get("TASK", []):
         name = record.get("name", "")
@@ -161,7 +161,7 @@ def check_tasks(parsed: Parsed) -> Check:
 
 
 def check_minutes(parsed: Parsed, minutes: int) -> Check:
-    """Item 5 checks for every minute line of every kind."""
+    """Check for every minute line of every kind."""
     missing = [
         f"{kind} {m}" for kind in MINUTE_KINDS for m in range(1, minutes + 1) if minute_record(parsed, kind, m) is None
     ]
@@ -169,7 +169,7 @@ def check_minutes(parsed: Parsed, minutes: int) -> Check:
 
 
 def check_losses(parsed: Parsed, minutes: int) -> Check:
-    """Item 6 checks that no reading, message, or line was lost."""
+    """Check that no reading, message, or line was lost."""
     sensor = minute_record(parsed, "SENSOR_MINUTE", minutes)
     pipeline = minute_record(parsed, "PIPELINE_MINUTE", minutes)
     usb = minute_record(parsed, "USB_MINUTE", minutes)
@@ -189,7 +189,7 @@ def check_losses(parsed: Parsed, minutes: int) -> Check:
 
 
 def check_reading_counts(parsed: Parsed, minutes: int) -> Check:
-    """Item 7 checks that the pipeline task saw the readings that the sensor task sent."""
+    """Check that the pipeline task saw the readings that the sensor task sent."""
     sensor = minute_record(parsed, "SENSOR_MINUTE", minutes)
     pipeline = minute_record(parsed, "PIPELINE_MINUTE", minutes)
     if sensor is None or pipeline is None:
@@ -199,7 +199,7 @@ def check_reading_counts(parsed: Parsed, minutes: int) -> Check:
 
 
 def check_bursts(parsed: Parsed, minutes: int) -> Check:
-    """Item 8 checks the burst sizes and the delay from stamp to read."""
+    """Check the burst sizes and the delay from stamp to read."""
     sensor = minute_record(parsed, "SENSOR_MINUTE", minutes)
     if sensor is None:
         return Check("burst sizes and delay", False, "the last SENSOR_MINUTE line is missing")
@@ -212,13 +212,13 @@ def check_bursts(parsed: Parsed, minutes: int) -> Check:
 
 
 def rate_limits() -> tuple[int, int]:
-    """Give the lowest and highest rate that item 9 allows."""
+    """Give the lowest and highest rate that check_rates allows."""
     step = FEATURE1_RATE_UHZ * RATE_TOLERANCE_PPM // 1_000_000
     return FEATURE1_RATE_UHZ - step, FEATURE1_RATE_UHZ + step
 
 
 def check_rates(parsed: Parsed) -> Check:
-    """Item 9 checks every rate against feature 1's rate."""
+    """Check every RATE line against FEATURE1_RATE_UHZ."""
     low, high = rate_limits()
     rates = [int(r["rate_uhz"]) for r in parsed.records.get("RATE", [])]
     ok = bool(rates) and all(low <= rate <= high for rate in rates)
@@ -226,7 +226,7 @@ def check_rates(parsed: Parsed) -> Check:
 
 
 def check_numbers(parsed: Parsed) -> Check:
-    """Item 10 checks the first stretch and the stretch numbers."""
+    """Check the first stretch and the stretch numbers."""
     stretches = parsed.records.get("STRETCH", [])
     numbers = [int(r["number"]) for r in stretches]
     ok = bool(stretches) and stretches[0].get("kind") == "start" and numbers == list(range(len(numbers)))
@@ -234,7 +234,7 @@ def check_numbers(parsed: Parsed) -> Check:
 
 
 def check_errors(parsed: Parsed) -> Check:
-    """Item 11 checks that each drift end lies beyond half a reading period."""
+    """Check that each drift end lies beyond half a reading period."""
     bad = []
     for record in parsed.records.get("STRETCH", []):
         if record.get("kind") != "2" or record.get("error_us") in (None, "none"):
@@ -246,7 +246,7 @@ def check_errors(parsed: Parsed) -> Check:
 
 
 def check_still(parsed: Parsed) -> Check:
-    """Item 12 checks that the watch lay still and the units are right."""
+    """Check that the watch lay still and the units are right."""
     bad = []
     lines = parsed.records.get("PIPELINE_MINUTE", [])
     for record in lines:
@@ -264,7 +264,7 @@ def check_still(parsed: Parsed) -> Check:
 
 
 def check_screen(parsed: Parsed, minutes: int) -> Check:
-    """Item 13 checks that the screen task changed the uptime about once a second."""
+    """Check that the screen task changed the uptime about once a second."""
     screen = minute_record(parsed, "SCREEN_MINUTE", minutes)
     if screen is None:
         return Check("screen updates", False, "the last SCREEN_MINUTE line is missing")

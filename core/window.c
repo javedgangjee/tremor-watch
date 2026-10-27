@@ -1,7 +1,4 @@
-/*
- * window.c holds the result codes and the window rule. window.h describes
- * them, and the feature 6 requirements 23 to 25 give the details.
- */
+/* window.c holds the result codes and the window rule. See window.h. */
 
 #include "window.h"
 

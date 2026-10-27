@@ -40,7 +40,6 @@
 #include "view.h"
 
 #define SECOND_TICKS pdMS_TO_TICKS(1000)
-/* The task reads the power chip every 10 seconds. */
 #define POWER_EVERY_S 10
 
 static sess_t s_sess;

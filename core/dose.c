@@ -1,6 +1,5 @@
 /*
- * dose.c holds the dose schedule and the due rule. dose.h describes them, and
- * the feature 6 requirements 30 to 34 give the details.
+ * dose.c holds the dose schedule and the due rule. See dose.h.
  *
  * Day and minute sums use 64-bit whole numbers with division that rounds down.
  */
@@ -12,7 +11,7 @@
 #define MINUTE_US INT64_C(60000000)
 #define DAY_US (DOSE_DAY_MINUTES * MINUTE_US)
 
-/* floor_div() divides by a positive number and rounds down. */
+/* Divides by a positive number and rounds down. */
 static int64_t floor_div(int64_t a, int64_t b)
 {
     int64_t q = a / b;
@@ -22,14 +21,14 @@ static int64_t floor_div(int64_t a, int64_t b)
     return q;
 }
 
-/* dose_at() gives the local time of schedule time i on local day `day`. */
+/* Gives the local time of schedule time i on local day `day`. */
 static int64_t dose_at(const dose_t *d, int64_t day, uint8_t i)
 {
     return day * DAY_US + (int64_t)d->schedule.minutes[i] * MINUTE_US;
 }
 
-/* covered() is true when a kept dose has a local time from D minus 1 hour to
- * D, with both ends included. */
+/* True when a kept dose has a local time from D minus 1 hour to D, with both
+ * ends included. */
 static bool covered(const dose_t *d, int64_t dose_local_us)
 {
     for (uint32_t i = 0; i < d->log_kept; i++) {
@@ -42,13 +41,12 @@ static bool covered(const dose_t *d, int64_t dose_local_us)
     return false;
 }
 
-/* is_on() is true when the clock is set and the schedule has a time. */
 static bool is_on(const dose_t *d)
 {
     return d->clock_set && d->schedule.count > 0;
 }
 
-/* mark_tick() records a tick that makes nothing due. */
+/* Records a tick that makes nothing due. */
 static void mark_tick(dose_t *d, int64_t now_us)
 {
     d->ticked = true;
@@ -156,8 +154,8 @@ unsigned dose_tick(dose_t *d, int64_t now_us)
     return 0;
 }
 
-/* nearest() gives the scheduled time nearest to now, before or after, with a
- * tie going to the earlier one. */
+/* Gives the scheduled time nearest to now, before or after. A tie goes to the
+ * earlier one. */
 static int64_t nearest(const dose_t *d, int64_t now_local)
 {
     int64_t today = floor_div(now_local, DAY_US);

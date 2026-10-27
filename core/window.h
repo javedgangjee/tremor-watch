@@ -1,15 +1,13 @@
 /*
  * window.h holds the result codes and the window rule.
  *
- * The rule follows the plan's Windows section. Window n of a stretch holds the
- * 100 Hz samples 100n to 100n + 399. The converter gives the samples in blocks
- * of 100, and block b starts at sample 100b, so window n is complete when
- * block n + 3 arrives. The detector runs on each window as soon as it is
+ * Window n of a stretch holds the 100 Hz samples 100n to 100n + 399. The
+ * converter gives the samples in blocks of 100, and block b starts at sample
+ * 100b, so window n is complete when block n + 3 arrives. The detector runs on each window as soon as it is
  * complete, so the runs follow the readings and never a timer.
  *
- * Every answer carries one result code from the list below, as the plan's
- * Firmware design section says. The numbers are fixed, and the W line of the
- * recording writes them.
+ * Every answer carries one result code from the list below. The numbers are
+ * fixed, and the W line of the recording writes them.
  *
  * The caller owns the state. The file has no static data that changes. On the
  * watch the pipeline task owns the window rule.

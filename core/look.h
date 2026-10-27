@@ -1,13 +1,12 @@
 /*
  * look.h holds the face's colours, its layout, and the text measures.
  *
- * The look follows the build spec's Watch face section and the design file
- * context/Tremor Watch Light.html, with the changes of feature 11's
- * requirements 42 to 46. The layout is a table of boxes in pixels for each
- * screen. Each text box is as tall as its font's line height in
- * core/face_metrics.h, and each text and icon box lies inside the screen's
- * rounded shape. The text widths are the sums of the advance widths in
- * core/face_metrics.h, which is the width LVGL 9.5.0 gives with no kerning.
+ * The look starts from the design file context/Tremor Watch Light.html. The
+ * layout is a table of boxes in pixels for each screen. Each text box is as
+ * tall as its font's line height in core/face_metrics.h, and each text and icon
+ * box lies inside the screen's rounded shape. The text widths are the sums of
+ * the advance widths in core/face_metrics.h, which is the width LVGL 9.5.0
+ * gives with no kerning.
  *
  * The colours and the layout are const data, so the file has no static data
  * that changes.
@@ -31,25 +30,21 @@
 #define LOOK_OUTLINE 8
 /* The "Took it" button is the lower half of Medication, from this row down. */
 #define LOOK_TOOK_IT_Y 251
-/* The cards have corners of this radius. */
 #define LOOK_CARD_RADIUS 40
 /* The "Took it" check is this many pixels square. */
 #define LOOK_ICON_PX 88
-/* The circle's icons are this many pixels square. The user had them fill the
- * top two thirds of the circle at 136 pixels on 2026-10-24, and had them shrink
- * to 128 on 2026-10-26 to make room for "Tremor Detected" on two lines. */
+/* The circle's icons are this many pixels square, which leaves room under
+ * them for a two-line word. */
 #define LOOK_CIRCLE_ICON_PX 128
 
-/* The colours as 0xRRGGBB values. LOOK_DOSE is the design file's purple
- * #3F2559, which the user chose on 2026-10-23. */
+/* The colours as 0xRRGGBB values. */
 #define LOOK_BG 0xF6F3EE
 #define LOOK_CARD 0xFFFFFF
 #define LOOK_TEXT 0x111315
 #define LOOK_TEXT2 0x5C6265
 #define LOOK_TREMOR 0x1B2E42
-/* The user swapped the No tremor and Arm moving looks on 2026-10-25, and
- * renamed No tremor to Rest. Rest is now the charcoal outline, and Arm moving
- * is the filled green circle. */
+/* No tremor shows as "Rest" in a charcoal outline, and Arm moving as a
+ * filled green circle. */
 #define LOOK_ARM 0x2A7242
 #define LOOK_DOSE 0x3F2559
 #define LOOK_REST 0x26292B

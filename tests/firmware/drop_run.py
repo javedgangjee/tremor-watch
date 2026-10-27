@@ -1,20 +1,19 @@
 """Close the port for a while and judge whether the watch kept working.
 
-The watch lies still on a table on USB power with firmware/ flashed. The
-script resets the watch and reads until 60 seconds after the first FACE line
-with state 1. It then closes the port, waits, and opens the port again with
-DTR and RTS low, so the watch does not reset, and reads for 150 seconds. It
-saves every line with the laptop's time in seconds as gzip text, and the
-"> CLOSE" and "> OPEN" lines mark the closed time. It judges the log by the pass
-checks of check 10 of specs/features/09-usb-recording/validation.md. It runs
-with the ESP-IDF Python, which has pyserial, and it takes about 5 minutes.
+Runs check 10 of specs/features/09-usb-recording/validation.md. The watch
+lies still on a table on USB power with firmware/ flashed. The script resets
+the watch and reads until 60 seconds after the first FACE line with state 1.
+It then closes the port, waits, opens it again with DTR and RTS low so the
+watch does not reset, and reads for 150 seconds. It saves every line with the
+laptop's time in seconds as gzip text, and the "> CLOSE" and "> OPEN" lines
+mark the closed time. It runs with the ESP-IDF Python, which has pyserial, and
+takes about 5 minutes.
 
     ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/drop_run.py
 
-With --unplug the script asks the user to unplug the USB cable instead, which
-needs a battery in the watch. Check 11 uses it. With --log-only it judges a
-saved log and opens no port. It exits with code 0 only when every pass check
-holds.
+With --unplug the script asks the person to unplug the USB cable instead,
+which needs a battery in the watch. With --log-only it judges a saved log and
+opens no port. It exits with code 0 only when every pass check holds.
 """
 from __future__ import annotations
 
@@ -49,7 +48,7 @@ OPEN_BEFORE_S = 60.0
 READ_AFTER_S = 150.0
 READ_FIRST_S = 5.0
 UNPLUG_WAIT_S = 300.0
-# The limits of check 10.
+# Pass limits.
 T_LINES_MIN = 50
 SETTLE_US = 15_000_000
 STEP_LOW_US = 900_000
@@ -81,11 +80,9 @@ def read_for(ser: Any, port: str, out: Any, started: float, seconds: float, stop
 
 
 def read_first_line(ser: Any, port: str, out: Any, started: float) -> Any:
-    """Read the first line after the port opens. When the port closed, the
-    laptop dropped the bytes it held, which can end in the middle of a line, so
-    the first line can be the rest of that line. Such a rest goes into the log
-    as the script's own line "> PARTIAL <text>", and a whole line goes in as it
-    is."""
+    """Read the first line after the port opens. Closing the port dropped the
+    bytes the laptop held, so this line can be the end of a cut line. Such a
+    line goes into the log as "> PARTIAL <text>"."""
     end = time.monotonic() + READ_FIRST_S
     while time.monotonic() < end:
         ser, text = record_run.read_line(ser, port)
@@ -148,7 +145,7 @@ def last(log: DropLog, word: str) -> dict[str, str]:
 
 
 def check_one_boot(log: DropLog) -> Check:
-    """Item 1 checks one START line and the same B line throughout."""
+    """Check one START line and the same B line throughout."""
     starts = sum(1 for t in log.texts if t.startswith("START "))
     boots = {t for t in log.texts if kind_of(t) == "B"}
     ok = starts == 1 and len(boots) == 1
@@ -156,7 +153,7 @@ def check_one_boot(log: DropLog) -> Check:
 
 
 def check_t_counts(log: DropLog) -> Check:
-    """Item 3 checks the T lines before CLOSE and after OPEN."""
+    """Check the T lines before CLOSE and after OPEN."""
     before = sum(1 for t in log.texts[: log.close] if kind_of(t) == "T")
     after = sum(1 for t in log.texts[log.open :] if kind_of(t) == "T")
     ok = before >= T_LINES_MIN and after >= T_LINES_MIN
@@ -164,7 +161,7 @@ def check_t_counts(log: DropLog) -> Check:
 
 
 def check_no_wait(log: DropLog) -> Check:
-    """Item 4 checks that no task dropped a message while the port was closed."""
+    """Check that no task dropped a message while the port was closed."""
     got = {
         "line_drops": last(log, "USB_MINUTE").get("line_drops"),
         "msg_drops": last(log, "SENSOR_MINUTE").get("msg_drops"),
@@ -178,7 +175,7 @@ def check_no_wait(log: DropLog) -> Check:
 
 
 def check_answers(log: DropLog) -> Check:
-    """Item 5 checks the answer spacing, also across the closed time."""
+    """Check the answer spacing, also across the closed time."""
     t0s = {r["number"]: int(r["t0_us"]) for r in (fields_of(t) for t in log.texts if t.startswith("STRETCH "))}
     answers = [fields_of(t) for t in log.texts if t.startswith("ANSWER ") and "window=none" not in t]
     problems: list[str] = []
@@ -203,7 +200,7 @@ def check_answers(log: DropLog) -> Check:
 @dataclass
 class GapInfo:
     """What the T lines and the last USB_MINUTE line show about the closed time.
-    close_gap is the gap at the close that the laptop makes, or None. gaps holds
+    close_gap is the gap the laptop makes at the close, or None. gaps holds
     every other gap, which is the watch's own when port_drops is above 0."""
 
     port_drops: int
@@ -213,11 +210,10 @@ class GapInfo:
 
 
 def is_close_gap(log: DropLog, bursts: list[Burst], gap: tuple[Burst, Burst]) -> bool:
-    """Tell the gap at the close. When the script closes the port, the Mac throws
-    away the bytes it already holds, so the lines from CLOSE up to the first text
-    after OPEN never reach the log. Such a gap runs from the last T line before
-    CLOSE to the first T line after OPEN with no B line between them, and from
-    the first line after OPEN the R lines follow on up to that T line."""
+    """Tell the gap at the close. Closing the port drops the bytes the laptop
+    holds, so the lines from CLOSE to the first text after OPEN are lost. That
+    gap runs from the last T line before CLOSE to the first T line after OPEN
+    with no B line between, and the R lines after OPEN count up to that T line."""
     a, b = gap
     before = [x for x in bursts if x.index < log.close]
     after = [x for x in bursts if x.index > log.open]
@@ -241,7 +237,7 @@ def gap_info(log: DropLog) -> GapInfo:
 
 
 def check_gap(log: DropLog, unplug: bool) -> Check:
-    """Item 6 checks the gap at the close, the watch's own gap, and the B and S lines at it."""
+    """Check the gap at the close, the watch's own gap, and the B and S lines at it."""
     info = gap_info(log)
     problems: list[str] = []
     if len(info.gaps) > 1:
@@ -267,7 +263,7 @@ def check_gap(log: DropLog, unplug: bool) -> Check:
 
 
 def judge(log: DropLog, unplug: bool) -> list[Check]:
-    """Give the result of every pass check of check 10."""
+    """Give the result of every pass check."""
     return [
         check_one_boot(log),
         record_run.check_format(log.texts, "every line is whole"),
@@ -279,7 +275,7 @@ def judge(log: DropLog, unplug: bool) -> list[Check]:
 
 
 def measurements(log: DropLog) -> list[str]:
-    """Give the measurements of check 10 as report lines."""
+    """Give the measurements as report lines."""
     info = gap_info(log)
     out = [f"- The last USB_MINUTE line gives port_drops={info.port_drops} and restarts={info.restarts}."]
     if info.port_drops > 0:

@@ -1,13 +1,12 @@
 /*
- * converter.h is the converter, which turns one stretch of gyroscope readings
- * into 100 readings a second.
+ * converter.h turns one stretch of gyroscope readings into 100 readings a
+ * second.
  *
- * The converter follows the plan's Sensor and converter section, under
- * Converting to 100 readings a second. Block b makes the 100 Hz samples 100b
- * to 100b + 99 of the stretch. It fits a natural cubic spline through the
- * block's readings plus 16 extra readings on each side, reads the curve at
- * each sample, and throws away the extra readings. The 100 Hz grid starts at
- * the stretch's first reading. The converter adds no filter.
+ * Block b makes the 100 Hz samples 100b to 100b + 99 of the stretch. It fits a
+ * natural cubic spline through the block's readings plus 16 extra readings on
+ * each side, reads the curve at each sample, and throws away the extra
+ * readings. The 100 Hz grid starts at the stretch's first reading. The
+ * converter adds no filter.
  *
  * Readings and samples are in degrees per second as 32-bit floats. A rate is a
  * whole number of millionths of a reading per second.
@@ -21,18 +20,16 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* The converter takes the three gyroscope axes. */
 #define CONV_AXES 3
-/* The converter gives 100 samples a second. */
 #define CONV_OUT_HZ 100
-/* Each block has 16 extra readings on each side. */
+/* The extra readings on each side of a block. */
 #define CONV_MARGIN 16
-/* Each block gives 100 samples, which is one second. */
+/* Each block gives one second of samples. */
 #define CONV_BLOCK_SAMPLES 100
 /* The ring holds 2048 readings, which is more than 10 seconds at the highest
  * rate plus one full sensor buffer. */
 #define CONV_RING_LEN 2048
-/* A block holds at most 192 readings. */
+/* A block spans at most this many readings, its extra readings included. */
 #define CONV_MAX_BLOCK 192
 /* The lowest and the highest rate the converter accepts, in millionths of a
  * reading per second. */
@@ -48,7 +45,6 @@ typedef struct {
     uint64_t count;
     /* The number of the oldest reading the ring still holds. */
     uint64_t base;
-    /* The number of the next block. */
     uint64_t next_block;
     /* The work arrays for one block. They hold the readings, the second
      * derivatives, and the forward sweep's factors and values. */

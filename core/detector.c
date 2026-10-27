@@ -3,14 +3,14 @@
  *
  * It follows detect() in reference/plain_detector.py in its 32-bit float case,
  * step for step. Every step before the score runs in 32-bit floats, as numpy
- * runs it on float32 arrays. The score runs in 64-bit doubles, because numpy
+ * does on float32 arrays. The score runs in 64-bit doubles, because numpy
  * turns the 12 numbers into 64-bit values when it subtracts the 64-bit means.
  *
- * The fixed numbers come from detector_tables.h, which tools/gen_tables.py
- * makes. This is the only file in core/ that includes that header, because the
- * header holds static arrays. The FFTs come from KISS FFT, which never touches
- * the heap here, because det_init() builds both configurations in static
- * buffers.
+ * The fixed numbers come from detector_tables.h, made by tools/gen_tables.py.
+ * Only this file in core/ includes that header, because it holds static
+ * arrays.
+ * det_init() builds both KISS FFT configurations in static buffers, so the
+ * FFTs never touch the heap.
  *
  * The tremor detector comes from ParaDigMa by the Radboud Parkinson's group,
  * which has an Apache 2.0 licence. The source paper is Timmermans and
@@ -29,9 +29,9 @@ _Static_assert(DET_MFCC_COUNT == DET_N_COEF, "the result must hold one value for
 _Static_assert(DET_WINDOW_LEN == 400, "the window must hold 400 readings");
 
 /*
- * These are the recipe numbers that detector_tables.h does not hold. Each
- * comment names the toolbox setting in TremorConfig that gives the number, or
- * the toolbox function that holds it when TremorConfig does not.
+ * Recipe numbers that detector_tables.h does not hold. Each comment names the
+ * TremorConfig setting that gives the number, or the toolbox function that
+ * holds it.
  */
 
 /* sampling_frequency is 100 readings a second. */
@@ -53,12 +53,10 @@ _Static_assert(DET_WINDOW_LEN == 400, "the window must hold 400 readings");
 #define SPG_STEP 40
 #define SPG_SLICES ((DET_WINDOW_LEN - DET_SPG_SEG) / SPG_STEP + 1)
 
-/* extract_spectral_domain_features multiplies the coarse spectrum by 100. This
- * number is in its code and is not a TremorConfig setting. */
+/* extract_spectral_domain_features multiplies the coarse spectrum by 100. */
 #define SPG_GAIN 100.0f
 
-/* compute_mfccs adds 1e-10 before it takes log10. This number is in its code and
- * is not a TremorConfig setting. */
+/* compute_mfccs adds 1e-10 before it takes log10. */
 #define LOG_FLOOR 1e-10f
 
 /* spectral_resolution_psd is 0.25 Hz, which is the width of one fine step. */
@@ -109,10 +107,9 @@ static float psd[PSD_BINS];
 static float spg[SPG_SLICES][DET_N_BINS];
 
 /*
- * numpy_sum() adds n floats in the order that numpy's .sum() uses on a float32
- * array. numpy adds blocks of up to 128 values in eight running sums and
- * splits longer arrays in two. Keeping that order gives the same float as
- * plain_detector.py.
+ * Adds n floats in the order that numpy's .sum() uses on a float32 array:
+ * blocks of up to 128 values in eight running sums, and longer arrays split in
+ * two. Keeping that order gives the same float as plain_detector.py.
  */
 static float numpy_sum(const float *a, int n)
 {
@@ -145,7 +142,8 @@ static float numpy_sum(const float *a, int n)
     return numpy_sum(a, n2) + numpy_sum(a + n2, n - n2);
 }
 
-/* fft_config() builds one real FFT configuration in its static buffer. */
+/* Builds one real FFT configuration in its static buffer, or returns NULL if
+ * the buffer is too small. */
 static kiss_fftr_cfg fft_config(int nfft, unsigned char *mem, size_t mem_size)
 {
     size_t need = 0;
@@ -178,7 +176,7 @@ bool det_init(void)
     return true;
 }
 
-/* fine_spectrum() is step 1 of detect(). It averages two 3 s slices and adds the three axes. */
+/* Step 1 of detect(): average two 3 s slices and add the three axes. */
 static void fine_spectrum(const float window[DET_WINDOW_LEN][DET_AXES])
 {
     for (int k = 0; k < PSD_BINS; k++) {
@@ -204,7 +202,7 @@ static void fine_spectrum(const float window[DET_WINDOW_LEN][DET_AXES])
     }
 }
 
-/* coarse_spectrum() is step 2 of detect(). It keeps six 2 s slices apart and adds the three axes. */
+/* Step 2 of detect(): keep six 2 s slices apart and add the three axes. */
 static void coarse_spectrum(const float window[DET_WINDOW_LEN][DET_AXES])
 {
     for (int s = 0; s < SPG_SLICES; s++) {
@@ -227,8 +225,8 @@ static void coarse_spectrum(const float window[DET_WINDOW_LEN][DET_AXES])
     }
 }
 
-/* shape_numbers() is step 3 of detect(). It groups each slice into 15 bands, takes the
- * log, applies the cosine table, and averages the six slices. */
+/* Step 3 of detect(): group each slice into 15 bands, take the log, apply the
+ * cosine table, and average the six slices. */
 static void shape_numbers(float mfcc[DET_N_COEF])
 {
     float logb[DET_N_FILT];
@@ -253,7 +251,7 @@ static void shape_numbers(float mfcc[DET_N_COEF])
     }
 }
 
-/* score() is step 4 of detect(). It runs in 64-bit doubles and returns the probability. */
+/* Step 4 of detect(): returns the probability, computed in 64-bit doubles. */
 static double score(const float mfcc[DET_N_COEF])
 {
     double dot = 0.0;

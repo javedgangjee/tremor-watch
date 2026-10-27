@@ -151,7 +151,6 @@ static void test_5_fault(void)
     share_t before = sess.share;
     TEST_ASSERT_EQUAL_UINT(0u, sess_answer(&sess, false, 0, RES_SENSOR_FAULT, 9000000));
     TEST_ASSERT_EQUAL_INT(FACE_NO_TREMOR, face_shown(&sess.face));
-    /* The second fault answer is passed with window 4 and has_window false. */
     TEST_ASSERT_EQUAL_UINT(SESS_FACE_CHANGED, sess_answer(&sess, false, 4, RES_SENSOR_FAULT, 10000000));
     TEST_ASSERT_EQUAL_INT(FACE_WAITING, face_shown(&sess.face));
     TEST_ASSERT_EQUAL_UINT32(2u, sess.answers[RES_SENSOR_FAULT]);
@@ -219,9 +218,10 @@ static void test_7_new_session(void)
     TEST_ASSERT_EQUAL_INT64(LOCAL(1, 8, 0), next);
 }
 
-/* Cases 20 to 22 of feature 11 use the clock of tests/view/test_view.c. The
- * offset O is 2026-10-23 00:00:00 in microseconds since 1970, so timer value
- * 0 is local midnight at the start of 23 October 2026. */
+/* Cases 20 to 22 follow specs/features/11-watch-face/validation.md and use
+ * the clock of tests/view/test_view.c. The offset O is 2026-10-23 00:00:00 in
+ * microseconds since 1970, so timer value 0 is local midnight at the start of
+ * 23 October 2026. */
 #define F11_O INT64_C(1792713600000000)
 #define F11_AT(h, m, s) (((INT64_C(h) * 60 + (m)) * 60 + (s)) * SECOND_US)
 

@@ -1,15 +1,15 @@
 """Run the face's scripted check on the watch and judge the log.
 
-The watch lies still on a table on USB power with firmware/ flashed, and
-nobody touches it. The script runs the steps of check 9 of
-specs/features/11-watch-face/validation.md in order. It resets the watch,
-sends TONE,1, CLOCK, and SCHEDULE,FaceTest,<m> with m the next whole minute at
-least 90 seconds ahead, waits for the dose to become due and to end, sends
-TONE,0 and a second schedule in the same way, waits for the second dose to
-become due, sends SESSION, and puts the settings of the boot back. It saves
+Runs check 9 of specs/features/11-watch-face/validation.md. The watch lies
+still on a table on USB power with firmware/ flashed, and nobody touches it.
+In order, the script resets the watch, sends TONE,1, CLOCK, and
+SCHEDULE,FaceTest,<m> with m the next whole minute at least 90 seconds ahead,
+waits for the dose to become due and to end, sends TONE,0 and a second
+schedule in the same way, waits for the second dose to become due, sends
+SESSION, and puts the settings of the boot back. It saves
 every line with the laptop's time in seconds as gzip text, and each command
 and the reset go into the log as lines that start with "> ". It runs with the
-ESP-IDF Python, which has pyserial, and it takes about 22 minutes.
+ESP-IDF Python, which has pyserial, and takes about 22 minutes.
 
     caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/face_run.py
 
@@ -57,7 +57,7 @@ DUE_US = 900_000_000
 DAY_US = 86_400_000_000
 MINUTE_US = 60_000_000
 
-# The limits of check 9 of feature 11.
+# Pass limits.
 START_WITHIN_S = 30.0
 INTERNAL_MIN = 10240
 VIEW_WITHIN_US = 1_100_000
@@ -112,7 +112,7 @@ def send_schedule(r: Runner) -> float:
 
 
 def run(port: str, log_path: Path) -> None:
-    """Run every step of check 9 on the watch."""
+    """Run every step on the watch."""
     with gzip.open(log_path, "wt") as out:
         r = command_run.make_runner(port, out)
         command_run.reset_watch(r)
@@ -235,7 +235,7 @@ def f_state(line: Line) -> int:
 
 
 def check_boot(log: FaceLog) -> Check:
-    """Item 1 checks one B line with version 11 and the table hash, and the format of every record line."""
+    """Check one good B line and the format of every record line."""
     texts = [line.text for line in log.lines]
     boots = [t for t in texts if kind_of(t) == "B"]
     problems = []
@@ -250,7 +250,7 @@ def check_boot(log: FaceLog) -> Check:
 
 
 def check_start(log: FaceLog) -> Check:
-    """Item 2 checks the SCREEN_START line."""
+    """Check the SCREEN_START line."""
     starts = [line for line in log.lines if line.word == "SCREEN_START"]
     if not starts or not log.lines:
         return result("screen start", ["no SCREEN_START line"])
@@ -267,7 +267,7 @@ def check_start(log: FaceLog) -> Check:
 
 
 def check_before_clock(log: FaceLog) -> Check:
-    """Item 3 checks the SCREEN_VIEW lines before the CLOCK command."""
+    """Check the SCREEN_VIEW lines before the CLOCK command."""
     clock = sent_with(log, "CLOCK,")
     end = clock[0].line.index if clock else len(log.lines)
     before = [line for line in views(log) if line.index < end]
@@ -280,7 +280,7 @@ def check_before_clock(log: FaceLog) -> Check:
 
 
 def check_faces(log: FaceLog) -> Check:
-    """Item 4 checks a SCREEN_VIEW with the face of each F line and the look of each face."""
+    """Check a SCREEN_VIEW with the face of each F line and the look of each face."""
     problems = []
     all_views = views(log)
     for f in f_lines(log):
@@ -297,7 +297,7 @@ def check_faces(log: FaceLog) -> Check:
 
 
 def check_after_clock(log: FaceLog) -> Check:
-    """Item 5 checks the time of every SCREEN_VIEW after the CLOCK command's A line."""
+    """Check the time of every SCREEN_VIEW after the CLOCK command's A line."""
     if log.offset_us is None or log.clock_answer is None:
         return result("time after the clock", ["no CLOCK command with a CLOCK line and an answer"])
     problems = []
@@ -311,7 +311,7 @@ def check_after_clock(log: FaceLog) -> Check:
 
 
 def check_next(log: FaceLog) -> Check:
-    """Item 6 checks the next dose time after each schedule command."""
+    """Check the next dose time after each schedule command."""
     problems = []
     found = schedules(log)
     if not found:
@@ -357,7 +357,7 @@ def doses(log: FaceLog) -> list[Dose]:
 
 
 def check_first_dose(log: FaceLog) -> Check:
-    """Item 7 checks that the first dose becomes due with its tone and its view."""
+    """Check that the first dose becomes due with its tone and its view."""
     found = doses(log)
     if not found or found[0].start is None or log.offset_us is None:
         return result("first dose due", ["no F line with state 4 after the first schedule"])
@@ -388,7 +388,7 @@ def check_first_dose(log: FaceLog) -> Check:
 
 
 def check_first_end(log: FaceLog) -> Check:
-    """Item 8 checks that the first due state ends after 15 minutes with its view and no second tone."""
+    """Check that the first due state ends after 15 minutes with its view and no second tone."""
     found = doses(log)
     if not found or found[0].start is None or found[0].end is None or log.offset_us is None:
         return result("first dose ends", ["no F line that ends the first due state"])
@@ -410,7 +410,7 @@ def check_first_end(log: FaceLog) -> Check:
 
 
 def check_second_dose(log: FaceLog) -> Check:
-    """Item 9 checks the second dose with the tone off, and the view after SESSION."""
+    """Check the second dose with the tone off, and the view after SESSION."""
     problems = []
     found = doses(log)
     tone_off = sent_with(log, "TONE,0")
@@ -484,7 +484,7 @@ def share_from(log: FaceLog, end: int) -> ShareView:
 
 
 def check_blocks(log: FaceLog) -> Check:
-    """Item 10 checks the blocks and the share of the last SCREEN_VIEW before SESSION."""
+    """Check the blocks and the share of the last SCREEN_VIEW before SESSION."""
     session = sent_with(log, "SESSION")
     end = session[0].line.index if session else len(log.lines)
     before = [v for v in views(log) if v.index < end]
@@ -510,7 +510,7 @@ def check_blocks(log: FaceLog) -> Check:
 
 
 def check_minutes(log: FaceLog) -> Check:
-    """Item 11 checks the minute lines and that no SCREEN_ERROR line comes."""
+    """Check the minute lines and that no SCREEN_ERROR line comes."""
     problems = []
     for line in log.lines:
         f = line.fields
@@ -531,14 +531,14 @@ def check_minutes(log: FaceLog) -> Check:
 
 
 def check_untouched(log: FaceLog) -> Check:
-    """Item 12 checks that the log holds no D, DOSE, DOSE_REFUSED, TOUCH, or BUTTON line."""
+    """Check that the log holds no D, DOSE, DOSE_REFUSED, TOUCH, or BUTTON line."""
     found = [line.text for line in log.lines
              if kind_of(line.text) == "D" or line.word in ("DOSE", "DOSE_REFUSED", "TOUCH", "BUTTON")]
     return result("nobody touched the watch", [f"line {t}" for t in found], f"{len(found)} lines")
 
 
 def check_settings(log: FaceLog) -> Check:
-    """Item 13 checks that the last SETTINGS line gives the settings of the boot."""
+    """Check that the last SETTINGS line gives the settings of the boot."""
     settings = [line.fields for line in log.lines if line.word == "SETTINGS"]
     boot = next((f for f in settings if f.get("source") == "boot"), None)
     if boot is None or not settings:
@@ -550,7 +550,7 @@ def check_settings(log: FaceLog) -> Check:
 
 
 def judge(log: FaceLog) -> list[Check]:
-    """Give the result of every pass check of check 9."""
+    """Give the result of every pass check."""
     return [
         check_boot(log),
         check_start(log),
@@ -569,7 +569,7 @@ def judge(log: FaceLog) -> list[Check]:
 
 
 def measurements(log: FaceLog) -> list[str]:
-    """Give the measurements of check 9 as report lines."""
+    """Give the measurements as report lines."""
     out = []
     start = next((line for line in log.lines if line.word == "SCREEN_START"), None)
     if start is not None:

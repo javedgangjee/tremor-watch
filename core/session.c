@@ -1,7 +1,4 @@
-/*
- * session.c holds the state task's rules. session.h describes them, and the
- * feature 8 requirements 24 to 26 give the details.
- */
+/* session.c holds the state task's rules. See session.h. */
 
 #include "session.h"
 
@@ -13,7 +10,7 @@ static void clear_counts(sess_t *s)
     s->gaps = 0;
 }
 
-/* changed() counts a change of the shown state and gives its flag. */
+/* Counts a change of the shown state and returns its flag. */
 static unsigned changed(sess_t *s, bool change)
 {
     if (!change) {

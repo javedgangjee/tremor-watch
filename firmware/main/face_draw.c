@@ -1,6 +1,6 @@
 /*
  * face_draw.c builds and changes the LVGL objects of the face. face_draw.h
- * describes it, and feature 11's requirements 42 to 58 give the details.
+ * describes it.
  *
  * Each screen is one full-screen object, and every other object of the screen
  * is its direct child, placed at its box from core/look.h. Children take no
@@ -46,10 +46,6 @@ LV_FONT_DECLARE(face_font_96)
 #define POP_TOP 1030
 #define POP_END 1000
 #define TICK_MS 1280
-/* The battery's border and nub. */
-#define BATTERY_BORDER 3
-#define BATTERY_NUB_W 5
-#define BATTERY_NUB_H 12
 /* The blocks have gaps of 4 pixels, a hollow block has a border of 3 pixels,
  * and a bar is at least 4 pixels tall. */
 #define BLOCK_GAP 4
@@ -62,7 +58,6 @@ typedef struct {
     /* Home and Logged. */
     lv_obj_t *time;
     lv_obj_t *date;
-    lv_obj_t *battery;
     lv_obj_t *line;
     lv_obj_t *pulse;
     lv_obj_t *circle;
@@ -423,9 +418,8 @@ static void build_home(look_screen_t screen)
     screen_objs_t *o = &s_objs[screen];
     const look_box_t *c = look_box(screen, LOOK_ITEM_CIRCLE);
     const look_box_t *icon = look_box(screen, LOOK_ITEM_CIRCLE_ICON);
-    /* The user removed the top row of time, date, and battery on 2026-10-24,
-     * so o->time, o->date, and o->battery stay NULL and set_text() skips them. */
-
+    /* These screens have no row of time and date, so o->time and o->date
+     * stay NULL and set_text() skips them. */
     o->pulse = plain(o->root, c->x, c->y, c->w, c->h);
     if (o->pulse != NULL) {
         lv_obj_set_style_radius(o->pulse, LV_RADIUS_CIRCLE, 0);
@@ -567,9 +561,6 @@ void face_draw_view(const view_t *v)
         screen_objs_t *o = &s_objs[screen];
         set_text(o->time, screen, LOOK_ITEM_TIME, v->time, NULL);
         set_text(o->date, screen, LOOK_ITEM_DATE, v->date, NULL);
-        if (o->battery != NULL && strcmp(lv_label_get_text(o->battery), v->battery) != 0) {
-            lv_label_set_text(o->battery, v->battery);
-        }
     }
     screen_objs_t *home = &s_objs[LOOK_HOME];
     set_text(home->line, LOOK_HOME, LOOK_ITEM_LINE, v->last_tremor, NULL);

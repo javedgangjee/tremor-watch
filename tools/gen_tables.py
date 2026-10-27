@@ -33,7 +33,7 @@ logger = logging.getLogger("gen_tables")
 
 DEFAULT_OUT = REPO / "core" / "detector_tables.h"
 DEFAULT_MODEL = Path(paradigma.__file__).resolve().parent / "assets" / "tremor_detection_clf_package.pkl"
-# Feature 2 confirmed this hash as the model file of ParaDigMa 1.1.2.
+# The hash of the model file of ParaDigMa 1.1.2.
 EXPECTED_SHA256 = "4be2ac2b511c501257ea8186068f06a94d0084d653840e907be72cd103dc5b0e"
 FEATURE_NAMES = [f"mfcc_{i}" for i in range(1, plain.N_COEF + 1)]
 COMMAND = "reference/.venv/bin/python tools/gen_tables.py"
@@ -121,7 +121,6 @@ def matrix(name: str, rows: str, cols: str, table: np.ndarray) -> list[str]:
 
 
 def header_text(model: dict[str, np.ndarray | float], tables: dict[str, np.ndarray], digest: str) -> str:
-    """Return the full text of the header."""
     n_bins = plain.SPG_NFFT // 2 + 1
     comment = [
         "/*",
@@ -191,7 +190,6 @@ def check_tables(tables: dict[str, np.ndarray]) -> None:
 
 
 def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
-    """Read the command-line options."""
     parser = argparse.ArgumentParser(description="Write the detector's fixed numbers into a C header.")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="the header to write")
     parser.add_argument("--model", type=Path, default=DEFAULT_MODEL, help="the toolbox's model file")

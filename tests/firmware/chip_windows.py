@@ -1,12 +1,12 @@
 """Run the saved windows on the chip and judge the results.
 
+Runs check 8 of specs/features/08-pipeline-state/validation.md.
 firmware/detector_check/ must be flashed on the watch. The script resets the
-watch through the port as table_run.py does, saves every line with the
-laptop's time in seconds until CHECK_END arrives or 5 minutes pass, and judges
-the log by the pass checks in check 8 of
-specs/features/08-pipeline-state/validation.md. The chip's numbers are checked
-against tests/detector/answers.csv with the rule of tests/detector/test_detector.c.
-It runs with the ESP-IDF Python, which has pyserial.
+watch as table_run.py does and saves every line with the laptop's time in
+seconds until CHECK_END arrives or 5 minutes pass. It checks the chip's
+numbers against tests/detector/answers.csv with the rule of
+tests/detector/test_detector.c. It runs with the ESP-IDF Python, which has
+pyserial.
 
     ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/chip_windows.py
 
@@ -161,7 +161,7 @@ def windows_of(parsed: table_run.Parsed, pass_number: int) -> dict[int, dict[str
 
 
 def check_crc(parsed: table_run.Parsed) -> Check:
-    """Item 1 checks the chip's CRC-32 of "123456789" against zlib's."""
+    """Check the chip's CRC-32 of "123456789" against zlib's."""
     want = f"0x{zlib.crc32(CRC_TEXT):08x}"
     lines = parsed.records.get("CHECK_CRC", [])
     ok = len(lines) == 1 and lines[0].get("value", "").lower() == want
@@ -169,7 +169,7 @@ def check_crc(parsed: table_run.Parsed) -> Check:
 
 
 def check_start(parsed: table_run.Parsed, data: bytes) -> Check:
-    """Item 2 checks the size and the CRC-32 of the embedded windows."""
+    """Check the size and the CRC-32 of the embedded windows."""
     want = f"0x{zlib.crc32(data):08x}"
     lines = parsed.records.get("CHECK_START", [])
     ok = (
@@ -182,7 +182,7 @@ def check_start(parsed: table_run.Parsed, data: bytes) -> Check:
 
 
 def check_runs(parsed: table_run.Parsed) -> Check:
-    """Item 3 checks that each pass ran every window once and nothing reset."""
+    """Check that each pass ran every window once and nothing reset."""
     texts = parsed.texts
     crc_at = [i for i, text in enumerate(texts) if text.startswith("CHECK_CRC ")]
     window_at = [i for i, text in enumerate(texts) if text.startswith("CHECK_WINDOW ")]
@@ -222,7 +222,7 @@ class Measures:
 
 
 def check_pass_1(parsed: table_run.Parsed, answers: list[Row]) -> tuple[Check, Measures]:
-    """Item 4 applies the rule of test_detector.c to every window of pass 1."""
+    """Apply the rule of test_detector.c to every window of pass 1."""
     records = windows_of(parsed, 1)
     m = Measures()
     failures: list[str] = []
@@ -247,7 +247,7 @@ def check_pass_1(parsed: table_run.Parsed, answers: list[Row]) -> tuple[Check, M
 
 
 def check_pass_2(parsed: table_run.Parsed) -> Check:
-    """Item 5 checks that pass 2 gives the same text as pass 1 for every number and answer."""
+    """Check that pass 2 gives the same text as pass 1 for every number and answer."""
     first = windows_of(parsed, 1)
     second = windows_of(parsed, 2)
     differ: list[int] = []

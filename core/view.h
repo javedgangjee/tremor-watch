@@ -3,10 +3,8 @@
  *
  * The state task builds the view from the session once a second and after
  * each change, and it sends the view to the screen task, which only draws it.
- * The texts follow the build spec's Watch face section, under Screens, and
- * feature 11's requirements 48 to 53. The time is 24-hour, and the date is a
- * short weekday, the day, and a short month in English. Before the dose clock
- * is set, the time shows "--:--".
+ * The time is 24-hour, and the date is a short weekday, the day, and a short
+ * month in English. Before the dose clock is set, the time shows "--:--".
  *
  * The caller owns the view. The file has no static data that changes.
  */

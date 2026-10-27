@@ -1,15 +1,15 @@
 """Guide a person through the face's taps and BOOT presses and judge the log.
 
-The watch lies on a table on USB power with firmware/ flashed. The script
-runs the steps of check 13 of specs/features/11-watch-face/validation.md. It
-opens the port with no reset, sets the dose clock, and prints each step for
-the person. It marks each step in the log with a line "> STEP n", waits for
-the lines that the step needs or 60 seconds, and goes on. Step 8 waits up to
-320 seconds, because the screen goes back to Home after 5 minutes. At the end
-it puts the starting schedule and tone back. It saves every line with the
+Runs check 13 of specs/features/11-watch-face/validation.md. The watch lies
+on a table on USB power with firmware/ flashed. The script opens the port with
+no reset, sets the dose clock, and shows each step to the person. It marks
+each step in the log with a line "> STEP n", waits for the lines that the step
+needs or 60 seconds, and goes on. Step 8 waits up to 320 seconds, because the
+screen goes back to Home after 5 minutes. At the end it puts the starting
+schedule and tone back. It saves every line with the
 laptop's time in seconds as gzip text, and each command it sends goes into the
 log as a line that starts with "> ". It runs with the ESP-IDF Python, which
-has pyserial, and it takes about 12 minutes.
+has pyserial, and takes about 12 minutes.
 
     ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/tap_run.py
 
@@ -52,8 +52,8 @@ STEP = "STEP"
 DOSE_NAME = "TapTest"
 # The dose time lies at least this long after the schedule command.
 LEAD_S = 90
-# The script waits this long for the lines of a step, and step 8 waits longer
-# for the screen to go back to Home. These times belong to the script.
+# The script waits this long for the lines of a step, and longer in step 8
+# for the screen to go back to Home.
 STEP_WAIT_S = 60.0
 IDLE_WAIT_S = 320.0
 # The script reads this long after a step's lines, so late lines join the step.
@@ -61,7 +61,7 @@ SETTLE_S = 2.0
 FIRST_READ_S = 2.0
 DAY_US = 86_400_000_000
 MINUTE_US = 60_000_000
-# The limits of check 13.
+# Pass limits.
 WITHIN_S = 1.0
 NO_TONE_S = 2.0
 LOGGED_MIN_US = 2_800_000
@@ -137,7 +137,7 @@ def step(r: Runner, n: int, text: str) -> None:
 
 
 def run(port: str, log_path: Path) -> None:
-    """Run every step of check 13 with the person."""
+    """Run every step with the person."""
     with gzip.open(log_path, "wt") as out:
         r = command_run.make_runner(port, out)
         read_for(r, FIRST_READ_S)
@@ -256,7 +256,7 @@ def after(lines: list[Line], line: Line) -> list[Line]:
 
 
 def check_step1(log: TapLog) -> Check:
-    """Item 1 checks a tap on Home that opens Medication with the tap tone."""
+    """Check a tap on Home that opens Medication with the tap tone."""
     lines = log.steps.get(1, [])
     touches = of(lines, "TOUCH", target="home", accepted="1")
     if not touches:
@@ -270,7 +270,7 @@ def check_step1(log: TapLog) -> Check:
 
 
 def check_step2(log: TapLog) -> Check:
-    """Item 2 checks that a tap on the upper half of Medication is ignored."""
+    """Check that a tap on the upper half of Medication is ignored."""
     lines = log.steps.get(2, [])
     touches = of(lines, "TOUCH")
     if not touches:
@@ -288,7 +288,7 @@ def check_step2(log: TapLog) -> Check:
 
 
 def check_step3(log: TapLog) -> Check:
-    """Item 3 checks one "Took it" tap, its dose, and the Logged view for 3 seconds."""
+    """Check one "Took it" tap, its dose, and the Logged view for 3 seconds."""
     lines = log.steps.get(3, [])
     touches = of(lines, "TOUCH", target="took_it", accepted="1")
     if not touches:
@@ -310,7 +310,7 @@ def check_step3(log: TapLog) -> Check:
 
 
 def check_step4(log: TapLog) -> Check:
-    """Item 4 checks that a quick second tap after Home opens Medication is ignored."""
+    """Check that a quick second tap after Home opens Medication is ignored."""
     lines = log.steps.get(4, [])
     touches = of(lines, "TOUCH")
     problems = []
@@ -329,7 +329,7 @@ def check_step4(log: TapLog) -> Check:
 
 
 def check_step5(log: TapLog) -> Check:
-    """Item 5 checks that two quick "Took it" taps log one dose."""
+    """Check that two quick "Took it" taps log one dose."""
     lines = log.steps.get(5, [])
     touches = of(lines, "TOUCH")
     doses = of(lines, "DOSE")
@@ -350,7 +350,7 @@ def dose_local(minute: int, d_local_us: int) -> int:
 
 
 def check_step6(log: TapLog) -> Check:
-    """Item 6 checks the due dose, the BOOT press, and the "Took it" tap that ends it."""
+    """Check the due dose, the BOOT press, and the "Took it" tap that ends it."""
     lines = log.steps.get(6, [])
     problems = []
     schedule = next((line for line in lines if line.text.startswith(f"> SCHEDULE,{DOSE_NAME},")), None)
@@ -386,14 +386,14 @@ def check_step6(log: TapLog) -> Check:
 
 
 def check_step7(log: TapLog) -> Check:
-    """Item 7 checks that four BOOT presses cycle through the screens back to Home."""
+    """Check that four BOOT presses cycle through the screens back to Home."""
     buttons = [line.fields.get("screen", "") for line in of(log.steps.get(7, []), "BUTTON")]
     want = ["medication", "session", "status", "home"]
     return Check("step 7 BOOT cycle", buttons[:4] == want and len(buttons) == 4, f"BUTTON screens {buttons}")
 
 
 def check_step8(log: TapLog) -> Check:
-    """Item 8 checks that Session goes back to Home 5 minutes after the last BOOT press."""
+    """Check that Session goes back to Home 5 minutes after the last BOOT press."""
     lines = log.steps.get(8, [])
     buttons = of(lines, "BUTTON")
     if not buttons:
@@ -405,7 +405,7 @@ def check_step8(log: TapLog) -> Check:
 
 
 def check_step9(log: TapLog) -> Check:
-    """Item 9 checks that a tap with the tone off plays no tone."""
+    """Check that a tap with the tone off plays no tone."""
     lines = log.steps.get(9, [])
     problems = []
     if not any(line.text == "> TONE,0" for line in lines):
@@ -430,9 +430,8 @@ def check_steps(log: TapLog) -> Check:
 def check_format(log: TapLog) -> Check:
     """Check one B line and that every record line follows its pattern.
 
-    The script opens the port with no reset. The watch writes its B line again
-    before its first line after lines were dropped, which happens while no
-    laptop reads the port, so the log holds one B line."""
+    The port opens with no reset. The watch repeats its B line after lines were
+    dropped while nobody read the port, so the log holds one B line."""
     boots = records(log.lines, "B")
     bad = [line.text for line in log.lines if kind_of(line.text) and not record_run.is_record(line.text)]
     problems = [f"{len(boots)} B lines"] if len(boots) != 1 else []
@@ -468,7 +467,7 @@ def check_settings(log: TapLog) -> Check:
 
 
 def judge(log: TapLog) -> list[Check]:
-    """Give the result of every pass check of check 13."""
+    """Give the result of every pass check."""
     return [
         check_steps(log),
         check_step1(log),

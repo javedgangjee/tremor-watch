@@ -4,7 +4,7 @@
  *
  * The task takes every sensor message. It checks that the reading numbers
  * follow on and keeps each minute's sums for the gyroscope and the
- * accelerometer, as in feature 7. It then gives the message to the rules in
+ * accelerometer. It then gives the message to the rules in
  * core/pipeline.c, which follow the stretches, run the converter, and give
  * each complete window. The task runs det_run() on each window, times the run,
  * and sends the answer to the state task. When no sensor message comes for 2

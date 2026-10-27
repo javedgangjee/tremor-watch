@@ -17,8 +17,7 @@
  * A sensor fault answer is due when no part has come for 2 seconds, and then
  * once a second until a part comes.
  *
- * The feature 8 requirements 20, 21, and 23 give the details. The caller owns
- * the state. The file has no static data that changes.
+ * The caller owns the state. The file has no static data that changes.
  */
 
 #ifndef PIPELINE_H
@@ -116,10 +115,8 @@ bool pipe_window(pipe_t *p, float window[DET_WINDOW_LEN][DET_AXES], uint32_t *nu
  * and it then moves the next fault time on by PIPE_FAULT_EVERY_US. */
 bool pipe_fault_due(pipe_t *p, int64_t now_us);
 
-/* pipe_next_fault_us() gives the time the next fault answer is due. */
 int64_t pipe_next_fault_us(const pipe_t *p);
 
-/* pipe_stretch() gives the current stretch. */
 const rt_stretch_t *pipe_stretch(const pipe_t *p);
 
 /* pipe_end_stretch() gives the stretch number of the last end request. */

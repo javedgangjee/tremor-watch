@@ -1,7 +1,5 @@
-/*
- * share.c holds the session share and the Session screen's blocks. share.h
- * describes them, and the feature 6 requirements 26 and 27 give the details.
- */
+/* share.c holds the session share and the Session screen's blocks. See
+ * share.h. */
 
 #include "share.h"
 
@@ -20,7 +18,7 @@ void share_start(share_t *s, int64_t start_us)
     s->count = 0;
 }
 
-/* block_number() gives the block that a window with time time_us goes in. */
+/* Gives the block that a window ending at time_us goes in. */
 static uint32_t block_number(const share_t *s, int64_t time_us)
 {
     if (time_us <= s->start_us) {
@@ -30,8 +28,8 @@ static uint32_t block_number(const share_t *s, int64_t time_us)
     return k > (int64_t)LAST_BLOCK_NUMBER ? LAST_BLOCK_NUMBER : (uint32_t)k;
 }
 
-/* append() adds an empty block after the newest one, and it drops the oldest
- * block when the ring is full. */
+/* Adds an empty block after the newest one. Drops the oldest block when the
+ * ring is full. */
 static void append(share_t *s, uint32_t number)
 {
     uint32_t slot;
@@ -57,8 +55,9 @@ bool share_add(share_t *s, uint32_t window, res_code_t code, int64_t time_us)
         return false;
     }
 
-    /* A window in a later block adds the blocks up to it. Only the latest 12
-     * blocks can be kept, so the adding starts no earlier than 11 before it. */
+    /* A window in a later block adds the blocks up to it. The ring keeps only
+     * SHARE_BLOCKS blocks, so adding starts no earlier than SHARE_BLOCKS - 1
+     * before it. */
     uint32_t k = block_number(s, time_us);
     uint32_t next = 0;
     if (s->count > 0) {
@@ -95,8 +94,8 @@ bool share_add(share_t *s, uint32_t window, res_code_t code, int64_t time_us)
     return true;
 }
 
-/* percent() divides first and then multiplies by 100, as aggregate_tremor()
- * does. */
+/* Divides first and then multiplies by 100, as the toolbox's
+ * aggregate_tremor() does, so the results match. */
 static bool percent(uint32_t tremor, uint32_t still, double *out)
 {
     if (still == 0) {

@@ -1,21 +1,19 @@
 """Run the full recording on a table and judge the log.
 
-The watch lies still on a table on USB power with firmware/ flashed. The
-script resets the watch through the port as pipeline_run.py does, saves every
-line with the laptop's time in seconds as gzip text, and judges the log by the
-pass checks in check 8 of specs/features/09-usb-recording/validation.md. These
-are the 13 pass checks of table_run.py, the 8 pass checks of pipeline_run.py
-on the diagnostic lines, and the checks of the record lines. It runs with the
-ESP-IDF Python, which has pyserial.
+Runs check 8 of specs/features/09-usb-recording/validation.md. The watch lies
+still on a table on USB power with firmware/ flashed. The script resets the
+watch as pipeline_run.py does and saves every line with the laptop's time in
+seconds as gzip text. It judges the log by the 13 pass checks of table_run.py,
+the 8 pass checks of pipeline_run.py on the diagnostic lines, and the checks
+of the record lines. It runs with the ESP-IDF Python, which has pyserial.
 
     caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/record_run.py
 
 With --log-only it judges a saved log and opens no port. It exits with code 0
 only when every pass check holds.
 
-The file also holds the helpers that command_run.py and drop_run.py import.
-These are read_log(), the record line patterns, the diagnostic line pattern,
-the format check, the B line check, and the T and R check.
+The file also holds the log and record line helpers that the other run
+scripts import.
 """
 from __future__ import annotations
 
@@ -175,7 +173,7 @@ def boot_problems(text: str) -> list[str]:
 
 
 def check_boot(texts: list[str]) -> Check:
-    """Item 2 checks one good B line before the START line. The texts start at
+    """Check one good B line before the START line. The texts start at
     the first B line."""
     boots = [i for i, text in enumerate(texts) if kind_of(text) == "B"]
     starts = [i for i, text in enumerate(texts) if text.startswith("START ")]
@@ -231,7 +229,7 @@ def gaps_of(bursts: list[Burst]) -> list[tuple[Burst, Burst]]:
 
 
 def check_bursts(texts: list[str], readings_needed: int) -> Check:
-    """Item 5 checks the T and R lines from reading 0 with no gap and no overlap."""
+    """Check the T and R lines from reading 0 with no gap and no overlap."""
     bursts = bursts_of(texts)
     problems: list[str] = []
     if not bursts or bursts[0].first != 0:
@@ -262,7 +260,7 @@ def diagnostic_parsed(texts: list[str]) -> Parsed:
 
 
 def check_stretches(texts: list[str], parsed: Parsed) -> Check:
-    """Item 4 checks the S lines of each stretch against its STRETCH and RATE lines."""
+    """Check the S lines of each stretch against its STRETCH and RATE lines."""
     s_lines: dict[int, list[tuple[int, list[str]]]] = {}
     first_t: dict[int, int] = {}
     t_stamp: dict[int, int] = {}
@@ -299,7 +297,7 @@ def check_stretches(texts: list[str], parsed: Parsed) -> Check:
 
 
 def check_windows(texts: list[str]) -> Check:
-    """Item 6 checks one W line for each ANSWER line with the same values and text."""
+    """Check one W line for each ANSWER line with the same values and text."""
     answers = [fields_of(t) for t in texts if t.startswith("ANSWER ")]
     w_lines = [record_fields(t) for t in texts if kind_of(t) == "W"]
     problems: list[str] = []
@@ -316,7 +314,7 @@ def check_windows(texts: list[str]) -> Check:
 
 
 def check_faces(texts: list[str]) -> Check:
-    """Item 7 checks one F line for each FACE line with the same time and state."""
+    """Check one F line for each FACE line with the same time and state."""
     faces = [fields_of(t) for t in texts if t.startswith("FACE ")]
     f_lines = [record_fields(t) for t in texts if kind_of(t) == "F"]
     want = [[f.get("at_us"), f.get("state")] for f in faces]
@@ -328,13 +326,13 @@ def check_faces(texts: list[str]) -> Check:
 
 
 def check_no_command_lines(texts: list[str]) -> Check:
-    """Item 8 checks that the log holds no D line and no A line."""
+    """Check that the log holds no D line and no A line."""
     found = [t for t in texts if kind_of(t) in ("D", "A")]
     return Check("no D or A line", not found, f"{len(found)} lines" + (f", first: {found[0]}" if found else ""))
 
 
 def check_drops(parsed: Parsed, minutes: int) -> Check:
-    """Item 9 checks that the recording dropped nothing and took no command."""
+    """Check that the recording dropped nothing and took no command."""
     sensor = table_run.minute_record(parsed, "SENSOR_MINUTE", minutes) or {}
     usb = table_run.minute_record(parsed, "USB_MINUTE", minutes) or {}
     got = {
@@ -364,7 +362,7 @@ def judge_record(texts: list[str], parsed: Parsed, minutes: int) -> list[Check]:
 
 
 def measurements(entries: list[Entry], parsed: Parsed, minutes: int) -> list[str]:
-    """Give the measurements of check 8 as report lines."""
+    """Give the measurements as report lines."""
     texts = [e.text for e in entries]
     start = first_boot_index(texts) or 0
     out = [f"- The log holds {start} lines before the B line."]
@@ -481,8 +479,8 @@ def main(argv: list[str] | None = None) -> int:
     if not args.log_only:
         capture(args.port, args.minutes, args.log)
     entries = read_log(args.log)
-    # A reader skips every line before the first B line. They come from the
-    # chip's ROM, or from before the reset when the laptop still held them.
+    # Skip every line before the first B line. They come from the chip's ROM,
+    # or from before the reset when the laptop still held them.
     texts = [e.text for e in entries]
     texts = texts[first_boot_index(texts) or 0 :]
     parsed = diagnostic_parsed(texts)

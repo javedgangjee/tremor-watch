@@ -1,7 +1,4 @@
-/*
- * tone.c fills the samples of the face's two tones. tone.h describes them,
- * and feature 11's requirement 59 gives the details.
- */
+/* tone.c fills the samples of the face's two tones. See tone.h. */
 
 #include "tone.h"
 
@@ -13,12 +10,11 @@
 #define TWO_PI 6.283185307179586
 
 typedef struct {
-    /* The frequency in Hz. */
     uint32_t hz;
-    /* The samples of one tone and of the silence after it. */
+    /* Samples in one tone and in the silence after it. */
     size_t on;
     size_t off;
-    /* The number of tones. */
+    /* Number of tones. */
     size_t count;
 } pattern_t;
 

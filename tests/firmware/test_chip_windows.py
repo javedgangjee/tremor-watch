@@ -40,7 +40,7 @@ def load(path: Path) -> ModuleType:
 
 
 def test_windows_bytes() -> None:
-    """Case 1 checks the bytes and every value that lies near a halfway point."""
+    """Check the bytes and every value that lies near a halfway point."""
     data = load(WINDOWS_BIN).windows_bytes(WINDOWS_CSV)
     assert len(data) == 1_545_600
     wide = np.loadtxt(WINDOWS_CSV, delimiter=",", skiprows=1, dtype=np.float64).ravel()
@@ -65,7 +65,7 @@ def test_windows_bytes() -> None:
 
 
 def test_rule() -> None:
-    """Case 2 checks the rule of test_detector.c on made-up rows."""
+    """Check the rule of test_detector.c on made-up rows."""
     cw = load(CHIP_WINDOWS)
 
     def toolbox(prob: float = 0.5, below: float = 10.0, gap: float = 0.5) -> object:
@@ -133,13 +133,13 @@ def judge(lines: list[str], tmp_path: Path) -> int:
 
 
 def test_good_log_passes(tmp_path: Path) -> None:
-    """Case 3 judges a log with the toolbox's own numbers."""
+    """Judge a log with the toolbox's own numbers."""
     assert judge(good_lines(), tmp_path) == 0
     assert "Detector run time on the chip" in (tmp_path / "report.md").read_text()
 
 
 def test_bad_logs_fail(tmp_path: Path) -> None:
-    """Case 4 checks four changed copies of the good log."""
+    """Check four changed copies of the good log."""
     good = good_lines()
 
     lines = [line for line in good if not line.startswith("CHECK_WINDOW pass=2 window=17 ")]
@@ -159,7 +159,7 @@ def test_bad_logs_fail(tmp_path: Path) -> None:
 
 
 def test_python_rules() -> None:
-    """Case 5 checks the user's Python rules in the three scripts."""
+    """Check the Python style rules in the three scripts."""
     for path in (WINDOWS_BIN, CHIP_WINDOWS, PIPELINE_RUN):
         source = path.read_text()
         for node in ast.walk(ast.parse(source)):

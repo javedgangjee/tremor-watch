@@ -64,10 +64,8 @@ FONT_RANGES: dict[int, str] = {
 FIRST_CHAR = 0x20
 LAST_CHAR = 0x7E
 
-# The circle's icons are 128 pixels square. The user had them fill the top two
-# thirds of the circle on 2026-10-24 at 136 pixels, and had them shrink to 128
-# on 2026-10-26 to make room for "Tremor Detected" on two lines. The "Took it"
-# button's check stays 88 pixels square.
+# ICON_PX leaves room in the circle for "Tremor Detected" on two lines below
+# the icon. BUTTON_ICON_PX is the size of the "Took it" button's check.
 ICON_PX = 128
 BUTTON_ICON_PX = 88
 BUTTON_ICONS = ("face_icon_check",)
@@ -543,7 +541,6 @@ def icons_texts() -> tuple[str, str]:
 
 
 def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
-    """Read the command line."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--font", type=Path, default=DEFAULT_FONT, help="the Red Hat Display Bold font file")
     parser.add_argument("--assets", type=Path, default=DEFAULT_ASSETS, help="the folder for the fonts and icons")

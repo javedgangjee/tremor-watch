@@ -1,14 +1,14 @@
 """Send the four commands to the watch and judge the log.
 
-The watch lies still on a table on USB power with firmware/ flashed. The
-script runs the steps of check 9 of specs/features/09-usb-recording/
-validation.md in order. It sends nine bad commands, turns the tone off, sets a
-dose time about 4 minutes ahead, restarts the watch, sets the clock, waits for
-the dose to become due and to end, starts a new session, and puts the settings
-of the first boot back. It saves every line with the laptop's time in seconds
-as gzip text. Each command it sends goes into the log as a line that starts
-with "> ", and so does each reset. It runs with the ESP-IDF Python, which has
-pyserial, and it takes about 23 minutes.
+Runs check 9 of specs/features/09-usb-recording/validation.md. The watch
+lies still on a table on USB power with firmware/ flashed. In order, the
+script sends nine bad commands, turns the tone off, sets a dose time about 4
+minutes ahead, restarts the watch, sets the clock, waits for the dose to
+become due and to end, starts a new session, and puts the settings of the
+first boot back. It saves every line with the laptop's time in seconds as gzip
+text. Each command it sends and each reset go into the log as lines that start
+with "> ". It runs with the ESP-IDF Python, which has pyserial, and takes
+about 23 minutes.
 
     caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/command_run.py
 
@@ -45,7 +45,7 @@ DEFAULT_LOG = REPO / "tests" / "firmware" / "command_log.txt.gz"
 DEFAULT_REPORT = REPO / "tests" / "firmware" / "command_report.md"
 
 RESET = "RESET"
-# The nine bad commands and their answers, in the order of check 9 item 2.
+# The nine bad commands and the A line each must get, in the order sent.
 BAD_COMMANDS = (
     ("HELLO", "A,0,1"),
     ("TONE", "A,4,2"),
@@ -63,8 +63,7 @@ LEAD_S = 240
 # The script waits this long after the dose time, and after its end.
 DUE_WAIT_S = 10
 DUE_US = 900_000_000
-# The script waits this long for the answer to each command. The time belongs
-# to the script and is not a requirement of the watch.
+# The script waits this long for the answer to each command.
 ANSWER_WAIT_S = 5.0
 # The script waits this long for the first boot's face and the second boot's
 # first minute line, and for the minute line after the session command.
@@ -72,7 +71,7 @@ BOOT_WAIT_S = 120.0
 MINUTE_WAIT_S = 75.0
 DAY_US = 86_400_000_000
 MINUTE_US = 60_000_000
-# The limits of check 9.
+# Pass limits.
 DUE_LATE_US = 1_100_000
 CLOCK_LIMIT_US = 1_000_000
 SESSION_ANSWERS_MAX = 61
@@ -173,7 +172,7 @@ def is_minute(minute: int | None) -> Callable[[str], bool]:
 
 
 def run(port: str, log_path: Path) -> None:
-    """Run every step of check 9 on the watch."""
+    """Run every step on the watch."""
     with gzip.open(log_path, "wt") as out:
         r = make_runner(port, out)
         reset_watch(r)
@@ -297,7 +296,7 @@ def result(name: str, problems: list[str], detail: str = "") -> Check:
 
 
 def check_boot1(log: Log) -> Check:
-    """Item 1 checks boot 1's B line and its SETTINGS line."""
+    """Check boot 1's B line and its SETTINGS line."""
     lines = boot(log, 0)
     problems, b_line = boot_check(lines, "boot 1")
     settings = [line for line in lines if line.word == "SETTINGS" and line.fields.get("source") == "boot"]
@@ -307,7 +306,7 @@ def check_boot1(log: Log) -> Check:
 
 
 def check_bad_commands(log: Log) -> Check:
-    """Item 2 checks the nine bad commands and their answers in order."""
+    """Check the nine bad commands and their answers in order."""
     problems = []
     sent = log.sent[: len(BAD_COMMANDS)]
     if [s.text for s in sent] != [text for text, _ in BAD_COMMANDS]:
@@ -323,7 +322,7 @@ def check_bad_commands(log: Log) -> Check:
 
 
 def check_tone_off(log: Log) -> Check:
-    """Item 3 checks that TONE,0 turns the tone off and stores it."""
+    """Check that TONE,0 turns the tone off and stores it."""
     s = find_sent(log, "TONE,0")
     if s is None:
         return result("tone off", ["no TONE,0 command"])
@@ -342,7 +341,7 @@ def schedule_sent(log: Log) -> tuple[Sent | None, int | None]:
 
 
 def check_schedule(log: Log) -> Check:
-    """Item 4 checks that the schedule command sets and stores the dose time."""
+    """Check that the schedule command sets and stores the dose time."""
     s, minute = schedule_sent(log)
     if s is None:
         return result("schedule", ["no schedule command"])
@@ -354,7 +353,7 @@ def check_schedule(log: Log) -> Check:
 
 
 def check_restart(log: Log) -> Check:
-    """Item 5 checks that the restart kept the schedule and the tone and left the clock unset."""
+    """Check that the restart kept the schedule and the tone and left the clock unset."""
     lines = boot(log, 1)
     problems, b_line = boot_check(lines, "boot 2")
     first = next((line.text for line in boot(log, 0) if kind_of(line.text) == "B"), "")
@@ -401,7 +400,7 @@ def clock_of(log: Log) -> Clock | None:
 
 
 def check_clock(log: Log) -> Check:
-    """Item 6 checks the CLOCK command, its CLOCK line, and the next minute line."""
+    """Check the CLOCK command, its CLOCK line, and the next minute line."""
     clock = clock_of(log)
     if clock is None:
         return result("clock", ["no CLOCK command with one CLOCK line in boot 2"])
@@ -455,7 +454,7 @@ def f_local(line: Line, offset_us: int) -> int:
 
 
 def check_due(log: Log) -> Check:
-    """Item 7 checks the F line that starts the due dose and its TONE line."""
+    """Check the F line that starts the due dose and its TONE line."""
     due = due_of(log)
     if due is None:
         return result("dose becomes due", ["no clock or no schedule"])
@@ -477,7 +476,7 @@ def check_due(log: Log) -> Check:
 
 
 def check_due_end(log: Log) -> Check:
-    """Item 8 checks the due state and the F line that ends it."""
+    """Check the due state and the F line that ends it."""
     due = due_of(log)
     if due is None or len(due.start) != 1 or due.end is None:
         return result("due dose ends", ["no due dose with an end"])
@@ -497,7 +496,7 @@ def check_due_end(log: Log) -> Check:
 
 
 def check_session(log: Log) -> Check:
-    """Item 9 checks that SESSION starts a new session."""
+    """Check that SESSION starts a new session."""
     s = find_sent(log, "SESSION")
     if s is None:
         return result("new session", ["no SESSION command"])
@@ -534,7 +533,7 @@ def check_session(log: Log) -> Check:
 
 
 def check_tone_on(log: Log) -> Check:
-    """Item 10 checks that TONE,1 turns the tone on."""
+    """Check that TONE,1 turns the tone on."""
     session = find_sent(log, "SESSION")
     s = find_sent(log, "TONE,1", session.line.index if session is not None else -1)
     if s is None:
@@ -545,7 +544,7 @@ def check_tone_on(log: Log) -> Check:
 
 
 def check_restore(log: Log) -> Check:
-    """Item 11 checks the commands that put back the settings of boot 1."""
+    """Check the commands that put back the settings of boot 1."""
     boot_settings = next(
         (line.fields for line in boot(log, 0) if line.word == "SETTINGS" and line.fields.get("source") == "boot"), None
     )
@@ -559,7 +558,7 @@ def check_restore(log: Log) -> Check:
 
 
 def check_format(log: Log) -> Check:
-    """Item 12 checks the format of both boots and one START line in each."""
+    """Check the format of both boots and one START line in each."""
     problems = []
     if len(log.boots) != 2:
         problems.append(f"the log holds {len(log.boots)} resets")
@@ -575,7 +574,7 @@ def check_format(log: Log) -> Check:
 
 
 def judge(log: Log) -> list[Check]:
-    """Give the result of every pass check of check 9."""
+    """Give the result of every pass check."""
     return [
         check_boot1(log),
         check_bad_commands(log),
@@ -593,7 +592,7 @@ def judge(log: Log) -> list[Check]:
 
 
 def measurements(log: Log) -> list[str]:
-    """Give the measurements of check 9 as report lines."""
+    """Give the measurements as report lines."""
     out = []
     due = due_of(log)
     if due is not None and len(due.start) == 1:

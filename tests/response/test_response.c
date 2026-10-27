@@ -1,5 +1,5 @@
 /*
- * The response time test. It runs the plan's simulated demo through the C
+ * The response time test. It runs the simulated demo through the C
  * converter, the window rule, the C detector, and the face rule, and it checks
  * how fast the face shows Tremor and goes back to No tremor.
  *
@@ -53,7 +53,7 @@
 /* The time for the run and the redraw. */
 #define REDRAW_US INT64_C(50000)
 
-/* The limits from validation.md check 1. */
+/* The limits from check 1 of specs/features/06-state-rules/validation.md. */
 #define SHOW_MEDIAN_MIN 2.0
 #define SHOW_MEDIAN_MAX 3.5
 #define BACK_MEDIAN_MIN 4.0

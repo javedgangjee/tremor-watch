@@ -1,7 +1,4 @@
-/*
- * face.c holds the face state and the two-in-a-row rule. face.h describes
- * them, and the feature 6 requirements 28 and 29 give the details.
- */
+/* face.c holds the face state and the two-in-a-row rule. See face.h. */
 
 #include "face.h"
 

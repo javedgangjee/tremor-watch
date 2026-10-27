@@ -7,8 +7,8 @@ second as A * sin(2 * pi * 5 * t) on the x axis, as counts of 32 per degree per
 second, rounded and clipped to the 16-bit range, with 0 on y and z. The
 accelerometer counts are 0, 0, and 4096.
 
-The file also runs build/core/replay on a list of lines through the standard
-input and returns its rows, its summary line, and its exit code.
+replay_rows() runs build/core/replay on a list of lines through the standard
+input.
 """
 from __future__ import annotations
 

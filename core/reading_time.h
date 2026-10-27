@@ -1,11 +1,10 @@
 /*
  * reading_time.h is the time rule, which gives each gyroscope reading its time.
  *
- * The rule follows the plan's Sensor and converter section, under Giving each
- * reading a time. The readings arrive in bursts, and each burst has a 64-bit
- * microsecond stamp. The readings form stretches with no gap. Within a stretch,
- * reading n has the time t0 + (n - f0) / r, where t0 is the stamp of the first
- * burst, f0 is its first reading number, and r is one fixed rate.
+ * The readings arrive in bursts, and each burst has a 64-bit microsecond
+ * stamp. The readings form stretches with no gap. Within a stretch, reading n
+ * has the time t0 + (n - f0) / r, where t0 is the stamp of the first burst, f0
+ * is its first reading number, and r is one fixed rate.
  *
  * A rate is a whole number of millionths of a reading per second. For example,
  * 114.3302 readings a second is 114330200.
@@ -68,7 +67,6 @@ void rt_init(rt_state_t *s);
  * nothing and returns 0. */
 unsigned rt_burst(rt_state_t *s, uint64_t first_reading, uint32_t count, int64_t stamp_us, bool overflow);
 
-/* rt_current() gives the current stretch. */
 const rt_stretch_t *rt_current(const rt_state_t *s);
 
 /* rt_reading_time_us() gives the time of reading `reading` in microseconds,

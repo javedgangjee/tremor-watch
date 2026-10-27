@@ -1,6 +1,5 @@
 /*
- * tone_out.c drives the board's ES8311 audio codec. tone_out.h describes it,
- * and feature 11's requirement 59 gives the details.
+ * tone_out.c drives the board's ES8311 audio codec. tone_out.h describes it.
  *
  * The I2S channel repeats the last data in its DMA buffers when nothing new
  * is written, so after each pattern the feed writes silence for longer than

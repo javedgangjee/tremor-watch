@@ -1,7 +1,4 @@
-/*
- * pipeline.c holds the pipeline task's rules. pipeline.h describes them, and
- * the feature 8 requirements 20, 21, and 23 give the details.
- */
+/* pipeline.c holds the pipeline task's rules. See pipeline.h. */
 
 #include "pipeline.h"
 
@@ -31,8 +28,8 @@ void pipe_init(pipe_t *p, int64_t now_us)
     p->faults = 0;
 }
 
-/* ask_end() makes an end request for stretch `number`, unless that stretch
- * has already asked. It returns PIPE_END when it makes the request. */
+/* Makes an end request for stretch `number`, unless that stretch has already
+ * asked. Returns PIPE_END when it makes the request. */
 static unsigned ask_end(pipe_t *p, uint32_t number, unsigned reason)
 {
     if (p->end_asked && p->end_stretch == number) {

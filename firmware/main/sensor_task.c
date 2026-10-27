@@ -14,9 +14,10 @@
  *
  * A burst cannot be trusted when the buffer overflowed or filled, when a bus
  * read fails, when no interrupt comes for 1 second, or when INT1 is still high
- * 1 millisecond after a read. The task then drops the burst's readings, resets the buffer,
- * and gives no numbers to the dropped readings. The next good burst carries
- * the overflow flag, so every loss ends a stretch exactly once.
+ * 1 millisecond after a read. The task then drops the burst's readings,
+ * resets the buffer, and gives no numbers to the dropped readings. The next
+ * good burst carries the overflow flag, so every loss ends a stretch exactly
+ * once.
  */
 
 #include <stdbool.h>
@@ -92,7 +93,6 @@
 
 /* After a read, INT1 must drop within this many microseconds. */
 #define INT1_SETTLE_US 1000
-/* The stamp queue holds this many stamps. */
 #define STAMP_QUEUE_LEN 8
 /* With no interrupt for this long, the task counts a stall. */
 #define STALL_MS 1000
@@ -197,9 +197,9 @@ static esp_err_t write_command(uint8_t cmd)
 }
 
 /* soft_reset() resets the sensor as SensorLib's reset() does. The sensor keeps
- * its settings when the ESP32-S3 restarts, and its CTRL9 commands did not
- * answer on the watch until it was reset. The reset clears CTRL1, so the
- * function writes the value that qmi8658_init() writes. */
+ * its settings when the ESP32-S3 restarts, and its CTRL9 commands do not
+ * answer until it is reset. The reset clears CTRL1, so the function writes the
+ * value that qmi8658_init() writes. */
 static esp_err_t soft_reset(void)
 {
     esp_err_t err = write_reg(REG_RESET, RESET_VALUE);
