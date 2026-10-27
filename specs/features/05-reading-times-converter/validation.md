@@ -88,7 +88,7 @@ A reading of core/reading_time.c and core/converter.c beside the plan's Sensor a
 
 The solve and the curve match natural_spline_block() and the curve line in reference/spline_test.py, with the period folded in as requirement 25 says. The forward sweep uses the same factor and value steps in the same order.
 
-The code goes beyond the plan's words in three places, and each comes from a requirement that the user has not reviewed yet.
+The code goes beyond the plan's words in three places, and each comes from a requirement that the user accepted on 27 October 2026.
 
 - Requirement 21 lets a stretch measure its own rate when the stretch before it lasted less than 10 seconds. The plan says that every later stretch takes its rate from the stretch before, so this case departs from the plan's words. The plan gives its reason as the stretch before being minutes long, and a short stretch does not meet that reason.
 - Requirement 22 adds a line test before a stretch has its rate, and it ends a stretch when a stamp is not later than the stamp before or when a reading number is skipped. The plan names only the half period and the overflow as reasons to end a stretch.

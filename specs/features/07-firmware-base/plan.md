@@ -77,4 +77,4 @@ No step changes a file in reference/, context/, core/kissfft/, tests/unity/, too
 9. main.c installs the GPIO interrupt service before any task starts, because the touch driver and the sensor task both add GPIO interrupts. The touch driver then logs that the service is already installed, which does no harm.
 10. sensor_task.c does not include math.h, because qmi8658.h defines M_PI again and the build stops on the warning.
 
-The agent decided this on 23 October 2026, and the user has not reviewed it yet.
+The agent decided this on 23 October 2026, and the user accepted it on 27 October 2026.

@@ -144,7 +144,7 @@ A reading of core/window.c, core/share.c, core/face.c, and core/dose.c beside th
 
 One part of the Waiting rule still depends on later features. The Watch face section says Waiting shows when the sensor has failed. A single sensor fault answer still never shows, because a single odd answer never shows. The face shows Waiting only after two sensor fault or warming up answers in a row. Feature 7 or 8 decides how often the sensor fault code comes, and so whether the face shows Waiting when the sensor fails.
 
-The code goes beyond the build spec's words in these places. Each comes from a requirement that the user has not reviewed, or from the plan's list of changes during implement.
+The code goes beyond the build spec's words in these places. Each comes from a requirement that the user accepted on 27 October 2026, or from the plan's list of changes during implement.
 
 - The result codes and the face states have fixed numbers, as requirements 24 and 28 say.
 - A Session block takes each counted still window as 4 seconds of still time. The share keeps the latest 12 blocks and drops older ones, and a window in a dropped block counts in the session share only. A window timed before the session start goes in block 0. These come from requirement 27 and the plan's changes.

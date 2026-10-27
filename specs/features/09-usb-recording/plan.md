@@ -98,4 +98,4 @@ No step changes a file in reference/, context/, core/kissfft/, tests/unity/, too
 13. write_line() in usb_task.c returns after it brings the kept lines back when the line it was given is the kept S line or the kept B line, so a new S line after a drop is not written twice.
 14. After validate, the comment above esp_rom_install_channel_putc() in usb_task.c was reworded to say "the ROM's own print function" in place of the function's name, so check 4 item 3 prints nothing. The code did not change.
 
-The agent decided this on 23 October 2026, and the user has not reviewed it yet.
+The agent decided this on 23 October 2026, and the user accepted it on 27 October 2026.

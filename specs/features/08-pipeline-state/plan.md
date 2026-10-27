@@ -82,4 +82,4 @@ No step changes a file in reference/, context/, core/kissfft/, tests/unity/, too
 8. firmware/detector_check/CMakeLists.txt sets COMPONENTS to main, so ESP-IDF builds only main and the components it needs. detector_check.c prints a CHECK_ERROR line and stops when the embedded data has the wrong size or det_init() fails.
 9. specs/tech-stack.md names no CTest count, so step 12 changed no count.
 
-The agent decided this on 23 October 2026, and the user has not reviewed it yet.
+The agent decided this on 23 October 2026, and the user accepted it on 27 October 2026.

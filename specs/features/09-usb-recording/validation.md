@@ -220,7 +220,7 @@ The watch is left flashed with the firmware/ build of commit 50899e6. Its last b
 
 ### Decisions in this stage
 
-The user asked for this run to go on with no input and to commit even with failing checks. So this stage committed validation.md and the six output files. It did not change the text of any check, any code, or any script. The user decides whether to fix the comment in usb_task.c, whether to change the filters of check 4 item 9 and check 10 item 6, and whether the gap path run of check 8 is enough for requirement 22. The agent decided this on 23 October 2026, and the user has not reviewed it yet.
+The user asked for this run to go on with no input and to commit even with failing checks. So this stage committed validation.md and the six output files. It did not change the text of any check, any code, or any script. The user decides whether to fix the comment in usb_task.c, whether to change the filters of check 4 item 9 and check 10 item 6, and whether the gap path run of check 8 is enough for requirement 22. The agent decided this on 23 October 2026, and the user accepted it on 27 October 2026.
 
 ## Results of the second run, 2026-10-23
 
@@ -291,7 +291,7 @@ The watch is left flashed with the firmware/ build of commit 2c961e0. Its last b
 
 ### Decisions in this stage
 
-The run went on with no input from the user and committed with failing checks, as the user asked. This stage did not change the text of any check, any code, or any script. The user decides whether to change the filters of check 4 item 9 and check 10 item 6, and whether the first run's gap path on the watch is enough for requirement 22. The agent decided this on 23 October 2026, and the user has not reviewed it yet.
+The run went on with no input from the user and committed with failing checks, as the user asked. This stage did not change the text of any check, any code, or any script. The user decides whether to change the filters of check 4 item 9 and check 10 item 6, and whether the first run's gap path on the watch is enough for requirement 22. The agent decided this on 23 October 2026, and the user accepted it on 27 October 2026.
 
 ## Note on the reworded checks, 2026-10-23
 

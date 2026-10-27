@@ -60,4 +60,4 @@ The plan left a few details open, and the agent filled them as below.
 - rt_reading_time_us() returns NAN for a stretch with no rate.
 - In make_cases.py, the 45 Hz and 55 Hz parts of stretch above_50hz each have a seeded size from 50 to 100 degrees per second on each axis, the tremor burst in each mix stretch starts at phase 0, and stretch number i uses seed i + 1.
 
-The agent decided this on 22 October 2026, and the user has not reviewed it yet.
+The agent decided this on 22 October 2026, and the user accepted it on 27 October 2026.
