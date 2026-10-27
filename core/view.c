@@ -7,7 +7,6 @@
 #include "view.h"
 
 #include <inttypes.h>
-#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -64,9 +63,16 @@ static void date_text(char *out, size_t size, int64_t local_us)
     snprintf(out, size, "%s %d %s", WEEKDAYS[weekday], day, MONTHS[month - 1]);
 }
 
-static int round_half_up(double percent)
+/* Gives part out of whole as a whole percent, with halves going up, or -1
+ * when whole is 0. It works on the counts, because a double holds 57.5 or
+ * 14.5 percent just under the half. The counts are 32-bit, so the 64-bit
+ * sums cannot overflow. */
+static int percent_half_up(uint64_t part, uint64_t whole)
 {
-    return (int)floor(percent + 0.5);
+    if (whole == 0) {
+        return -1;
+    }
+    return (int)((UINT64_C(200) * part + whole) / (UINT64_C(2) * whole));
 }
 
 /* Writes a Medication value as "name, HH:MM", or the time alone when the
@@ -181,12 +187,12 @@ static void build_tremor(view_t *v, const sess_t *s)
 static void build_share(view_t *v, const sess_t *s)
 {
     const share_t *sh = &s->share;
-    double percent;
-    if (share_percent(sh, &percent)) {
-        v->percent = round_half_up(percent);
+    v->percent = percent_half_up(sh->tremor, (uint64_t)sh->tremor + sh->no_tremor);
+    /* The part never exceeds the whole, so a percent is 0 to 100. Testing the
+     * top end also tells the compiler the text fits. */
+    if (v->percent >= 0 && v->percent <= 100) {
         snprintf(v->share, sizeof v->share, "Tremor %d%%", v->percent);
     } else {
-        v->percent = -1;
         snprintf(v->share, sizeof v->share, "Tremor --%%");
     }
     snprintf(v->share_line, sizeof v->share_line, "of still time this session");
@@ -194,9 +200,8 @@ static void build_share(view_t *v, const sess_t *s)
     v->block_count = share_block_count(sh);
     for (uint32_t i = 0; i < SHARE_BLOCKS; i++) {
         const share_block_t *b = share_block(sh, i);
-        double block_percent;
         v->hollow[i] = b != NULL && share_block_hollow(b);
-        v->block_percent[i] = b != NULL && share_block_percent(b, &block_percent) ? round_half_up(block_percent) : -1;
+        v->block_percent[i] = b != NULL ? percent_half_up(b->tremor, b->still) : -1;
     }
     const share_block_t *oldest = share_block(sh, 0);
     if (oldest != NULL) {

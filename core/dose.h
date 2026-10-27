@@ -86,7 +86,8 @@ void dose_init(dose_t *d);
 /* dose_set_schedule() checks and stores the schedule, and it counts as a tick
  * that makes nothing due. It refuses a name of more than 20 bytes, more than 6
  * times, a time above 1439, or a time given twice. A refused schedule leaves
- * the old one in place, and the call returns false. */
+ * the old one in place, and the call returns false. A due dose whose time the
+ * new schedule no longer holds ends at the next tick. */
 bool dose_set_schedule(dose_t *d, const dose_schedule_t *s, int64_t now_us);
 
 /* dose_set_clock() sets the clock, so the local time is the timer plus
@@ -98,11 +99,16 @@ void dose_set_clock(dose_t *d, int64_t offset_us, int64_t now_us);
 void dose_new_session(dose_t *d, int64_t now_us);
 
 /* dose_tick() applies the due rule and returns the flags. The state task calls
- * it at least once a second. */
+ * it at least once a second. A due dose ends 15 minutes after its time, or at
+ * the first tick after a schedule change that drops its time, and the tick
+ * returns DOSE_DUE_ENDED. */
 unsigned dose_tick(dose_t *d, int64_t now_us);
 
 /* dose_took_it() logs a dose at now_us and ends a due dose. It refuses a tap
- * less than 3 seconds after the last accepted dose and returns false. */
+ * less than 3 seconds after the last accepted dose and returns false. An
+ * accepted tap first applies the due rule at now_us, as a tick would, so a
+ * dose time that passed since the last tick becomes due and the tap answers
+ * it. The tap's flags are not returned, so no tone plays for that time. */
 bool dose_took_it(dose_t *d, int64_t now_us);
 
 bool dose_is_due(const dose_t *d);

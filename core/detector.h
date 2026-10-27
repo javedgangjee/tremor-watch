@@ -43,4 +43,11 @@ bool det_init(void);
 /* det_run() scores one window. det_init() must have returned true first. */
 void det_run(const float window[DET_WINDOW_LEN][DET_AXES], det_result_t *out);
 
+/* det_decide() gives the three answers from prob, below, and peak_hz, which
+ * it leaves as they are. The model says yes when prob is at least the
+ * toolbox's cut-off. The arm is at rest when below is 50 or less. The window
+ * is tremor when both hold and peak_hz lies from 3 to 7 Hz, with both ends
+ * included. det_run() calls it, and it needs no det_init(). */
+void det_decide(det_result_t *r);
+
 #endif /* DETECTOR_H */

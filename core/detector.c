@@ -270,7 +270,6 @@ void det_run(const float window[DET_WINDOW_LEN][DET_AXES], det_result_t *out)
     shape_numbers(out->mfcc);
 
     out->prob = score(out->mfcc);
-    out->logreg = out->prob >= det_threshold;
 
     /* Step 5 of detect() finds the first largest fine step from 1 to 25 Hz, as argmax does. */
     int peak = PEAK_FIRST_STEP;
@@ -285,9 +284,16 @@ void det_run(const float window[DET_WINDOW_LEN][DET_AXES], det_result_t *out)
      * multiplies the sum by 0.25 as a double. */
     float below_sum = numpy_sum(&psd[BELOW_FIRST_STEP], BELOW_LAST_STEP - BELOW_FIRST_STEP + 1);
     out->below = PSD_STEP_HZ * (double)below_sum;
-    out->at_rest = out->below <= MOVEMENT_THRESHOLD;
+
+    det_decide(out);
+}
+
+/* Steps 4 and 5 of detect() end with these three tests. */
+void det_decide(det_result_t *r)
+{
+    r->logreg = r->prob >= det_threshold;
+    r->at_rest = r->below <= MOVEMENT_THRESHOLD;
 
     /* The window is tremor only when all three checks pass. */
-    out->tremor = out->logreg && out->peak_hz >= REST_TREMOR_MIN_HZ && out->peak_hz <= REST_TREMOR_MAX_HZ &&
-                  out->at_rest;
+    r->tremor = r->logreg && r->peak_hz >= REST_TREMOR_MIN_HZ && r->peak_hz <= REST_TREMOR_MAX_HZ && r->at_rest;
 }

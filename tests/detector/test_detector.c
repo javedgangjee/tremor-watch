@@ -239,6 +239,72 @@ static void test_5_saved_windows(void)
     printf("windows where an answer differs: %d, where the peak differs: %d\n", answer_diffs, peak_diffs);
 }
 
+/* decide() runs det_decide() on one set of numbers. */
+static det_result_t decide(double prob, double below, float peak_hz)
+{
+    det_result_t r;
+    memset(&r, 0, sizeof r);
+    r.prob = prob;
+    r.below = below;
+    r.peak_hz = peak_hz;
+    det_decide(&r);
+    TEST_ASSERT_EQUAL_DOUBLE(prob, r.prob);
+    TEST_ASSERT_EQUAL_DOUBLE(below, r.below);
+    TEST_ASSERT_EQUAL_FLOAT(peak_hz, r.peak_hz);
+    return r;
+}
+
+/* Each cut-off is hit exactly and at the next number on either side. The
+ * saved windows never land on a cut-off, so only this test pins down which
+ * side each end falls on. */
+static void test_6_cut_offs(void)
+{
+    const double prob_above = nextafter(CUT_OFF, 1.0);
+    const double prob_below = nextafter(CUT_OFF, 0.0);
+    det_result_t r;
+
+    /* The model says yes when the probability is at least the cut-off. */
+    r = decide(CUT_OFF, 10.0, 5.0f);
+    TEST_ASSERT_TRUE(r.logreg);
+    TEST_ASSERT_TRUE(r.tremor);
+    r = decide(prob_above, 10.0, 5.0f);
+    TEST_ASSERT_TRUE(r.logreg);
+    TEST_ASSERT_TRUE(r.tremor);
+    r = decide(prob_below, 10.0, 5.0f);
+    TEST_ASSERT_FALSE(r.logreg);
+    TEST_ASSERT_FALSE(r.tremor);
+
+    /* The arm is at rest when the low-frequency sum is 50 or less. */
+    r = decide(0.5, 50.0, 5.0f);
+    TEST_ASSERT_TRUE(r.at_rest);
+    TEST_ASSERT_TRUE(r.tremor);
+    r = decide(0.5, nextafter(50.0, 0.0), 5.0f);
+    TEST_ASSERT_TRUE(r.at_rest);
+    TEST_ASSERT_TRUE(r.tremor);
+    r = decide(0.5, nextafter(50.0, 100.0), 5.0f);
+    TEST_ASSERT_FALSE(r.at_rest);
+    TEST_ASSERT_FALSE(r.tremor);
+
+    /* The peak lies from 3 to 7 Hz, with both ends included. */
+    TEST_ASSERT_TRUE(decide(0.5, 10.0, 3.0f).tremor);
+    TEST_ASSERT_TRUE(decide(0.5, 10.0, nextafterf(3.0f, 4.0f)).tremor);
+    TEST_ASSERT_FALSE(decide(0.5, 10.0, nextafterf(3.0f, 0.0f)).tremor);
+    TEST_ASSERT_TRUE(decide(0.5, 10.0, 7.0f).tremor);
+    TEST_ASSERT_TRUE(decide(0.5, 10.0, nextafterf(7.0f, 0.0f)).tremor);
+    TEST_ASSERT_FALSE(decide(0.5, 10.0, nextafterf(7.0f, 8.0f)).tremor);
+
+    /* The peak check gives no answer of its own, and each check alone stops
+     * the tremor answer. */
+    r = decide(0.5, 10.0, 2.75f);
+    TEST_ASSERT_TRUE(r.logreg);
+    TEST_ASSERT_TRUE(r.at_rest);
+    TEST_ASSERT_FALSE(r.tremor);
+    r = decide(prob_below, nextafter(50.0, 100.0), 7.25f);
+    TEST_ASSERT_FALSE(r.logreg);
+    TEST_ASSERT_FALSE(r.at_rest);
+    TEST_ASSERT_FALSE(r.tremor);
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -247,5 +313,6 @@ int main(void)
     RUN_TEST(test_3_fft_200);
     RUN_TEST(test_4_zero_window);
     RUN_TEST(test_5_saved_windows);
+    RUN_TEST(test_6_cut_offs);
     return UNITY_END();
 }
