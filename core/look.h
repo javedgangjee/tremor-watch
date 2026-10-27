@@ -81,7 +81,6 @@ typedef enum {
     LOOK_ITEM_CARD = 0,
     LOOK_ITEM_TIME,
     LOOK_ITEM_DATE,
-    LOOK_ITEM_BATTERY,
     LOOK_ITEM_CIRCLE,
     LOOK_ITEM_CIRCLE_ICON,
     LOOK_ITEM_CIRCLE_WORD,
@@ -115,8 +114,7 @@ typedef enum {
 typedef enum {
     LOOK_KIND_SHAPE = 0,
     LOOK_KIND_TEXT = 1,
-    LOOK_KIND_ICON = 2,
-    LOOK_KIND_BATTERY = 3
+    LOOK_KIND_ICON = 2
 } look_kind_t;
 
 typedef enum {

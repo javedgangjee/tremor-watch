@@ -329,7 +329,6 @@ static void test_35_status(void)
     for (unsigned i = 0; i < LOOK_STATUS_ROWS; i++) {
         TEST_ASSERT_EQUAL_STRING(WANT[i], view.status[i]);
     }
-    TEST_ASSERT_EQUAL_STRING("68%", view.battery);
     check_fits();
 
     input.battery_known = false;
@@ -342,7 +341,6 @@ static void test_35_status(void)
     TEST_ASSERT_EQUAL_STRING("--", view.status[4]);
     TEST_ASSERT_EQUAL_STRING("--", view.status[5]);
     TEST_ASSERT_EQUAL_STRING("Off", view.status[6]);
-    TEST_ASSERT_EQUAL_STRING("--%", view.battery);
     check_fits();
 }
 

@@ -216,11 +216,9 @@ static void build_status(view_t *v, const view_input_t *in)
         snprintf(st[0], n, "%d%%", in->battery_percent);
         snprintf(st[1], n, "%u.%u V", (unsigned)((in->battery_mv + 50) / 1000),
                  (unsigned)((in->battery_mv + 50) / 100 % 10));
-        snprintf(v->battery, sizeof v->battery, "%d%%", in->battery_percent);
     } else {
         snprintf(st[0], n, "--");
         snprintf(st[1], n, "--");
-        snprintf(v->battery, sizeof v->battery, "--%%");
     }
     snprintf(st[2], n, "%" PRIu32 " h %" PRIu32 " m", in->uptime_s / 3600, in->uptime_s / 60 % 60);
     if (in->has_answer && in->rate_uhz > 0) {
