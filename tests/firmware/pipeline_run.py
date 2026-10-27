@@ -26,7 +26,7 @@ if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
 import table_run  # noqa: E402
-from table_run import Check, Parsed, fields_of, judge, parse_log, reopen  # noqa: E402
+from table_run import Check, Parsed, fields_of, judge, open_port, parse_log, reopen  # noqa: E402
 
 LOG = logging.getLogger("pipeline_run")
 
@@ -329,17 +329,7 @@ def capture(port: str, minutes: int, log_path: Path) -> None:
     """Reset the watch, then save every line until the last minute lines arrive."""
     import serial
 
-    ser = serial.Serial()
-    ser.port = port
-    ser.baudrate = 115200
-    ser.timeout = 0.5
-    ser.dtr = False
-    ser.rts = False
-    ser.open()
-    # A pulse on RTS resets the chip, as esptool's hard reset does.
-    ser.rts = True
-    time.sleep(0.1)
-    ser.rts = False
+    ser = open_port(port, reset=True)
     started = time.monotonic()
     deadline = started + (minutes + table_run.EXTRA_MINUTES) * 60
     needed = {(kind, str(minutes)) for kind in MINUTE_KINDS}

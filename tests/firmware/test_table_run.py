@@ -13,6 +13,9 @@ import re
 import sys
 from pathlib import Path
 from types import ModuleType
+from typing import Any
+
+import pytest
 
 HERE = Path(__file__).resolve().parent
 TABLE_RUN = HERE / "table_run.py"
@@ -124,6 +127,45 @@ def test_rate_and_restart_fail(tmp_path: Path) -> None:
     lines.append("START uptime_us=65000")
     code, _ = judge(lines, tmp_path)
     assert code == 1
+
+
+class FakeSerial:
+    """Stands in for serial.Serial and notes each change of DTR, RTS, and the open state."""
+
+    notes: list[tuple[str, Any]] = []
+
+    def __init__(self: FakeSerial) -> None:
+        object.__setattr__(self, "state", {"dtr": None, "rts": None})
+
+    def __setattr__(self: FakeSerial, name: str, value: Any) -> None:
+        if name in ("dtr", "rts"):
+            FakeSerial.notes.append((name, value))
+        self.state[name] = value
+
+    def open(self: FakeSerial) -> None:
+        FakeSerial.notes.append(("open", (self.state["dtr"], self.state["rts"])))
+
+
+def test_reopen_leaves_dtr_low(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Check that a reopen never resets the chip and leaves DTR low, so a later RTS pulse resets it."""
+    fake = ModuleType("serial")
+    fake.Serial = FakeSerial  # type: ignore[attr-defined]
+    fake.SerialException = OSError  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "serial", fake)
+    tr = load_table_run()
+
+    FakeSerial.notes = []
+    ser = tr.reopen("/dev/fake")
+    notes = FakeSerial.notes
+    opened = notes.index(("open", (True, False)))
+    assert notes[opened + 1:] == [("dtr", False)]
+    assert ("rts", True) not in notes
+    assert ser.state["dtr"] is False
+
+    FakeSerial.notes = []
+    tr.open_port("/dev/fake", reset=True)
+    after = FakeSerial.notes[FakeSerial.notes.index(("open", (False, False))) + 1:]
+    assert [n for n in after if n[0] == "rts"] == [("rts", True), ("rts", False)]
 
 
 def test_python_rules() -> None:

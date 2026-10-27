@@ -103,7 +103,7 @@ def session_command() -> str:
 def open_port(port: str, reset: bool) -> Any:
     """Open the port with DTR and RTS low, and with reset, pulse RTS as esptool's hard reset does.
 
-    This is a copy of open_port() in tests/firmware/record_run.py, because a
+    This is a copy of open_port() in tests/firmware/table_run.py, because a
     tool does not import from tests/.
     """
     import serial

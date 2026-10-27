@@ -305,17 +305,7 @@ def capture(port: str, log_path: Path) -> None:
     """Reset the watch, then save every line until CHECK_END arrives or 5 minutes pass."""
     import serial
 
-    ser = serial.Serial()
-    ser.port = port
-    ser.baudrate = 115200
-    ser.timeout = 0.5
-    ser.dtr = False
-    ser.rts = False
-    ser.open()
-    # A pulse on RTS resets the chip, as esptool's hard reset does.
-    ser.rts = True
-    time.sleep(0.1)
-    ser.rts = False
+    ser = table_run.open_port(port, reset=True)
     started = time.monotonic()
     deadline = started + CAPTURE_S
     with log_path.open("w") as out:
