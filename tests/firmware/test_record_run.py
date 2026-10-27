@@ -225,6 +225,115 @@ def test_rom_lines_before_boot(tmp_path: Path) -> None:
     assert "- The log holds 10 lines before the B line." in report
 
 
+def with_version(b_line: str, version: int) -> str:
+    """Give a B line with its firmware version changed."""
+    fields = b_line.split(",")
+    fields[3] = str(version)
+    return ",".join(fields)
+
+
+def test_saved_log_judged_by_its_version(tmp_path: Path) -> None:
+    """Judge a saved log of version 9 by version 9, and refuse a version the judge does not know."""
+    record_run = load("record_run", RECORD_RUN)
+    assert record_run.FIRMWARE_VERSION in record_run.KNOWN_VERSIONS
+    clean = clean_log()
+    i = find(clean, "B,")
+    for old in record_run.KNOWN_VERSIONS:
+        lines = list(clean)
+        lines[i] = with_version(lines[i], old)
+        code, report = judge(lines, tmp_path)
+        assert code == 0, report
+        assert f"The judge applies the rules of firmware version {old}, which the log's first B line gives." in report
+
+    lines = list(clean)
+    lines[i] = with_version(lines[i], 10)
+    (tmp_path / "report.md").unlink()
+    log = tmp_path / "log.txt.gz"
+    with gzip.open(log, "wt") as out:
+        out.write("".join(f"{n * 0.001:.3f}\t{line}\n" for n, line in enumerate(lines)))
+    code = record_run.main(["--log-only", "--minutes", str(MINUTES), "--log", str(log), "--report",
+                            str(tmp_path / "report.md")])
+    assert code == 1
+    assert not (tmp_path / "report.md").exists()
+
+
+def test_live_run_needs_the_firmware_version() -> None:
+    """A run with the watch judges by FIRMWARE_VERSION, so a B line of another version fails."""
+    record_run = load("record_run", RECORD_RUN)
+    clean = clean_log()
+    texts = clean[find(clean, "B,") :]
+    version = record_run.FIRMWARE_VERSION
+    old = with_version(texts[0], 9)
+    assert record_run.judged_version([old, *texts[1:]], live=True) == version
+    assert record_run.judged_version([old, *texts[1:]], live=False) == 9
+    assert record_run.check_boot(texts, version).passed
+    assert not record_run.check_boot([old, *texts[1:]], version).passed
+    assert record_run.boot_problems(old, version) == ["version 9"]
+    try:
+        record_run.judged_version([with_version(texts[0], 10)], live=False)
+    except record_run.UnknownVersion as error:
+        assert "firmware version 10" in str(error)
+    else:
+        raise AssertionError("version 10 was not refused")
+
+
+def write_cut_log(path: Path, lines: list[str], keep: float) -> bytes:
+    """Write a gzip log the way a recording does, but stop before the stream ends, and give the whole text."""
+    text = "".join(f"{n * 0.001:.3f}\t{line}\n" for n, line in enumerate(lines)).encode()
+    whole = path.with_name("whole.gz")
+    with gzip.open(whole, "wb") as out:
+        out.write(text)
+    data = whole.read_bytes()
+    path.write_bytes(data[: int(len(data) * keep)])
+    return text
+
+
+def test_cut_short_log(tmp_path: Path) -> None:
+    """Read a gzip log whose stream stops early, keep its whole lines, and say so in the report."""
+    record_run = load("record_run", RECORD_RUN)
+    clean = clean_log()
+    log = tmp_path / "log.txt.gz"
+    text = write_cut_log(log, clean, 0.8)
+    lines, cut_short = record_run.read_gzip_text(log)
+    assert cut_short
+    assert 0 < len(lines) < len(clean)
+    whole = text.decode().splitlines()
+    assert lines == whole[: len(lines)]
+    assert lines[-1].endswith(clean[len(lines) - 1])
+
+    report = tmp_path / "report.md"
+    code = record_run.main(["--log-only", "--minutes", str(MINUTES), "--log", str(log), "--report", str(report)])
+    assert code == 1
+    assert f"The log's gzip file was cut short, so the judge used the {len(lines)} whole lines before the cut." \
+        in report.read_text()
+
+    intact, _ = judge(clean, tmp_path)
+    assert intact == 0
+    assert record_run.read_gzip_text(tmp_path / "log.txt.gz") == (whole, False)
+    assert "cut short" not in (tmp_path / "report.md").read_text()
+
+
+# Each judge with a committed log, the log, and the committed report.
+COMMITTED = (
+    ("record_run", "record_log.txt.gz", "record_report.md"),
+    ("command_run", "command_log.txt.gz", "command_report.md"),
+    ("face_run", "face_log.txt.gz", "face_report.md"),
+    ("drop_run", "drop_log.txt.gz", "drop_report.md"),
+    ("pipeline_run", "pipeline_log.txt", "pipeline_report.md"),
+    ("table_run", "table_log.txt", "table_report.md"),
+    ("chip_windows", "chip_windows_log.txt", "chip_windows_report.md"),
+)
+
+
+def test_committed_reports_reproduce(tmp_path: Path) -> None:
+    """Judge each committed log with --log-only and check that it gives the committed report byte for byte."""
+    for name, log, report in COMMITTED:
+        out = tmp_path / report
+        code = load(name, HERE / f"{name}.py").main(["--log-only", "--log", str(HERE / log), "--report", str(out)])
+        assert code == 0, name
+        assert out.read_bytes() == (HERE / report).read_bytes(), name
+
+
 def test_type_hints_and_rules() -> None:
     """Check the type hints and the Python rules in the scripts and their tests."""
     for path in SCRIPTS + TEST_FILES:

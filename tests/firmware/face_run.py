@@ -14,14 +14,16 @@ ESP-IDF Python, which has pyserial, and takes about 22 minutes.
     caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/face_run.py
 
 The judge reads the log alone, so --log-only gives the same result. It exits
-with code 0 only when every pass check holds.
+with code 0 only when every pass check holds. A run with the watch needs the B
+line to give FIRMWARE_VERSION from firmware/main/tasks.h and the views to show
+the looks of the firmware now. With --log-only the judge applies the rules of
+the version in the log's B line, as record_run.py does.
 """
 from __future__ import annotations
 
 import argparse
 import gzip
 import logging
-import math
 import sys
 import time
 from dataclasses import dataclass
@@ -35,7 +37,7 @@ if str(HERE) not in sys.path:
 import command_run  # noqa: E402
 import record_run  # noqa: E402
 from command_run import Line, Runner  # noqa: E402
-from record_run import Entry, kind_of, read_log, record_fields  # noqa: E402
+from record_run import Entry, kind_of, record_fields  # noqa: E402
 from table_run import Check, fields_of  # noqa: E402
 
 LOG = logging.getLogger("face_run")
@@ -75,7 +77,7 @@ BLOCK_US = 600_000_000
 BLOCKS_KEPT = 12
 HOLLOW_BELOW = 30
 
-# The circle and its colour for each face state.
+# The circle and its colour for each face state in the firmware now.
 LOOKS = {
     0: ("fill", "1b2e42"),
     1: ("outline", "26292b"),
@@ -83,6 +85,24 @@ LOOKS = {
     3: ("outline", "5c6265"),
     4: ("fill", "3f2559"),
 }
+# The looks that version 11 had from feature 11 on 23 October 2026 until
+# commit 7f6b90e on 25 October 2026. Rest, which is state 1, had the filled
+# green circle, and Arm moving had the dark outline. face_log.txt.gz was
+# recorded with them.
+FIRST_LOOKS = {**LOOKS, 1: ("fill", "2a7242"), 2: ("outline", "26292b")}
+Looks = dict[int, tuple[str, str]]
+# The looks of each firmware version, with a name for the report. Commit
+# 7f6b90e swapped the looks of states 1 and 2 and kept version 11, so a saved
+# log of version 11 may show either set. Version 9 had no face, and version
+# 12 has only the looks since 7f6b90e.
+LOOKS_BY_VERSION: dict[int, list[tuple[str, Looks]]] = {
+    11: [
+        ("the looks since commit 7f6b90e", LOOKS),
+        ("the looks before commit 7f6b90e", FIRST_LOOKS),
+    ],
+    12: [("the looks since commit 7f6b90e", LOOKS)],
+}
+KNOWN_VERSIONS = tuple(LOOKS_BY_VERSION)
 
 
 def dose_minute(now: datetime) -> int:
@@ -234,7 +254,7 @@ def f_state(line: Line) -> int:
 # ---------------------------------------------------------------- checks
 
 
-def check_boot(log: FaceLog) -> Check:
+def check_boot(log: FaceLog, version: int) -> Check:
     """Check one good B line and the format of every record line."""
     texts = [line.text for line in log.lines]
     boots = [t for t in texts if kind_of(t) == "B"]
@@ -242,7 +262,7 @@ def check_boot(log: FaceLog) -> Check:
     if len(boots) != 1:
         problems.append(f"{len(boots)} B lines")
     else:
-        problems += record_run.boot_problems(boots[0])
+        problems += record_run.boot_problems(boots[0], version)
     fmt = record_run.check_format(texts)
     if not fmt.passed:
         problems.append(fmt.detail)
@@ -279,8 +299,34 @@ def check_before_clock(log: FaceLog) -> Check:
     return result("dashes before the clock", problems, f"{len(before)} SCREEN_VIEW lines")
 
 
-def check_faces(log: FaceLog) -> Check:
-    """Check a SCREEN_VIEW with the face of each F line and the look of each face."""
+def look_problems(all_views: list[Line], looks: Looks) -> list[str]:
+    """Give each SCREEN_VIEW whose circle and colour differ from the looks of its face."""
+    problems = []
+    for v in all_views:
+        look = looks.get(int(v.fields.get("face", "-1")))
+        if look is None or (v.fields.get("circle"), v.fields.get("colour")) != look:
+            problems.append(f"line {v.index} gives face={v.fields.get('face')} circle={v.fields.get('circle')} "
+                            f"colour={v.fields.get('colour')}")
+    return problems
+
+
+def look_sets(version: int, live: bool) -> list[tuple[str, Looks]]:
+    """Give the sets of looks that a log may show.
+
+    A run with the watch must show the looks of the firmware now. A saved log
+    may show any set of its version.
+    """
+    if live:
+        return [("the looks of the firmware now", LOOKS)]
+    return LOOKS_BY_VERSION.get(version, [("the looks of the firmware now", LOOKS)])
+
+
+def check_faces(log: FaceLog, version: int, live: bool) -> Check:
+    """Check a SCREEN_VIEW with the face of each F line and the look of each face.
+
+    Every view must follow one set of looks of the version. The first set
+    that fits names the looks in the report.
+    """
     problems = []
     all_views = views(log)
     for f in f_lines(log):
@@ -288,12 +334,12 @@ def check_faces(log: FaceLog) -> Check:
         t = at_us(f)
         if not any(v.fields.get("face") == state and 0 <= at_us(v) - t <= VIEW_WITHIN_US for v in all_views):
             problems.append(f"no SCREEN_VIEW with face={state} within 1.1 s of {f.text}")
-    for v in all_views:
-        look = LOOKS.get(int(v.fields.get("face", "-1")))
-        if look is None or (v.fields.get("circle"), v.fields.get("colour")) != look:
-            problems.append(f"line {v.index} gives face={v.fields.get('face')} circle={v.fields.get('circle')} "
-                            f"colour={v.fields.get('colour')}")
-    return result("the face of each F line", problems, f"{len(f_lines(log))} F lines")
+    sets = look_sets(version, live)
+    fitting = next((name for name, looks in sets if not look_problems(all_views, looks)), None)
+    if fitting is None:
+        fitting = sets[0][0]
+        problems += look_problems(all_views, sets[0][1])
+    return result("the face of each F line", problems, f"{len(f_lines(log))} F lines, {fitting}")
 
 
 def check_after_clock(log: FaceLog) -> Check:
@@ -479,7 +525,8 @@ def share_from(log: FaceLog, end: int) -> ShareView:
     last = max(blocks, default=-1)
     numbers = list(range(max(0, last - BLOCKS_KEPT + 1), last + 1))
     hollow = "".join("1" if blocks.get(b, [0, 0])[1] < HOLLOW_BELOW else "0" for b in numbers)
-    share = math.floor(100.0 * tremor / still + 0.5) if still else -1
+    # Halves round up on whole numbers, as core/view.c does.
+    share = (200 * tremor + still) // (2 * still) if still else -1
     return ShareView(len(numbers), hollow or "none", share)
 
 
@@ -549,13 +596,13 @@ def check_settings(log: FaceLog) -> Check:
     return result("settings put back", problems, " ".join(f"{k}={last.get(k)}" for k in keys))
 
 
-def judge(log: FaceLog) -> list[Check]:
-    """Give the result of every pass check."""
+def judge(log: FaceLog, version: int, live: bool) -> list[Check]:
+    """Give the result of every pass check by the rules of one firmware version."""
     return [
-        check_boot(log),
+        check_boot(log, version),
         check_start(log),
         check_before_clock(log),
-        check_faces(log),
+        check_faces(log, version, live),
         check_after_clock(log),
         check_next(log),
         check_first_dose(log),
@@ -588,9 +635,9 @@ def measurements(log: FaceLog) -> list[str]:
     return out
 
 
-def write_report(path: Path, checks: list[Check], measured: list[str]) -> None:
-    """Write the report with the checks and the measurements."""
-    lines = ["# Face run", "", "## Pass checks", ""]
+def write_report(path: Path, checks: list[Check], measured: list[str], notes: list[str]) -> None:
+    """Write the report with the notes, the checks, and the measurements."""
+    lines = ["# Face run", "", *notes, "", "## Pass checks", ""]
     lines += [f"- {'PASS' if c.passed else 'FAIL'}: {c.name}. {c.detail}" for c in checks]
     lines += ["", "## Measurements", ""] + measured
     path.write_text("\n".join(lines) + "\n")
@@ -608,9 +655,16 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.log_only:
         run(args.port, args.log)
-    log = parse(read_log(args.log))
-    checks = judge(log)
-    write_report(args.report, checks, measurements(log))
+    saved = record_run.load_log(args.log)
+    live = not args.log_only
+    try:
+        version = record_run.judged_version([e.text for e in saved.entries], live, KNOWN_VERSIONS)
+    except record_run.UnknownVersion as error:
+        LOG.error("The judge refuses the log: %s.", error)
+        return 1
+    log = parse(saved.entries)
+    checks = judge(log, version, live)
+    write_report(args.report, checks, measurements(log), record_run.report_notes(saved, version, live))
     for check in checks:
         LOG.info("%s: %s. %s", "PASS" if check.passed else "FAIL", check.name, check.detail)
     return 0 if all(check.passed for check in checks) else 1

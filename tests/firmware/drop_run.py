@@ -31,7 +31,7 @@ if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
 import record_run  # noqa: E402
-from record_run import Burst, bursts_of, gaps_of, is_record, kind_of, read_log, record_fields  # noqa: E402
+from record_run import Burst, bursts_of, gaps_of, is_record, kind_of, record_fields  # noqa: E402
 from table_run import Check, fields_of  # noqa: E402
 
 LOG = logging.getLogger("drop_run")
@@ -310,9 +310,9 @@ def measurements(log: DropLog) -> list[str]:
     return out
 
 
-def write_report(path: Path, checks: list[Check], measured: list[str]) -> None:
-    """Write the report with the checks and the measurements."""
-    lines = ["# Drop run", "", "## Pass checks", ""]
+def write_report(path: Path, checks: list[Check], measured: list[str], notes: list[str]) -> None:
+    """Write the report with any notes, the checks, and the measurements."""
+    lines = ["# Drop run", ""] + (notes + [""] if notes else []) + ["## Pass checks", ""]
     lines += [f"- {'PASS' if c.passed else 'FAIL'}: {c.name}. {c.detail}" for c in checks]
     lines += ["", "## Measurements", ""] + measured
     path.write_text("\n".join(lines) + "\n")
@@ -332,9 +332,10 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.log_only:
         run(args.port, args.log, args.closed_seconds, args.unplug)
-    log = drop_log([e.text for e in read_log(args.log)])
+    saved = record_run.load_log(args.log)
+    log = drop_log([e.text for e in saved.entries])
     checks = judge(log, args.unplug)
-    write_report(args.report, checks, measurements(log))
+    write_report(args.report, checks, measurements(log), record_run.cut_notes(saved))
     for check in checks:
         LOG.info("%s: %s. %s", "PASS" if check.passed else "FAIL", check.name, check.detail)
     return 0 if all(check.passed for check in checks) else 1

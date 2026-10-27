@@ -7,13 +7,15 @@ needs the laptop build of replay. Run it from the repo root after the C build.
 
 RECORDING is a file that tools/watch_cli.py saved, or any of the logs in
 tests/firmware/. A name that ends in .gz is read as gzip text, and any other
-name as plain text. A leading laptop time and tab is dropped from each line.
+name as plain text. A leading laptop time and tab is dropped from each line. A
+gzip file that was cut short is read up to the cut, and the report says so.
 
 The script runs replay on the lines and reads the watch's own lines in the
 same way. It checks a stretch only where the recording holds all of its T and
 R lines from its first reading on. For each checked window from window 1 on,
-the probability must agree within 0.0001, and the code and the peak must agree
-unless replay's numbers lie near a cut-off. It then runs the toolbox on each
+the probability must agree within 1e-6, the low-frequency sum within a
+millionth of its size, and the code and the peak must agree unless replay's
+numbers lie near a cut-off. It then runs the toolbox on each
 checked part with its conversion set to 100 readings a second and reports how
 often the toolbox's code agrees with the watch's. The rules are in
 specs/features/10-laptop-tools/requirements.md.
@@ -54,8 +56,18 @@ REPO = Path(__file__).resolve().parents[1]
 DEFAULT_REPLAY = REPO / "build" / "core" / "replay"
 MODEL_FILE = Path(paradigma.__file__).resolve().parent / "assets" / "tremor_detection_clf_package.pkl"
 
-# The match limits, the same as in tests/pads/pads_match.py.
-LIMIT = 0.0001
+# The watch and replay run the same C code, so their numbers differ only where
+# the chip's maths library and the laptop's differ. On the committed logs the
+# probability differs by at most 2.52e-10 and the low-frequency sum not at
+# all. On the 322 saved windows of tests/firmware/chip_windows_log.txt, which
+# run from no tremor to tremor, the chip and the laptop build differ by at most
+# 9.9e-8 in the probability and not at all in the sum. The probability limit
+# is ten times that largest difference. The sum is a 32-bit float sum, so its
+# limit is relative: a millionth of replay's value is about 16 steps of a
+# 32-bit float.
+PROB_LIMIT = 1e-6
+BELOW_LIMIT = 1e-6
+# The margins around the cut-offs, the same as in tests/pads/pads_match.py.
 PROB_NEAR = 0.0001
 BELOW_NEAR = 0.005
 GAP_NEAR = 0.0001
@@ -105,6 +117,8 @@ PATTERNS = record_patterns()
 COUNT_MIN = -32768
 COUNT_MAX = 32767
 BURST_MAX = 256
+
+READ_CHUNK = 1 << 16
 
 REASON_GAP = "after a checked part that ended at a gap"
 REASON_START = "in a stretch that started before the recording"
@@ -172,6 +186,7 @@ class Match:
 
     passed: bool
     prob_diff: float
+    below_diff: float
     code_differs: bool
     peak_differs: bool
     near_cut_off: bool
@@ -179,11 +194,39 @@ class Match:
     failed: str
 
 
-def read_recording(path: Path) -> list[str]:
-    """Read a recording as gzip or plain text and drop a leading laptop time and tab."""
+def read_gzip_text(path: Path) -> tuple[list[str], bool]:
+    """Read the lines of a gzip text file, and tell whether the file was cut short.
+
+    A recording that stopped without closing its file ends in the middle of
+    the gzip stream. The lines read before the cut are kept, and a last line
+    with no newline is dropped, because it may be part of a line.
+    """
+    data = bytearray()
+    cut_short = False
+    with gzip.open(path, "rb") as source:
+        while True:
+            try:
+                chunk = source.read(READ_CHUNK)
+            except EOFError:
+                cut_short = True
+                break
+            if not chunk:
+                break
+            data += chunk
+    lines = data.decode(errors="replace").splitlines()
+    if cut_short and lines and not data.endswith(b"\n"):
+        lines.pop()
+    return lines, cut_short
+
+
+def read_recording(path: Path) -> tuple[list[str], bool]:
+    """Read a recording as gzip or plain text and drop a leading laptop time and tab.
+
+    It also tells whether a gzip file was cut short.
+    """
+    cut_short = False
     if path.name.endswith(".gz"):
-        with gzip.open(path, "rt", errors="replace") as source:
-            raw_lines = source.read().splitlines()
+        raw_lines, cut_short = read_gzip_text(path)
     else:
         raw_lines = path.read_text(errors="replace").splitlines()
     lines: list[str] = []
@@ -195,7 +238,7 @@ def read_recording(path: Path) -> list[str]:
             lines.append(raw)
             continue
         lines.append(text if tab else raw)
-    return lines
+    return lines, cut_short
 
 
 def run_replay(replay: Path, lines: list[str], samples: Path) -> tuple[pd.DataFrame, str]:
@@ -341,12 +384,17 @@ def checked_parts(boot: Boot) -> list[Part]:
 def match_window(replay_row: Mapping[str, float], watch: Mapping[str, float], peak_gap: float) -> Match:
     """Check one window of replay against the watch's W line.
 
-    The probability must agree within 0.0001. The codes must agree unless
+    The probability must agree within PROB_LIMIT, and the low-frequency sum
+    within BELOW_LIMIT times replay's sum. The codes must agree unless
     replay's window lies near a cut-off, and the peaks must agree unless
-    replay's two largest peak steps nearly tie.
+    replay's two largest peak steps nearly tie. below_diff is the difference
+    in the sum divided by replay's sum.
     """
     prob = float(replay_row["pred_tremor_proba"])
     prob_diff = abs(float(watch["pred_tremor_proba"]) - prob)
+    below = float(replay_row["below_tremor_power"])
+    below_gap = abs(float(watch["below_tremor_power"]) - below)
+    below_diff = below_gap / abs(below) if below != 0 else (0.0 if below_gap == 0 else math.inf)
     near_tie = peak_gap < GAP_NEAR
     near_cut_off = (
         abs(prob - CUT_OFF) <= PROB_NEAR
@@ -356,13 +404,16 @@ def match_window(replay_row: Mapping[str, float], watch: Mapping[str, float], pe
     code_differs = int(watch["code"]) != int(replay_row["code"])
     peak_differs = float(watch["freq_peak"]) != float(replay_row["freq_peak"])
     failed = []
-    if prob_diff > LIMIT:
+    if prob_diff > PROB_LIMIT:
         failed.append("probability")
+    if below_diff > BELOW_LIMIT:
+        failed.append("low-frequency sum")
     if code_differs and not near_cut_off:
         failed.append("code")
     if peak_differs and not near_tie:
         failed.append("peak")
-    return Match(not failed, prob_diff, code_differs, peak_differs, near_cut_off, near_tie, ", ".join(failed))
+    return Match(not failed, prob_diff, below_diff, code_differs, peak_differs, near_cut_off, near_tie,
+                 ", ".join(failed))
 
 
 def fine_spectrum(windows: np.ndarray) -> np.ndarray:
@@ -486,6 +537,7 @@ class Result:
     problems: list[str] = field(default_factory=list)
     compared: int = 0
     prob_diff: float = 0.0
+    below_diff: float = 0.0
     text_differs: int = 0
     first_window: int | None = None
     last_window: int | None = None
@@ -500,6 +552,7 @@ class Result:
     watch_codes: list[int] = field(default_factory=list)
     toolbox_codes: list[int] = field(default_factory=list)
     summary: str = ""
+    cut_short: bool = False
 
 
 def trouble_in(boot: Boot, number: int | None) -> bool:
@@ -564,14 +617,19 @@ def compare_boot(result: Result, boot: Boot, rows: pd.DataFrame, samples: pd.Dat
                     f"boot {boot.boot_id}: replay starts a stretch at reading {first} with t0 {t0} that has no S line"
                 )
             continue
-        matched[number] = int(replay_number)
         replay_rates[number] = rate
-        replay_last[number] = int(group["window"].max())
-        if rate != boot.s_lines[number].rate_uhz and not exempt(boot, number):
+        if rate != boot.s_lines[number].rate_uhz:
+            if exempt(boot, number):
+                # A gap hid readings that the watch took this rate from, so
+                # replay cannot rebuild the stretch's windows. They are counted
+                # with the windows after a gap and not compared.
+                continue
             result.problems.append(
                 f"boot {boot.boot_id} stretch {number}: replay's rate {rate} differs from the watch's "
                 f"{boot.s_lines[number].rate_uhz}"
             )
+        matched[number] = int(replay_number)
+        replay_last[number] = int(group["window"].max())
 
     has_windows = {s for s, _ in boot.w_lines}
     lowest = min([*boot.s_lines, *has_windows], default=None)
@@ -637,6 +695,7 @@ def compare_boot(result: Result, boot: Boot, rows: pd.DataFrame, samples: pd.Dat
         result.first_window = window if result.first_window is None else min(result.first_window, window)
         result.last_window = window if result.last_window is None else max(result.last_window, window)
         result.prob_diff = max(result.prob_diff, match.prob_diff)
+        result.below_diff = max(result.below_diff, match.below_diff)
         if boot.w_text[(number, window)] != repr(float(replay_row["pred_tremor_proba"])):
             result.text_differs += 1
         if not match.passed:
@@ -673,13 +732,13 @@ def compare_boot(result: Result, boot: Boot, rows: pd.DataFrame, samples: pd.Dat
                 )
 
 
-def compare(lines: list[str], replay: Path) -> Result:
+def compare(lines: list[str], replay: Path, cut_short: bool = False) -> Result:
     """Run replay and the toolbox on the recording's lines and compare both with the watch."""
     with tempfile.TemporaryDirectory() as folder:
         samples_path = Path(folder) / "samples.csv"
         rows, stderr = run_replay(replay, lines, samples_path)
         samples = pd.read_csv(samples_path, float_precision="round_trip")
-    result = Result(summary=stderr.strip())
+    result = Result(summary=stderr.strip(), cut_short=cut_short)
     boots = watch_side(lines)
     if not boots:
         raise StopRun("the recording holds no B line")
@@ -711,6 +770,8 @@ def report_lines(recording: Path, result: Result) -> list[str]:
         f"- The boots are {', '.join(str(b) for b in result.boots)}.",
         f"- replay wrote: {result.summary}",
         f"- The result is {'pass' if passed else 'fail'}.",
+        *(["- The gzip file was cut short, so the comparison used the whole lines before the cut."]
+          if result.cut_short else []),
         "",
         "## Stretches",
         "",
@@ -727,7 +788,9 @@ def report_lines(recording: Path, result: Result) -> list[str]:
         "",
         f"- The run compared {result.compared} windows{span}. Window 0 of each stretch is left out.",
         f"- {len(result.differs)} windows differ in the code, the peak, or the probability.",
-        f"- The largest difference in the probability is {result.prob_diff:.3g}, and the limit is {LIMIT}.",
+        f"- The largest difference in the probability is {result.prob_diff:.3g}, and the limit is {PROB_LIMIT:g}.",
+        f"- The largest difference in the low-frequency sum, as a share of replay's sum, is "
+        f"{result.below_diff:.3g}, and the limit is {BELOW_LIMIT:g}.",
         f"- The probability's text differs from replay's shortest text on {result.text_differs} windows.",
         f"- {result.not_checked[REASON_GAP]} windows were not checked because they lie {REASON_GAP}.",
         f"- {result.not_checked[REASON_START]} windows were not checked because they lie {REASON_START}.",
@@ -802,8 +865,12 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     args = parse_args(argv)
     report = args.report if args.report is not None else default_report(args.recording)
+    lines, cut_short = read_recording(args.recording)
+    if cut_short:
+        logger.warning("%s was cut short. The comparison uses the %d whole lines before the cut.",
+                       args.recording, len(lines))
     try:
-        result = compare(read_recording(args.recording), args.replay)
+        result = compare(lines, args.replay, cut_short)
     except StopRun as stop:
         logger.error("%s", stop)
         return 1

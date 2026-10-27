@@ -13,7 +13,10 @@ about 23 minutes.
     caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/command_run.py
 
 The judge reads the log alone, so --log-only gives the same result. It exits
-with code 0 only when every pass check holds.
+with code 0 only when every pass check holds. A run with the watch needs the
+B lines to give FIRMWARE_VERSION from firmware/main/tasks.h. With --log-only
+the judge applies the rules of the version in the log's first B line, as
+record_run.py does.
 """
 from __future__ import annotations
 
@@ -34,7 +37,7 @@ if str(HERE) not in sys.path:
     sys.path.insert(0, str(HERE))
 
 import record_run  # noqa: E402
-from record_run import Entry, kind_of, read_log, record_fields  # noqa: E402
+from record_run import Entry, kind_of, record_fields  # noqa: E402
 from table_run import Check, fields_of  # noqa: E402
 
 LOG = logging.getLogger("command_run")
@@ -275,7 +278,7 @@ def find_sent(log: Log, text: str, after: int = -1) -> Sent | None:
     return next((s for s in log.sent if s.text == text and s.line.index > after), None)
 
 
-def boot_check(lines: list[Line], name: str) -> tuple[list[str], str]:
+def boot_check(lines: list[Line], name: str, version: int) -> tuple[list[str], str]:
     """Check one boot's B line and START line. Give the problems and the B line."""
     boots = [line for line in lines if kind_of(line.text) == "B"]
     starts = [line for line in lines if line.word == "START"]
@@ -283,7 +286,7 @@ def boot_check(lines: list[Line], name: str) -> tuple[list[str], str]:
     if len(boots) != 1 or len(starts) != 1:
         problems.append(f"{name} has {len(boots)} B lines and {len(starts)} START lines")
         return problems, boots[0].text if boots else ""
-    problems += [f"{name}: {p}" for p in record_run.boot_problems(boots[0].text)]
+    problems += [f"{name}: {p}" for p in record_run.boot_problems(boots[0].text, version)]
     if boots[0].index > starts[0].index:
         problems.append(f"{name} has its B line after START")
     return problems, boots[0].text
@@ -295,10 +298,10 @@ def result(name: str, problems: list[str], detail: str = "") -> Check:
     return Check(name, not problems, text + (f", first: {problems[0]}" if problems else ""))
 
 
-def check_boot1(log: Log) -> Check:
+def check_boot1(log: Log, version: int) -> Check:
     """Check boot 1's B line and its SETTINGS line."""
     lines = boot(log, 0)
-    problems, b_line = boot_check(lines, "boot 1")
+    problems, b_line = boot_check(lines, "boot 1", version)
     settings = [line for line in lines if line.word == "SETTINGS" and line.fields.get("source") == "boot"]
     if len(settings) != 1:
         problems.append(f"boot 1 has {len(settings)} SETTINGS lines with source=boot")
@@ -352,10 +355,10 @@ def check_schedule(log: Log) -> Check:
     return Check("schedule", ok, f"{s.text} gets {answer_of(s)}, SETTINGS {settings}")
 
 
-def check_restart(log: Log) -> Check:
+def check_restart(log: Log, version: int) -> Check:
     """Check that the restart kept the schedule and the tone and left the clock unset."""
     lines = boot(log, 1)
-    problems, b_line = boot_check(lines, "boot 2")
+    problems, b_line = boot_check(lines, "boot 2", version)
     first = next((line.text for line in boot(log, 0) if kind_of(line.text) == "B"), "")
     if b_line and first and record_fields(b_line)[0] == record_fields(first)[0]:
         problems.append("boot 2 has the boot ID of boot 1")
@@ -573,14 +576,14 @@ def check_format(log: Log) -> Check:
     return result("format in both boots", problems)
 
 
-def judge(log: Log) -> list[Check]:
-    """Give the result of every pass check."""
+def judge(log: Log, version: int) -> list[Check]:
+    """Give the result of every pass check by the rules of one firmware version."""
     return [
-        check_boot1(log),
+        check_boot1(log, version),
         check_bad_commands(log),
         check_tone_off(log),
         check_schedule(log),
-        check_restart(log),
+        check_restart(log, version),
         check_clock(log),
         check_due(log),
         check_due_end(log),
@@ -621,9 +624,9 @@ def measurements(log: Log) -> list[str]:
     return out
 
 
-def write_report(path: Path, checks: list[Check], measured: list[str]) -> None:
-    """Write the report with the checks and the measurements."""
-    lines = ["# Command run", "", "## Pass checks", ""]
+def write_report(path: Path, checks: list[Check], measured: list[str], notes: list[str]) -> None:
+    """Write the report with the notes, the checks, and the measurements."""
+    lines = ["# Command run", "", *notes, "", "## Pass checks", ""]
     lines += [f"- {'PASS' if c.passed else 'FAIL'}: {c.name}. {c.detail}" for c in checks]
     lines += ["", "## Measurements", ""] + measured
     path.write_text("\n".join(lines) + "\n")
@@ -641,9 +644,15 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.log_only:
         run(args.port, args.log)
-    log = parse_log(read_log(args.log))
-    checks = judge(log)
-    write_report(args.report, checks, measurements(log))
+    saved = record_run.load_log(args.log)
+    try:
+        version = record_run.judged_version([e.text for e in saved.entries], not args.log_only)
+    except record_run.UnknownVersion as error:
+        LOG.error("The judge refuses the log: %s.", error)
+        return 1
+    log = parse_log(saved.entries)
+    checks = judge(log, version)
+    write_report(args.report, checks, measurements(log), record_run.report_notes(saved, version, not args.log_only))
     for check in checks:
         LOG.info("%s: %s. %s", "PASS" if check.passed else "FAIL", check.name, check.detail)
     return 0 if all(check.passed for check in checks) else 1

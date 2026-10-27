@@ -12,6 +12,12 @@ of the record lines. It runs with the ESP-IDF Python, which has pyserial.
 With --log-only it judges a saved log and opens no port. It exits with code 0
 only when every pass check holds.
 
+A run with the watch judges the log by the rules of FIRMWARE_VERSION in
+firmware/main/tasks.h, so the B line must give that version. With --log-only
+the judge takes the version from the log's first B line instead, because the
+firmware changes after a log is saved. It refuses a version that it has no
+rules for. The report names the version.
+
 The file also holds the log and record line helpers that the other run
 scripts import.
 """
@@ -80,6 +86,18 @@ def firmware_version(header: Path = TASKS_HEADER) -> int:
 
 
 FIRMWARE_VERSION = firmware_version()
+# The firmware versions whose saved logs this judge has rules for. Version 9
+# added the record lines and the commands. Version 11 added the face, the D
+# line, and new diagnostic lines. The checks of this file and of
+# command_run.py are the same for both versions. Version 12 added fields at
+# the ends of the minute lines and the LINE_CUT line, and these checks treat
+# it as version 11.
+KNOWN_VERSIONS = (9, 11, 12)
+READ_CHUNK = 1 << 16
+
+
+class UnknownVersion(ValueError):
+    """A saved log gives a firmware version that the judge has no rules for."""
 
 
 @dataclass
@@ -90,18 +108,58 @@ class Entry:
     text: str
 
 
-def read_log(path: Path) -> list[Entry]:
-    """Read a gzip log. Each line holds the laptop time, a tab, and the text."""
-    entries: list[Entry] = []
-    with gzip.open(path, "rt", errors="replace") as source:
-        for raw in source.read().splitlines():
-            stamp, _, text = raw.partition("\t")
+@dataclass
+class SavedLog:
+    """The lines of a saved log, and whether its gzip stream ends early."""
+
+    entries: list[Entry]
+    cut_short: bool
+
+
+def read_gzip_text(path: Path) -> tuple[list[str], bool]:
+    """Read the lines of a gzip text file, and tell whether the file was cut short.
+
+    A recording that stopped without closing its file ends in the middle of
+    the gzip stream. The lines read before the cut are kept, and a last line
+    with no newline is dropped, because it may be part of a line.
+    """
+    data = bytearray()
+    cut_short = False
+    with gzip.open(path, "rb") as source:
+        while True:
             try:
-                seconds = float(stamp)
-            except ValueError:
-                seconds, text = 0.0, raw
-            entries.append(Entry(seconds, text))
-    return entries
+                chunk = source.read(READ_CHUNK)
+            except EOFError:
+                cut_short = True
+                break
+            if not chunk:
+                break
+            data += chunk
+    lines = data.decode(errors="replace").splitlines()
+    if cut_short and lines and not data.endswith(b"\n"):
+        lines.pop()
+    return lines, cut_short
+
+
+def load_log(path: Path) -> SavedLog:
+    """Read a gzip log. Each line holds the laptop time, a tab, and the text."""
+    raw_lines, cut_short = read_gzip_text(path)
+    entries: list[Entry] = []
+    for raw in raw_lines:
+        stamp, _, text = raw.partition("\t")
+        try:
+            seconds = float(stamp)
+        except ValueError:
+            seconds, text = 0.0, raw
+        entries.append(Entry(seconds, text))
+    if cut_short:
+        LOG.warning("%s was cut short. The judge uses the %d whole lines before the cut.", path, len(entries))
+    return SavedLog(entries, cut_short)
+
+
+def read_log(path: Path) -> list[Entry]:
+    """Read a gzip log and give its lines."""
+    return load_log(path).entries
 
 
 def write_entry(out: Any, started: float, text: str) -> None:
@@ -159,27 +217,75 @@ def table_hash(header: Path = TABLES_HEADER) -> str:
     return match.group(1)
 
 
-def boot_problems(text: str) -> list[str]:
+def boot_version(text: str) -> int | None:
+    """Give the firmware version of a B line, or None when the line breaks the format."""
+    match = PATTERNS["B"].match(text)
+    return int(match.group(3)) if match is not None else None
+
+
+def judged_version(texts: list[str], live: bool, known: tuple[int, ...] = KNOWN_VERSIONS) -> int:
+    """Give the firmware version whose rules judge a log.
+
+    A run with the watch is judged by FIRMWARE_VERSION, so a watch with other
+    firmware fails the B line check. A saved log is judged by the version of
+    its first B line, which must be one of the known versions. A saved log
+    with no good B line is judged by FIRMWARE_VERSION, and its B line check
+    fails. It raises UnknownVersion for a version the judge does not know.
+    """
+    if live:
+        return FIRMWARE_VERSION
+    start = first_boot_index(texts)
+    version = boot_version(texts[start]) if start is not None else None
+    if version is None:
+        return FIRMWARE_VERSION
+    if version not in known:
+        names = ", ".join(str(v) for v in known)
+        raise UnknownVersion(
+            f"the log's B line gives firmware version {version}, and this judge knows versions {names}"
+        )
+    return version
+
+
+def version_note(version: int, live: bool) -> str:
+    """Give the report's sentence that names the firmware version of the rules."""
+    source = "firmware/main/tasks.h" if live else "the log's first B line"
+    return f"The judge applies the rules of firmware version {version}, which {source} gives."
+
+
+def cut_notes(saved: SavedLog) -> list[str]:
+    """Give the report's sentence for a log whose gzip file was cut short, or no sentence."""
+    if not saved.cut_short:
+        return []
+    count = len(saved.entries)
+    return [f"The log's gzip file was cut short, so the judge used the {count} whole lines before the cut."]
+
+
+def report_notes(saved: SavedLog, version: int, live: bool) -> list[str]:
+    """Give the report lines that name the version and say whether the log was cut short."""
+    return [version_note(version, live), *cut_notes(saved)]
+
+
+def boot_problems(text: str, version: int) -> list[str]:
     """Give the problems of one B line, or an empty list when it is good."""
     match = PATTERNS["B"].match(text)
     if match is None:
         return [f"B line {text!r} breaks the format"]
     problems = []
-    if int(match.group(3)) != FIRMWARE_VERSION:
+    if int(match.group(3)) != version:
         problems.append(f"version {match.group(3)}")
     if match.group(4) != table_hash():
         problems.append(f"hash {match.group(4)}")
     return problems
 
 
-def check_boot(texts: list[str]) -> Check:
+def check_boot(texts: list[str], version: int) -> Check:
     """Check one good B line before the START line. The texts start at
     the first B line."""
     boots = [i for i, text in enumerate(texts) if kind_of(text) == "B"]
     starts = [i for i, text in enumerate(texts) if text.startswith("START ")]
     if len(boots) != 1 or len(starts) != 1:
         return Check("one B line before START", False, f"{len(boots)} B lines, {len(starts)} START lines")
-    problems = boot_problems(texts[boots[0]])
+    problems = boot_problems(texts[boots[0]], version)
     if boots[0] > starts[0]:
         problems.append("the B line comes after START")
     detail = texts[boots[0]]
@@ -346,11 +452,11 @@ def check_drops(parsed: Parsed, minutes: int) -> Check:
     return Check("no drops and no commands", ok, " ".join(f"{k}={v}" for k, v in got.items()))
 
 
-def judge_record(texts: list[str], parsed: Parsed, minutes: int) -> list[Check]:
+def judge_record(texts: list[str], parsed: Parsed, minutes: int, version: int) -> list[Check]:
     """Give the result of every pass check of the record lines."""
     sensor = table_run.minute_record(parsed, "SENSOR_MINUTE", minutes) or {}
     return [
-        check_boot(texts),
+        check_boot(texts, version),
         check_format(texts),
         check_stretches(texts, parsed),
         check_bursts(texts, int(sensor.get("readings", "0"))),
@@ -388,10 +494,15 @@ def measurements(entries: list[Entry], parsed: Parsed, minutes: int) -> list[str
 
 
 def write_report(
-    path: Path, sections: list[tuple[str, list[Check]]], measured: list[str], parsed: Parsed, minutes: int
+    path: Path,
+    sections: list[tuple[str, list[Check]]],
+    measured: list[str],
+    parsed: Parsed,
+    minutes: int,
+    notes: list[str],
 ) -> None:
-    """Write the report with every set of checks and the measurements."""
-    lines = [f"# Recording run of {minutes} minutes", ""]
+    """Write the report with the notes, every set of checks, and the measurements."""
+    lines = [f"# Recording run of {minutes} minutes", ""] + notes + [""]
     for title, checks in sections:
         lines += [f"## {title}", ""]
         lines += [f"- {'PASS' if c.passed else 'FAIL'}: {c.name}. {c.detail}" for c in checks]
@@ -458,18 +569,25 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.log_only:
         capture(args.port, args.minutes, args.log)
-    entries = read_log(args.log)
+    saved = load_log(args.log)
+    entries = saved.entries
     # Skip every line before the first B line. They come from the chip's ROM,
     # or from before the reset when the laptop still held them.
     texts = [e.text for e in entries]
     texts = texts[first_boot_index(texts) or 0 :]
+    try:
+        version = judged_version(texts, not args.log_only)
+    except UnknownVersion as error:
+        LOG.error("The judge refuses the log: %s.", error)
+        return 1
     parsed = diagnostic_parsed(texts)
     sections = [
         ("Pass checks of table_run.py", table_run.judge(parsed, args.minutes)),
         ("Pass checks of pipeline_run.py", pipeline_run.judge_pipeline(parsed, args.minutes)),
-        ("Pass checks of the record lines", judge_record(texts, parsed, args.minutes)),
+        ("Pass checks of the record lines", judge_record(texts, parsed, args.minutes, version)),
     ]
-    write_report(args.report, sections, measurements(entries, parsed, args.minutes), parsed, args.minutes)
+    write_report(args.report, sections, measurements(entries, parsed, args.minutes), parsed, args.minutes,
+                 report_notes(saved, version, not args.log_only))
     checks = [c for _, section in sections for c in section]
     for check in checks:
         LOG.info("%s: %s. %s", "PASS" if check.passed else "FAIL", check.name, check.detail)

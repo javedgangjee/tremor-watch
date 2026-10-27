@@ -16,7 +16,8 @@
 
 - The run compared 1797 windows, from window 1 to window 1797. Window 0 of each stretch is left out.
 - 0 windows differ in the code, the peak, or the probability.
-- The largest difference in the probability is 2.51e-10, and the limit is 0.0001.
+- The largest difference in the probability is 2.51e-10, and the limit is 1e-06.
+- The largest difference in the low-frequency sum, as a share of replay's sum, is 0, and the limit is 1e-06.
 - The probability's text differs from replay's shortest text on 1790 windows.
 - 0 windows were not checked because they lie after a checked part that ended at a gap.
 - 0 windows were not checked because they lie in a stretch that started before the recording.

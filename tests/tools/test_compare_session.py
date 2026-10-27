@@ -94,11 +94,15 @@ def replace_w(lines: list[str], stretch: int, window: int, field: int, value: st
 
 
 def test_22_limits_equal_the_other_copies() -> None:
-    assert (cs.LIMIT, cs.PROB_NEAR, cs.BELOW_NEAR, cs.GAP_NEAR) == (
-        pads_match.LIMIT, pads_match.PROB_NEAR, pads_match.BELOW_NEAR, pads_match.GAP_NEAR)
-    assert (cs.LIMIT, cs.PROB_NEAR, cs.BELOW_NEAR, cs.GAP_NEAR) == (0.0001, 0.0001, 0.005, 0.0001)
-    assert (cs.LIMIT, cs.PROB_NEAR, cs.BELOW_NEAR, cs.GAP_NEAR) == (
-        chip_windows.LIMIT, chip_windows.PROB_NEAR, chip_windows.BELOW_NEAR, chip_windows.GAP_NEAR)
+    assert (cs.PROB_NEAR, cs.BELOW_NEAR, cs.GAP_NEAR) == (
+        pads_match.PROB_NEAR, pads_match.BELOW_NEAR, pads_match.GAP_NEAR)
+    assert (cs.PROB_NEAR, cs.BELOW_NEAR, cs.GAP_NEAR) == (0.0001, 0.005, 0.0001)
+    assert (cs.PROB_NEAR, cs.BELOW_NEAR, cs.GAP_NEAR) == (
+        chip_windows.PROB_NEAR, chip_windows.BELOW_NEAR, chip_windows.GAP_NEAR)
+    # The watch and replay run the same C code, so their limits are far
+    # tighter than the limit of step 5 between the C code and the toolbox.
+    assert (cs.PROB_LIMIT, cs.BELOW_LIMIT) == (1e-6, 1e-6)
+    assert cs.PROB_LIMIT < pads_match.LIMIT == chip_windows.LIMIT == 0.0001
     assert cs.CUT_OFF == make_windows.CUT_OFF == chip_windows.CUT_OFF
     assert cs.MOVEMENT_THRESHOLD == pads_match.MOVEMENT_THRESHOLD == make_windows.MOVEMENT_THRESHOLD
     assert cs.MOVEMENT_THRESHOLD == chip_windows.MOVEMENT_THRESHOLD == 50.0
@@ -112,8 +116,14 @@ def test_23_match_rule() -> None:
         return row
 
     assert cs.match_window(replay(), replay(), 0.5).passed
-    assert cs.match_window(replay(), replay(pred_tremor_proba=0.50009), 0.5).passed
-    assert not cs.match_window(replay(), replay(pred_tremor_proba=0.50011), 0.5).passed
+    assert cs.match_window(replay(), replay(pred_tremor_proba=0.5000009), 0.5).passed
+    assert not cs.match_window(replay(), replay(pred_tremor_proba=0.5000011), 0.5).passed
+    assert cs.match_window(replay(), replay(below_tremor_power=10.000009), 0.5).passed
+    assert not cs.match_window(replay(), replay(below_tremor_power=10.000011), 0.5).passed
+    assert cs.match_window(replay(below_tremor_power=0.0), replay(below_tremor_power=0.0), 0.5).passed
+    assert not cs.match_window(replay(below_tremor_power=0.0), replay(below_tremor_power=1e-300), 0.5).passed
+    failed = cs.match_window(replay(), replay(below_tremor_power=10.1), 0.5)
+    assert failed.failed == "low-frequency sum" and failed.below_diff > cs.BELOW_LIMIT
     near = cs.CUT_OFF + 0.00005
     assert cs.match_window(replay(pred_tremor_proba=near), replay(pred_tremor_proba=near, code=1), 0.5).passed
     away = cs.CUT_OFF + 0.0002
@@ -196,6 +206,8 @@ def test_28_changed_copies_fail(tmp_path: Path, clean: tuple[list[str], rm.Burst
     copies = {
         "code": replace_w(lines, 0, 8, 3, "1"),
         "probability": replace_w(lines, 0, 9, 4, repr(float(w9[4]) + 0.001)),
+        "small probability": replace_w(lines, 0, 9, 4, repr(float(w9[4]) + 2e-6)),
+        "low-frequency sum": replace_w(lines, 0, 9, 5, repr(float(w9[5]) * (1 + 2e-6))),
         "removed": [line for line in lines if not line.startswith("W,0,10,")],
         "extra": [*lines, "W,0,40,0,0.5,10.0,5"],
         "rate": [*lines[:s0_last], ",".join([*rate0[:4], str(int(rate0[4]) + 1), rate0[5]]), *lines[s0_last + 1:]],
@@ -257,3 +269,26 @@ def test_30_gzip_and_text_give_the_same_report(tmp_path: Path, clean: tuple[list
     assert counts((tmp_path / "gz.md").read_text()) == counts(text_report)
     code, _ = run_main(tmp_path, [line for line in lines if not line.startswith("B,")], "no_boot.txt")
     assert code == 1
+
+
+def test_30b_cut_short_gzip(tmp_path: Path, clean: tuple[list[str], rm.Burst, int]) -> None:
+    """A gzip recording whose stream stops early is read up to the cut, and the report says so."""
+    lines, _, _ = clean
+    text = "".join(f"{i * 0.001:.3f}\t{line}\n" for i, line in enumerate(lines)).encode()
+    whole = tmp_path / "whole.txt.gz"
+    with gzip.open(whole, "wb") as out:
+        out.write(text)
+    data = whole.read_bytes()
+    cut = tmp_path / "cut.txt.gz"
+    cut.write_bytes(data[: len(data) * 3 // 4])
+    read, cut_short = cs.read_recording(cut)
+    assert cut_short
+    assert 0 < len(read) < len(lines)
+    assert read == lines[: len(read)]
+    assert cs.read_recording(whole) == (lines, False)
+
+    report = tmp_path / "cut.md"
+    assert cs.main([str(cut), "--report", str(report)]) == 0
+    assert "- The gzip file was cut short, so the comparison used the whole lines before the cut." in report.read_text()
+    assert cs.main([str(whole), "--report", str(tmp_path / "whole.md")]) == 0
+    assert "cut short" not in (tmp_path / "whole.md").read_text()

@@ -230,6 +230,20 @@ def test_clean_log(tmp_path: Path) -> None:
     assert judge(tmp_path, make_log()) == 0
 
 
+def test_saved_log_of_another_version(tmp_path: Path) -> None:
+    """A saved log of version 9, which had no taps, is refused and gets no report."""
+    record_run = load("record_run", HERE / "record_run.py")
+    tap_run = load("tap_run", TAP_RUN)
+    assert record_run.FIRMWARE_VERSION in tap_run.KNOWN_VERSIONS
+    lines = make_log()
+    i = next(n for n, (_, text) in enumerate(lines) if text.startswith("B,"))
+    fields = lines[i][1].split(",")
+    fields[3] = "9"
+    lines[i] = (lines[i][0], ",".join(fields))
+    assert judge(tmp_path, lines) == 1
+    assert not (tmp_path / "tap_report.md").exists()
+
+
 def test_changed_logs(tmp_path: Path) -> None:
     """Each of the nine changed copies fails."""
     for change in CHANGES:

@@ -1,11 +1,13 @@
 # Face run
 
+The judge applies the rules of firmware version 11, which the log's first B line gives.
+
 ## Pass checks
 
 - PASS: one B line and the format. B,2694533211,11,11,4be2ac2b511c501257ea8186068f06a94d0084d653840e907be72cd103dc5b0e
 - PASS: screen start. SCREEN_START at_us=581951 display=ok touch=ok audio=ok button=ok face=ok internal_free=162959 internal_largest=90112
 - PASS: dashes before the clock. 2 SCREEN_VIEW lines
-- PASS: the face of each F line. 6 F lines
+- PASS: the face of each F line. 6 F lines, the looks before commit 7f6b90e
 - PASS: time after the clock. 29 SCREEN_VIEW lines
 - PASS: next dose after each schedule. 2 schedules
 - PASS: first dose due. 489889 us after the dose time
