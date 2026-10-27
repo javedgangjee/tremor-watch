@@ -80,8 +80,17 @@ This file records each change to Tremor log that a person who reads or runs the 
 - Feature 10 adds pytest tests in tests/replay/ and tests/tools/ with 30 cases, so pytest now runs 105 cases.
 - Feature 10 adds tests/firmware/record_session.md, the session report of the 30-minute table recording, which shows replay agreeing with the watch on all 1797 compared windows and the toolbox agreeing on 449 of 449.
 - Feature 10 shows that replay agrees with the watch on every compared window of the three committed recordings and of two new recordings from the watch, with a largest probability difference of 2.52e-10, and that the toolbox agrees on every window it compares, with a largest difference of 1.02e-9.
+- Feature 11 adds the watch face in firmware/main/face_draw.c with four screens: Home, Medication, Session, and Status. Home shows the state circle and the time of the last tremor, a tap on Home opens Medication, and the BOOT button cycles through the screens.
+- Feature 11 adds the dose flow. Medication's lower half is one "Took it" button, a tap logs the dose and shows Logged for three seconds, and the state task sends a D line for each dose taken. A due dose turns the next dose line purple and plays the tone when the tone setting is on.
+- Feature 11 adds the face rules that run on the laptop in core/look.c, core/view.c, core/screens.c, and core/tone.c, with C unit tests for each.
+- Feature 11 adds tools/gen_face_assets.py, which converts Red Hat Display bold at 28, 40, 56, and 96 pixels and the Lucide icons for LVGL, and a test that the committed font and icon files equal what the tool makes.
+- Feature 11 adds tests/firmware/face_run.py and tests/firmware/tap_run.py, which check the face states and the dose flow on the watch from its log.
+- The README now shows the face screens, drawn on the laptop with face_draw.c and LVGL and placed in a drawing of the watch case.
 
 ### Changed
+
+- The older entries below name the wrist tests as feature 12. The recording viewer became feature 12 on 27 October 2026, and the wrist tests are now feature 13.
+- On 24 and 25 October 2026 the user had Home's top row of time, date, and battery removed, had the Home circle centred, swapped the Rest and Arm moving looks, and renamed No tremor to Rest. The Tremor circle now reads "Tremor Detected" on two lines.
 
 - The tech stack now names ESP-IDF v6.1, LVGL 9.5.0, the Waveshare repo commit 30f3b23, board support package 2.0.0, and QMI8658 driver 2.0.2.
 - The .gitignore file now leaves out the ESP-IDF build folders, the downloaded components, and the sdkconfig.old files under firmware/.
