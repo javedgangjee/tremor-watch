@@ -140,18 +140,18 @@ static void build_doses(view_t *v, const sess_t *s, int64_t now_us)
     v->due = dose_due_time(d, &due_local);
     if (v->due) {
         clock_text(time, sizeof time, due_local);
-        snprintf(v->label_1, sizeof v->label_1, "Dose due");
+        snprintf(v->label_1, sizeof v->label_1, "Dose Due:");
         dose_value(&v->value_1, name, time);
-        snprintf(v->label_2, sizeof v->label_2, "Last dose");
+        snprintf(v->label_2, sizeof v->label_2, "Last Dose:");
         v->value_2 = last;
     } else {
-        snprintf(v->label_1, sizeof v->label_1, "Last dose");
+        snprintf(v->label_1, sizeof v->label_1, "Last Dose:");
         v->value_1 = last;
-        snprintf(v->label_2, sizeof v->label_2, "Next dose");
+        snprintf(v->label_2, sizeof v->label_2, "Next Dose:");
         v->value_2 = next;
     }
 
-    static const char NEXT_WORDS[] = "Next dose ";
+    static const char NEXT_WORDS[] = "Next Dose: ";
     size_t words = strlen(NEXT_WORDS);
     size_t rest = strnlen(next.text, sizeof v->logged_next.text - words - 1);
     memcpy(v->logged_next.text, NEXT_WORDS, words);

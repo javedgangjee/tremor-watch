@@ -37,15 +37,15 @@ In the view cases, O is 1792713600000000, which is 2026-10-23 00:00:00 in micros
      21. sess_took_it() at 16:03:02.999999 after case 20 gives 0, and dose_count() stays 1. sess_took_it() at 16:03:03 gives SESS_DOSE_LOGGED only, and dose_count() is 2. This is the three second lock, and the second dose stays logged.
      22. With the schedule off and the clock unset, sess_took_it() at 5 seconds gives SESS_DOSE_LOGGED, and rec_dose() gives "D,5000000,".
    - tests/view/test_view.c holds these cases.
-     23. With no clock, the view gives the time "--:--", the date "--- -- ---", the last tremor line empty, which hides it, as the user chose on 2026-10-24, the first Medication entry "Last dose" with "None yet", and the second "Next dose" with "Levodopa, --:--".
+     23. With no clock, the view gives the time "--:--", the date "--- -- ---", the last tremor line empty, which hides it, as the user chose on 2026-10-24, the first Medication entry "Last Dose:" with "None yet", and the second "Next Dose:" with "Levodopa, --:--".
      24. At 15:58 the view gives the time "15:58" and the date "Fri 23 Oct", which is the design file's time. At 24:01, which is the timer value 86460000000, it gives "00:01" and "Sat 24 Oct".
      25. Two tremor answers with times at 14:32:05 and 14:32:10 give "Last tremor 14:32", which is the plan's Home example. The same answers with no clock give "Last tremor --:--".
-     26. At 13:00 with no dose the entries are "Last dose" with "None yet" and "Next dose" with "Levodopa, 16:00", which is the plan's Medication example.
-     27. sess_tick() at 15:59:59 and at 16:00 gives SESS_TONE at 16:00. The view at 16:00 gives the due flag, the face Dose due, the first entry "Dose due" with "Levodopa, 16:00", and the second "Last dose" with "None yet". A Tremor face before the due state comes back when sess_took_it() at 16:03 ends it.
-     28. After case 27's dose at 16:03, the view gives "Last dose" with "Levodopa, 16:03" and "Next dose" with "Levodopa, 20:00", and the Logged line "Next dose Levodopa, 20:00".
-     29. With a dose at 15:10, the view at 15:30 gives "Next dose" with "Levodopa, 20:00", and sess_tick() from 15:59:59 to 16:00:01 gives no SESS_TONE. This is the hour rule.
-     30. With a dose due at 16:00 and no tap, the view at 16:14:59 still gives the due flag. sess_tick() at 16:15 ends it, and the view gives "Last dose" with "None yet" and "Next dose" with "Levodopa, 20:00". sess_tick() at 16:30 gives no SESS_TONE, so the watch does not remind again.
-     31. A schedule with the name "Levodopa" and no times gives "Next dose" with "No schedule".
+     26. At 13:00 with no dose the entries are "Last Dose:" with "None yet" and "Next Dose:" with "Levodopa, 16:00", which is the plan's Medication example.
+     27. sess_tick() at 15:59:59 and at 16:00 gives SESS_TONE at 16:00. The view at 16:00 gives the due flag, the face Dose due, the first entry "Dose Due:" with "Levodopa, 16:00", and the second "Last Dose:" with "None yet". A Tremor face before the due state comes back when sess_took_it() at 16:03 ends it.
+     28. After case 27's dose at 16:03, the view gives "Last Dose:" with "Levodopa, 16:03" and "Next Dose:" with "Levodopa, 20:00", and the Logged line "Next Dose: Levodopa, 20:00".
+     29. With a dose at 15:10, the view at 15:30 gives "Next Dose:" with "Levodopa, 20:00", and sess_tick() from 15:59:59 to 16:00:01 gives no SESS_TONE. This is the hour rule.
+     30. With a dose due at 16:00 and no tap, the view at 16:14:59 still gives the due flag. sess_tick() at 16:15 ends it, and the view gives "Last Dose:" with "None yet" and "Next Dose:" with "Levodopa, 20:00". sess_tick() at 16:30 gives no SESS_TONE, so the watch does not remind again.
+     31. A schedule with the name "Levodopa" and no times gives "Next Dose:" with "No schedule".
      32. With no still window the view gives "Tremor --%" and the percent -1, and the line "of still time this session". With 3 tremor and 22 no tremor counted windows it gives "Tremor 12%", which is the design file's figure. With 1 tremor and 7 no tremor it gives "Tremor 13%", because 12.5 rounds up.
      33. With 29 counted still windows in block 0, the block is hollow. With 30, of which 3 are tremor, it is not hollow and its percent is 10.
      34. With counted windows in each of the first 13 blocks of 10 minutes, the view gives 12 blocks, and the oldest block's start time is "00:10".
