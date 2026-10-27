@@ -267,7 +267,7 @@
     <div class="note">
       <ul>
         <li><strong>This page is the build spec.</strong> Where the Claude Design file and this page differ, this page wins.</li>
-        <li><strong>The build targets a recorded demo on the watch alone.</strong> A session lasts one to two hours. There is no Mac app and no Bluetooth. The laptop is used to build the code, to check it, and to set the watch's clock and dose times over USB.</li>
+        <li><strong>The build targets a recorded demo on the watch alone.</strong> A session lasts one to two hours. The watch needs no Mac app and no Bluetooth while it runs. The laptop is used to build the code, to check it, to set the watch's clock and dose times over USB, and to view saved recordings in a small viewer app.</li>
         <li><strong>The Python toolbox is the reference.</strong> The C detector must follow <code>reference/plain_detector.py</code> step for step, and it counts as correct only while it matches the toolbox.</li>
         <li><strong>The detector is used as published.</strong> Nobody retrains it or changes its stored numbers.</li>
       </ul>
@@ -448,6 +448,7 @@
       <li>A <code>D</code> line records a dose taken. It holds the time in microseconds and the scheduled dose time it answers.</li>
     </ul>
     <p>The laptop sends commands over the same port. One command sets the clock with the time in UTC and the local offset. Another sets the dose schedule, another starts a new session, and another turns the tone on or off. <code>tools/watch_cli.py</code> sends these commands and saves the recording to a file.</p>
+    <p>A small Electron app on the laptop shows a saved recording. It opens a file that <code>tools/watch_cli.py</code> saved, plots the gyroscope readings against time, and marks each window that the watch answered with tremor. It reads saved files only and never opens the watch's port.</p>
     <p>Until the clock is set, the face shows dashes for the time and the dose schedule stays off.</p>
   </section>
 
@@ -654,6 +655,6 @@
   </section>
 
   <footer>
-    <p>Revised 21 October 2026. The detector comes from Timmermans and colleagues, npj Parkinson's Disease, 2025, and the test data from Varghese and colleagues, npj Parkinson's Disease, 2024. The sensor rates come from the QMI8658A datasheet.</p>
+    <p>Revised 27 October 2026. The detector comes from Timmermans and colleagues, npj Parkinson's Disease, 2025, and the test data from Varghese and colleagues, npj Parkinson's Disease, 2024. The sensor rates come from the QMI8658A datasheet.</p>
   </footer>
 </div>
