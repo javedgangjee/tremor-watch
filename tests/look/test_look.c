@@ -212,7 +212,7 @@ static bool disc_meets_box(const look_box_t *c, const look_box_t *b)
 
 static bool is_drawn(const look_box_t *b)
 {
-    return b != NULL && (b->kind == LOOK_KIND_TEXT || b->kind == LOOK_KIND_ICON || b->kind == LOOK_KIND_BATTERY);
+    return b != NULL && (b->kind == LOOK_KIND_TEXT || b->kind == LOOK_KIND_ICON);
 }
 
 static void test_5_shape_and_overlap(void)

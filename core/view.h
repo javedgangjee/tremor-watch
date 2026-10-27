@@ -37,10 +37,9 @@ typedef struct {
     /* The shown face state and whether a dose is due. */
     face_state_t face;
     bool due;
-    /* Home's time, date, battery, and last tremor line. */
+    /* Home's time, date and last tremor line. */
     char time[8];
     char date[16];
-    char battery[8];
     char last_tremor[24];
     /* Medication's two entries. While a dose is due, the first value is the
      * due dose, which the face draws in purple. */
