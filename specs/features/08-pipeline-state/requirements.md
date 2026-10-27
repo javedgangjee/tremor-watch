@@ -53,3 +53,9 @@ Each item below is a choice that the build spec and the existing code leave open
 32. `make check` stays as feature 7 wrote it. It now runs 11 CTest tests, and it does not build firmware/detector_check/, because the chip check needs the watch. The agent decided this on 23 October 2026, and the user accepted it on 27 October 2026.
 
 33. specs/tech-stack.md records core/pipeline.h, core/session.h, the end request queue, the sensor fault rule, firmware/detector_check/, and the two new watch commands. The agent decided this on 23 October 2026, and the user accepted it on 27 October 2026.
+
+## Fixes after review
+
+Each item below is a fix that a code review on 27 October 2026 found. Nothing could be tested on the watch at the time.
+
+34. When det_init() fails, the pipeline task no longer deletes itself. det_init() fails only when the FFT buffers are too small, which is a fault of the build, so a restart would not help, and the task does not try again. It writes `PIPELINE_ERROR detector_init` after `DETECTOR_INIT ok=0` and again after each PIPELINE_MINUTE line. It keeps taking the sensor messages and their minute sums, so PIPELINE_MINUTE still goes out, but it gives no message to the pipe. So the pipe's fault clock runs out, a sensor fault answer comes each second, STATE_MINUTE counts them in its fault field, and the face shows Waiting. Before this fix the face also showed Waiting, but no answer came, and only one line said why. The user asked for this fix on 27 October 2026. It has not run on the watch yet.

@@ -27,6 +27,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#include "esp_task_wdt.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -89,7 +90,7 @@ static void after_call(unsigned flags)
     face_state_t shown = face_shown(&s_sess.face);
     usb_send("FACE at_us=%lld state=%d", (long long)now_us, (int)shown);
     char line[REC_LINE_MAX];
-    if (rec_face(line, sizeof line, now_us, shown) > 0) {
+    if (line_made(rec_face(line, sizeof line, now_us, shown)) > 0) {
         usb_send("%s", line);
     }
     send_screen();
@@ -129,8 +130,8 @@ static void take_answer(const state_msg_t *m)
              (long long)m->at_us, (long long)m->run_us, (long long)m->delay_us,
              (flags & SESS_COUNTED) != 0 ? 1 : 0, (int)face_shown(&s_sess.face));
     char line[REC_LINE_MAX];
-    if (rec_window(line, sizeof line, m->stretch, m->has_window, m->window, (res_code_t)m->code, m->prob, m->below,
-            m->peak_hz) > 0) {
+    if (line_made(rec_window(line, sizeof line, m->stretch, m->has_window, m->window, (res_code_t)m->code, m->prob,
+            m->below, m->peak_hz)) > 0) {
         usb_send("%s", line);
     }
     after_call(flags);
@@ -152,7 +153,7 @@ static void take_took_it(const state_msg_t *m)
         usb_send("DOSE at_us=%lld answers_local_us=%lld count=%lu", (long long)dose.time_us,
                  (long long)dose.answers_local_us, (unsigned long)dose_count(&s_sess.dose));
         char line[REC_LINE_MAX];
-        if (rec_dose(line, sizeof line, &dose) > 0) {
+        if (line_made(rec_dose(line, sizeof line, &dose)) > 0) {
             usb_send("%s", line);
         }
     }
@@ -166,7 +167,7 @@ static void take_took_it(const state_msg_t *m)
 static void reply(rec_cmd_t command, rec_result_t result)
 {
     char line[REC_LINE_MAX];
-    if (rec_reply(line, sizeof line, command, result) > 0) {
+    if (line_made(rec_reply(line, sizeof line, command, result)) > 0) {
         usb_send("%s", line);
     }
 }
@@ -297,11 +298,16 @@ void state_task(void *arg)
     read_power();
     send_screen();
 
+    /* The task waits at most 1 second for a message, and a settings store
+     * write takes well under a second, so the watchdog's 5 seconds run out
+     * only when the task is stuck. */
+    ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
     TickType_t next_second = xTaskGetTickCount() + SECOND_TICKS;
     uint32_t minute = 1;
     uint32_t seconds = 0;
     state_msg_t msg;
     for (;;) {
+        esp_task_wdt_reset();
         TickType_t now = xTaskGetTickCount();
         TickType_t wait = (TickType_t)(next_second - now) <= SECOND_TICKS ? next_second - now : 0;
         if (xQueueReceive(g_state_queue, &msg, wait) == pdTRUE) {

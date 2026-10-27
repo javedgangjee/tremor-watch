@@ -19,7 +19,10 @@
 #include <string.h>
 
 #include "driver/gpio.h"
+#include "esp_attr.h"
 #include "esp_heap_caps.h"
+#include "esp_private/cache_utils.h"
+#include "esp_task_wdt.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -70,6 +73,12 @@ typedef struct {
 
 static view_line_t s_line;
 static bool s_line_sent;
+
+/* The touch handle and the LVGL port's touch handler. s_touch_waiting is true
+ * when a touch interrupt came while the flash cache was off. */
+static esp_lcd_touch_handle_t s_touch;
+static esp_lcd_touch_interrupt_callback_t s_touch_wake;
+static volatile bool s_touch_waiting;
 
 void screen_took_it(int64_t at_us)
 {
@@ -141,6 +150,27 @@ static lv_display_t *start_display(void)
     return disp;
 }
 
+/*
+ * on_touch() takes the touch pin's interrupt in place of the LVGL port's own
+ * handler. main.c puts the GPIO interrupt in IRAM, so the sensor's INT1 stamps
+ * stay on time while the settings store writes to flash with the cache off.
+ * The port's handler calls code in flash and reads the touch handle in PSRAM,
+ * and the cache serves both. So on_touch() calls the port's handler only while
+ * the cache is on. Otherwise it leaves the touch for the next round of the
+ * screen task. Every settings store call comes from the state task on core 0,
+ * which is the core of the GPIO interrupt, so the cache cannot turn off while
+ * on_touch() runs.
+ */
+static void IRAM_ATTR on_touch(void *arg)
+{
+    (void)arg;
+    if (spi_flash_cache_enabled()) {
+        s_touch_wake(s_touch);
+    } else {
+        s_touch_waiting = true;
+    }
+}
+
 static bool start_touch(lv_display_t *disp)
 {
     esp_lcd_touch_handle_t touch = NULL;
@@ -151,7 +181,12 @@ static bool start_touch(lv_display_t *disp)
         .disp = disp,
         .handle = touch,
     };
-    return lvgl_port_add_touch(&touch_cfg) != NULL;
+    if (lvgl_port_add_touch(&touch_cfg) == NULL) {
+        return false;
+    }
+    s_touch = touch;
+    s_touch_wake = touch->config.interrupt_callback;
+    return s_touch_wake != NULL && gpio_isr_handler_add(BSP_LCD_TOUCH_INT, on_touch, NULL) == ESP_OK;
 }
 
 static bool start_button(void)
@@ -263,8 +298,16 @@ void screen_task(void *arg)
     uint32_t face_changes = 0;
     face_state_t face = FACE_WAITING;
     uint32_t minute = 1;
+    /* A round takes about ROUND_MS and waits on the display lock, so the
+     * watchdog's 5 seconds run out only when the task or LVGL is stuck. */
+    ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
     TickType_t last_wake = xTaskGetTickCount();
     for (;;) {
+        esp_task_wdt_reset();
+        if (s_touch_waiting) {
+            s_touch_waiting = false;
+            s_touch_wake(s_touch);
+        }
         int64_t now_us = esp_timer_get_time();
         bool down = button_ok && gpio_get_level(BOOT_GPIO) == 0;
         bool got = take_views();

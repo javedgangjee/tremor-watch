@@ -24,7 +24,7 @@ set(ASSET_SOURCES
 idf_component_register(
     SRCS ${TASK_SOURCES} power.cpp ${ASSET_SOURCES}
     INCLUDE_DIRS "." "assets"
-    PRIV_REQUIRES core esp_timer esp_driver_gpio esp_driver_i2c XPowersLib espressif__esp_lcd_touch nvs_flash
+    PRIV_REQUIRES core esp_timer esp_driver_gpio esp_driver_i2c XPowersLib espressif__esp_lcd_touch nvs_flash spi_flash
         esp_driver_usb_serial_jtag espressif__esp_codec_dev)
 
 set_source_files_properties(${TASK_SOURCES} PROPERTIES

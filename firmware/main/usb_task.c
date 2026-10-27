@@ -31,6 +31,7 @@
 #include "esp_random.h"
 #include "esp_rom_sys.h"
 #include "esp_system.h"
+#include "esp_task_wdt.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -48,6 +49,9 @@
 #define RECORD_WAIT_MS 10
 /* The task reads at most this many received bytes at a time. */
 #define READ_CHUNK 64
+/* A LINE_CUT line names at most this many characters of the cut line's first
+ * word. */
+#define CUT_WORD_MAX 24
 
 typedef struct {
     uint32_t port_drops;
@@ -58,6 +62,7 @@ typedef struct {
 } usb_counts_t;
 
 atomic_uint g_line_drops;
+atomic_uint g_line_cuts;
 atomic_bool g_recording_on;
 
 static usb_counts_t s_counts;
@@ -81,12 +86,33 @@ static char s_command[REC_COMMAND_MAX + 2];
 static size_t s_command_len;
 static bool s_too_long;
 
+/* format_line() formats one line into out. A line that does not fit would end
+ * in a cut value that still reads as a number, so the function writes a
+ * LINE_CUT line in its place, with the cut line's first word and the length
+ * it needed, and counts the cut. */
+static void format_line(char *out, size_t size, const char *fmt, va_list args)
+{
+    int len = vsnprintf(out, size, fmt, args);
+    if (len >= 0 && (size_t)len < size) {
+        return;
+    }
+    atomic_fetch_add(&g_line_cuts, 1u);
+    char word[CUT_WORD_MAX + 1];
+    size_t word_len = len < 0 ? 0 : strcspn(out, " ,");
+    if (word_len > CUT_WORD_MAX) {
+        word_len = CUT_WORD_MAX;
+    }
+    memcpy(word, out, word_len);
+    word[word_len] = '\0';
+    snprintf(out, size, "LINE_CUT word=%s chars=%d", word_len > 0 ? word : "none", len);
+}
+
 bool usb_send(const char *fmt, ...)
 {
     line_t line;
     va_list args;
     va_start(args, fmt);
-    vsnprintf(line.text, sizeof line.text, fmt, args);
+    format_line(line.text, sizeof line.text, fmt, args);
     va_end(args);
     if (xQueueSend(g_line_queue, &line, 0) != pdTRUE) {
         atomic_fetch_add(&g_line_drops, 1u);
@@ -140,11 +166,23 @@ static void write_line(const char *text)
     }
 }
 
+/* write_text() formats one of the task's own lines and writes it. */
+static void write_text(const char *fmt, ...) __attribute__((format(__printf__, 1, 2)));
+static void write_text(const char *fmt, ...)
+{
+    char line[LINE_CHARS + 1];
+    va_list args;
+    va_start(args, fmt);
+    format_line(line, sizeof line, fmt, args);
+    va_end(args);
+    write_line(line);
+}
+
 /* write_stretch() writes and keeps the S line of the kept stretch with a rate. */
 static void write_stretch(uint32_t rate_uhz)
 {
-    if (rec_stretch(s_stretch_line, sizeof s_stretch_line, s_stretch, s_first, s_t0_us, rate_uhz,
-            IMU_GYRO_RANGE_DPS) == 0) {
+    if (line_made(rec_stretch(s_stretch_line, sizeof s_stretch_line, s_stretch, s_first, s_t0_us, rate_uhz,
+            IMU_GYRO_RANGE_DPS)) == 0) {
         return;
     }
     s_have_stretch = true;
@@ -163,12 +201,12 @@ static void take_record(const record_msg_t *m)
     } else if ((m->flags & RT_RATE_SET) != 0) {
         write_stretch(m->rate_uhz);
     }
-    if (m->first_part && rec_burst(line, sizeof line, m->first_reading, m->burst_count, m->stamp_us) > 0) {
+    if (m->first_part && line_made(rec_burst(line, sizeof line, m->first_reading, m->burst_count, m->stamp_us)) > 0) {
         write_line(line);
     }
     for (uint32_t i = 0; i < m->count; i++) {
         /* Axes 3 to 5 are the gyroscope, and axes 0 to 2 are the accelerometer. */
-        if (rec_reading(line, sizeof line, m->first_reading + i, &m->raw[i][3], &m->raw[i][0]) > 0) {
+        if (line_made(rec_reading(line, sizeof line, m->first_reading + i, &m->raw[i][3], &m->raw[i][0])) > 0) {
             write_line(line);
         }
     }
@@ -179,7 +217,7 @@ static void answer(rec_cmd_t command, rec_result_t result)
 {
     char line[REC_LINE_MAX];
     s_counts.bad_commands++;
-    if (rec_reply(line, sizeof line, command, result) > 0) {
+    if (line_made(rec_reply(line, sizeof line, command, result)) > 0) {
         write_line(line);
     }
 }
@@ -240,13 +278,11 @@ static void read_commands(void)
 
 static void write_minute_line(uint32_t minute)
 {
-    char line[LINE_CHARS + 1];
-    snprintf(line, sizeof line,
-             "USB_MINUTE minute=%" PRIu32 " line_drops=%u port_drops=%" PRIu32 " restarts=%" PRIu32 " bytes=%" PRIu64
-             " commands=%" PRIu32 " bad_commands=%" PRIu32 " stack_free=%u",
-             minute, atomic_load(&g_line_drops), s_counts.port_drops, s_counts.restarts, s_counts.bytes,
-             s_counts.commands, s_counts.bad_commands, (unsigned)uxTaskGetStackHighWaterMark(NULL));
-    write_line(line);
+    write_text("USB_MINUTE minute=%" PRIu32 " line_drops=%u port_drops=%" PRIu32 " restarts=%" PRIu32 " bytes=%" PRIu64
+               " commands=%" PRIu32 " bad_commands=%" PRIu32 " stack_free=%u line_cuts=%u",
+               minute, atomic_load(&g_line_drops), s_counts.port_drops, s_counts.restarts, s_counts.bytes,
+               s_counts.commands, s_counts.bad_commands, (unsigned)uxTaskGetStackHighWaterMark(NULL),
+               atomic_load(&g_line_cuts));
 }
 
 void usb_task(void *arg)
@@ -263,16 +299,18 @@ void usb_task(void *arg)
     };
     ESP_ERROR_CHECK(usb_serial_jtag_driver_install(&config));
 
-    rec_boot(s_boot_line, sizeof s_boot_line, esp_random(), (uint32_t)esp_reset_reason(), FIRMWARE_VERSION,
-             TABLE_HASH);
+    line_made(rec_boot(s_boot_line, sizeof s_boot_line, esp_random(), (uint32_t)esp_reset_reason(),
+                       FIRMWARE_VERSION, TABLE_HASH));
     write_line(s_boot_line);
-    char line[REC_LINE_MAX];
-    snprintf(line, sizeof line, "START uptime_us=%" PRId64, esp_timer_get_time());
-    write_line(line);
+    write_text("START uptime_us=%" PRId64, esp_timer_get_time());
     send_task_line("usb");
 
+    /* The task waits at most RECORD_WAIT_MS a round and writes with no wait,
+     * so the watchdog's 5 seconds run out only when the task is stuck. */
+    ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
     uint32_t minute = 1;
     for (;;) {
+        esp_task_wdt_reset();
         if (xQueueReceive(g_record_queue, &s_record, pdMS_TO_TICKS(RECORD_WAIT_MS)) == pdTRUE) {
             take_record(&s_record);
         }
