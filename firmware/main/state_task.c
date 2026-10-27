@@ -186,15 +186,17 @@ static void send_settings(const char *source, const char *store)
              s->name);
 }
 
-/* load_settings() loads the schedule and the tone setting at start. A schedule
- * that dose_set_schedule() refuses counts as a store error, and the schedule
- * stays off. */
+/* load_settings() loads the schedule and the tone setting at start. Each
+ * setting that loaded is used, even when the other one was bad, because
+ * settings_load() leaves a bad setting at its default. A schedule that
+ * dose_set_schedule() refuses counts as a store error, and the schedule stays
+ * off. */
 static void load_settings(void)
 {
     settings_t settings;
     settings_status_t status = settings_load(&settings);
     s_tone_on = settings.tone_on;
-    if (status == SETTINGS_OK && !dose_set_schedule(&s_sess.dose, &settings.schedule, esp_timer_get_time())) {
+    if (!dose_set_schedule(&s_sess.dose, &settings.schedule, esp_timer_get_time())) {
         status = SETTINGS_ERROR;
     }
     const char *store = status == SETTINGS_OK ? "ok" : status == SETTINGS_EMPTY ? "empty" : "error";
