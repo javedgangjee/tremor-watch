@@ -47,6 +47,17 @@
 #define SCREEN_PRIORITY 5
 #define USB_PRIORITY 3
 
+/* The core each task is pinned to. */
+#define SENSOR_CORE 1
+#define PIPELINE_CORE 1
+#define STATE_CORE 0
+#define SCREEN_CORE 0
+#define USB_CORE 0
+/* The screen task pauses the scheduler to keep the state task from running
+ * between its queue test and its SCREEN_VIEW line. On ESP-IDF that pause
+ * holds only on the calling core, so both tasks must share one. */
+_Static_assert(STATE_CORE == SCREEN_CORE, "the state task and the screen task must run on one core");
+
 /*
  * sensor_msg_t carries one part of a burst from the sensor task to the
  * pipeline task. A burst of more than SENSOR_MSG_READINGS readings goes in
@@ -55,7 +66,6 @@
 typedef struct {
     /* The flags that rt_burst() returned for the burst. */
     unsigned flags;
-    bool overflow;
     /* The stretch number and its rate after the rt_burst() call. */
     uint32_t stretch;
     uint32_t rate_uhz;
