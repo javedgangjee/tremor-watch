@@ -187,6 +187,17 @@ def test_case_48_committed_files() -> None:
         assert f"-r {chars}" in line
 
 
+def test_case_48_committed_files_match_the_tool() -> None:
+    """The committed icons and metrics are what the tool writes today, byte for byte."""
+    icons_c, icons_h = gen.icons_texts()
+    assert (ASSETS / "face_icons.c").read_text(encoding="ascii") == icons_c
+    assert (ASSETS / "face_icons.h").read_text(encoding="ascii") == icons_h
+    # The metrics come from the committed fonts, so this needs no npx.
+    metrics = {size: gen.parse_font_output((ASSETS / f"face_font_{size}.c").read_text(encoding="utf-8"))
+               for size in gen.FONT_RANGES}
+    assert METRICS.read_text(encoding="ascii") == gen.metrics_text(metrics)
+
+
 def functions_of(path: Path) -> list[ast.FunctionDef]:
     """Return every function in a Python file."""
     tree = ast.parse(path.read_text(encoding="utf-8"))
