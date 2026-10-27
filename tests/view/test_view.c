@@ -127,7 +127,7 @@ static void test_23_no_clock(void)
     TEST_ASSERT_EQUAL_STRING("--:--", view.time);
     TEST_ASSERT_EQUAL_STRING("--- -- ---", view.date);
     TEST_ASSERT_EQUAL_STRING("", view.last_tremor);
-    entries("Last dose", "None yet", "Next dose", "Levodopa, --:--");
+    entries("Last Dose:", "None yet", "Next Dose:", "Levodopa, --:--");
     check_fits();
 }
 
@@ -171,7 +171,7 @@ static void test_26_medication(void)
 {
     with_clock();
     build(AT(13, 0, 0));
-    entries("Last dose", "None yet", "Next dose", "Levodopa, 16:00");
+    entries("Last Dose:", "None yet", "Next Dose:", "Levodopa, 16:00");
     check_fits();
 }
 
@@ -190,7 +190,7 @@ static void test_27_due(void)
     build(AT(16, 0, 0));
     TEST_ASSERT_TRUE(view.due);
     TEST_ASSERT_EQUAL_INT(FACE_DOSE_DUE, view.face);
-    entries("Dose due", "Levodopa, 16:00", "Last dose", "None yet");
+    entries("Dose Due:", "Levodopa, 16:00", "Last Dose:", "None yet");
     check_fits();
     TEST_ASSERT_TRUE((sess_took_it(&sess, AT(16, 3, 0)) & SESS_DOSE_LOGGED) != 0);
     TEST_ASSERT_EQUAL_INT(FACE_TREMOR, face_shown(&sess.face));
@@ -202,8 +202,8 @@ static void test_28_after_dose(void)
     TEST_ASSERT_TRUE((sess_took_it(&sess, AT(16, 3, 0)) & SESS_DOSE_LOGGED) != 0);
     build(AT(16, 3, 0));
     TEST_ASSERT_FALSE(view.due);
-    entries("Last dose", "Levodopa, 16:03", "Next dose", "Levodopa, 20:00");
-    TEST_ASSERT_EQUAL_STRING("Next dose Levodopa, 20:00", view.logged_next.text);
+    entries("Last Dose:", "Levodopa, 16:03", "Next Dose:", "Levodopa, 20:00");
+    TEST_ASSERT_EQUAL_STRING("Next Dose: Levodopa, 20:00", view.logged_next.text);
     check_fits();
 }
 
@@ -212,7 +212,7 @@ static void test_29_hour_rule(void)
     with_clock();
     TEST_ASSERT_TRUE((sess_took_it(&sess, AT(15, 10, 0)) & SESS_DOSE_LOGGED) != 0);
     build(AT(15, 30, 0));
-    TEST_ASSERT_EQUAL_STRING("Next dose", view.label_2);
+    TEST_ASSERT_EQUAL_STRING("Next Dose:", view.label_2);
     TEST_ASSERT_EQUAL_STRING("Levodopa, 20:00", view.value_2.text);
     check_fits();
     for (int64_t t = AT(15, 59, 59); t <= AT(16, 0, 1); t += SECOND_US) {
@@ -230,7 +230,7 @@ static void test_30_due_ends(void)
     sess_tick(&sess, AT(16, 15, 0));
     build(AT(16, 15, 0));
     TEST_ASSERT_FALSE(view.due);
-    entries("Last dose", "None yet", "Next dose", "Levodopa, 20:00");
+    entries("Last Dose:", "None yet", "Next Dose:", "Levodopa, 20:00");
     check_fits();
     TEST_ASSERT_EQUAL_UINT(0u, sess_tick(&sess, AT(16, 30, 0)) & SESS_TONE);
 }
@@ -240,7 +240,7 @@ static void test_31_no_times(void)
     dose_set_clock(&sess.dose, O, 0);
     set_schedule("Levodopa", 0);
     build(AT(13, 0, 0));
-    TEST_ASSERT_EQUAL_STRING("Next dose", view.label_2);
+    TEST_ASSERT_EQUAL_STRING("Next Dose:", view.label_2);
     TEST_ASSERT_EQUAL_STRING("No schedule", view.value_2.text);
     check_fits();
 }
