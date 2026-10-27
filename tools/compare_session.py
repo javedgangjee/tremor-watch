@@ -83,17 +83,25 @@ RES_TREMOR = 0
 RES_NO_TREMOR = 1
 RES_ARM_MOVING = 2
 
-# The record lines of core/recording_format.md.
-PATTERNS = {
-    "B": re.compile(r"^B,(\d+),(\d+),(\d+),([0-9a-f]{64})$"),
-    "S": re.compile(r"^S,(\d+),(\d+),(-?\d+),(\d+),(\d+)$"),
-    "T": re.compile(r"^T,(\d+),(\d+),(-?\d+)$"),
-    "R": re.compile(r"^R,(\d+),(-?\d+),(-?\d+),(-?\d+),(-?\d+),(-?\d+),(-?\d+)$"),
-    "W": re.compile(r"^W,(\d+),(\d*),([0-4]),([-+.0-9e]*),([-+.0-9e]*),([-+.0-9e]*)$"),
-    "F": re.compile(r"^F,(-?\d+),([0-4])$"),
-    "D": re.compile(r"^D,(-?\d+),(-?\d*)$"),
-    "A": re.compile(r"^A,([0-4]),([0-5])$"),
-}
+FORMAT_DOC = REPO / "core" / "recording_format.md"
+RECORD_LETTERS = "BSTRWFDA"
+
+
+def record_patterns(doc: Path = FORMAT_DOC) -> dict[str, re.Pattern[str]]:
+    """Read the pattern of each record line from the table in core/recording_format.md."""
+    patterns: dict[str, re.Pattern[str]] = {}
+    for row in doc.read_text().splitlines():
+        match = re.match(r"^\| ([A-Z]) \|.*\| `(\^.*\$)` \|$", row)
+        if match:
+            patterns[match.group(1)] = re.compile(match.group(2))
+    if sorted(patterns) != sorted(RECORD_LETTERS):
+        raise ValueError(f"{doc} gives patterns for {''.join(sorted(patterns))}, not for {RECORD_LETTERS}")
+    return patterns
+
+
+# The record lines of core/recording_format.md, read from its table as
+# tests/firmware/record_run.py reads them.
+PATTERNS = record_patterns()
 COUNT_MIN = -32768
 COUNT_MAX = 32767
 BURST_MAX = 256
@@ -274,13 +282,19 @@ def watch_side(lines: list[str]) -> list[Boot]:
                 continue
             held.counts.append((raw[0], raw[1], raw[2]))
         elif kind == "W" and values[1] != "":
+            # The pattern lets a number be empty or malformed. Such a line is
+            # skipped, so its window shows as one with no W line.
+            try:
+                numbers = {
+                    "code": float(values[2]),
+                    "pred_tremor_proba": float(values[3]),
+                    "below_tremor_power": float(values[4]),
+                    "freq_peak": float(values[5]),
+                }
+            except ValueError:
+                continue
             key = (int(values[0]), int(values[1]))
-            boots[-1].w_lines[key] = {
-                "code": float(values[2]),
-                "pred_tremor_proba": float(values[3]),
-                "below_tremor_power": float(values[4]),
-                "freq_peak": float(values[5]),
-            }
+            boots[-1].w_lines[key] = numbers
             boots[-1].w_text[key] = values[3]
     if boots:
         close_burst(boots[-1], held)
