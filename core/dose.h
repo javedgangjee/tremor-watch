@@ -1,11 +1,11 @@
 /*
  * dose.h holds the dose schedule and the due rule.
  *
- * The rules follow the plan's Dose schedule section. The schedule has one
- * medicine name and up to six local clock times a day. A dose time becomes due
- * at that clock time unless a dose was logged in the hour before it. The due
- * state ends when "Took it" is tapped or fifteen minutes pass, and the watch
- * does not remind again. Until the clock is set, the schedule stays off.
+ * The schedule has one medicine name and up to six local clock times a day.
+ * A dose time becomes due at that clock time unless a dose was logged in the
+ * hour before it. The due state ends when "Took it" is tapped or fifteen
+ * minutes pass, and the watch does not remind again. Until the clock is set,
+ * the schedule stays off.
  *
  * Time counts in the watch's 64-bit microsecond timer. The local clock in
  * microseconds since 1970 is the timer plus an offset, which
@@ -24,11 +24,10 @@
 
 /* A schedule holds at most 6 times a day. */
 #define DOSE_MAX_TIMES 6
-/* A medicine name holds at most 20 bytes. */
+/* A medicine name holds at most 20 bytes, without its zero byte. */
 #define DOSE_NAME_MAX 20
 /* The rules keep the latest 8 doses. */
 #define DOSE_LOG_LEN 8
-/* A day has 1440 minutes. */
 #define DOSE_DAY_MINUTES 1440
 /* A due dose ends 15 minutes after its time. */
 #define DOSE_DUE_US 900000000
@@ -106,7 +105,6 @@ unsigned dose_tick(dose_t *d, int64_t now_us);
  * less than 3 seconds after the last accepted dose and returns false. */
 bool dose_took_it(dose_t *d, int64_t now_us);
 
-/* dose_is_due() is true while a dose is due. */
 bool dose_is_due(const dose_t *d);
 
 /* dose_due_time() gives the due dose's local time. It returns false when no

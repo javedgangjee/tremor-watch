@@ -1,6 +1,6 @@
 /*
  * Unit tests for the tone samples in core/tone.c. They hold cases 37 to 40 of
- * feature 11's validation.md.
+ * specs/features/11-watch-face/validation.md.
  */
 
 #include <stdint.h>

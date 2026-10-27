@@ -1,5 +1,6 @@
-"""Tests of tools/compare_session.py, from check 5 of
-specs/features/10-laptop-tools/validation.md.
+"""Tests of tools/compare_session.py.
+
+Cases follow specs/features/10-laptop-tools/validation.md.
 
 They need the toolbox and the laptop build of replay, so they run in the
 reference venv after the C build.
@@ -41,7 +42,7 @@ def w_line(row: pd.Series) -> str:
 
 
 def clean_recording() -> tuple[list[str], rm.Burst, int]:
-    """Give case 3's recording of check 3 with W lines from replay's rows, the burst of stretch 1, and R1."""
+    """Give a two-stretch recording with W lines from replay's rows, the burst that starts stretch 1, and R1."""
     lines, burst, r1 = rm.with_second_stretch(rm.recording_lines(50, 100), 30)
     rows, _, code = rm.replay_rows(lines)
     assert code == 0

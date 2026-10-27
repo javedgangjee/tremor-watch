@@ -1,11 +1,10 @@
 /*
  * tone.h holds the samples of the face's two tones.
  *
- * The tones follow the build spec's Watch face section, which asks for one
- * soft tone at each accepted tap and three when a dose becomes due, and
- * feature 11's requirement 59. The tap tone is one 660 Hz tone of 120
- * milliseconds. The dose tone is three 880 Hz tones of 250 milliseconds, each
- * with 250 milliseconds of silence after it. Each tone has an amplitude of 30
+ * The tap tone plays at each accepted tap. It is one 660 Hz tone of 120
+ * milliseconds. The dose tone plays when a dose becomes due. It is three
+ * 880 Hz tones of 250 milliseconds, each with 250 milliseconds of silence
+ * after it. Each tone has an amplitude of 30
  * percent of full scale and a fade of 5 milliseconds at each end, so it is
  * soft and does not click.
  *

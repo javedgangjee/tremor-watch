@@ -1,6 +1,6 @@
 /*
  * face_draw.c builds and changes the LVGL objects of the face. face_draw.h
- * describes it, and feature 11's requirements 42 to 58 give the details.
+ * describes it.
  *
  * Each screen is one full-screen object, and every other object of the screen
  * is its direct child, placed at its box from core/look.h. Children take no
@@ -423,9 +423,8 @@ static void build_home(look_screen_t screen)
     screen_objs_t *o = &s_objs[screen];
     const look_box_t *c = look_box(screen, LOOK_ITEM_CIRCLE);
     const look_box_t *icon = look_box(screen, LOOK_ITEM_CIRCLE_ICON);
-    /* The user removed the top row of time, date, and battery on 2026-10-24,
-     * so o->time, o->date, and o->battery stay NULL and set_text() skips them. */
-
+    /* These screens have no row of time, date, and battery, so o->time,
+     * o->date, and o->battery stay NULL and set_text() skips them. */
     o->pulse = plain(o->root, c->x, c->y, c->w, c->h);
     if (o->pulse != NULL) {
         lv_obj_set_style_radius(o->pulse, LV_RADIUS_CIRCLE, 0);

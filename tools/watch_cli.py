@@ -93,13 +93,11 @@ def tone_command(on: bool) -> str:
 
 
 def session_command() -> str:
-    """Give the SESSION command."""
     return "SESSION"
 
 
 def open_port(port: str, reset: bool) -> Any:
-    """Open the port with DTR and RTS low. With reset, pulse RTS to reset the
-    chip as esptool's hard reset does.
+    """Open the port with DTR and RTS low, and with reset, pulse RTS as esptool's hard reset does.
 
     This is a copy of open_port() in tests/firmware/record_run.py, because a
     tool does not import from tests/.
@@ -307,7 +305,6 @@ def run_command(port: str, command: str) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """Build the parser of the command line."""
     parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n", 1)[0])
     parser.add_argument("--port", default=DEFAULT_PORT)
     sub = parser.add_subparsers(dest="action", required=True)

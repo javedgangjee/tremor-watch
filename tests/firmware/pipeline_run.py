@@ -1,11 +1,10 @@
 """Run the pipeline and state tasks on a table and judge the log.
 
-The watch lies still on a table on USB power with firmware/ flashed. The
-script resets the watch through the port as table_run.py does, saves every
-line with the laptop's time in seconds, and judges the log by the pass checks
-in check 9 of specs/features/08-pipeline-state/validation.md. These are the 13
-pass checks of table_run.py and the checks of this feature. It runs with the
-ESP-IDF Python, which has pyserial.
+Runs check 9 of specs/features/08-pipeline-state/validation.md. The watch
+lies still on a table on USB power with firmware/ flashed. The script resets
+the watch as table_run.py does and saves every line with the laptop's time in
+seconds. It judges the log by the 13 pass checks of table_run.py and its own.
+It runs with the ESP-IDF Python, which has pyserial.
 
     caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/pipeline_run.py
 
@@ -79,7 +78,7 @@ def stretch_t0s(parsed: Parsed) -> dict[int, int]:
 
 
 def check_detector(parsed: Parsed) -> Check:
-    """Item 2 checks DETECTOR_INIT and that no error or end request came."""
+    """Check DETECTOR_INIT and that no error or end request came."""
     inits = parsed.records.get("DETECTOR_INIT", [])
     bad = [t for t in parsed.texts if t.startswith("PIPELINE_ERROR") or t.startswith("END_REQUEST")]
     ok = len(inits) == 1 and inits[0].get("ok") == "1" and not bad
@@ -88,7 +87,7 @@ def check_detector(parsed: Parsed) -> Check:
 
 
 def check_windows(lines: list[Line]) -> Check:
-    """Item 3 checks the window numbers and the codes of each stretch."""
+    """Check the window numbers and the codes of each stretch."""
     problems: list[str] = []
     next_window: dict[str, int] = {}
     for line in answers_of(lines):
@@ -112,7 +111,7 @@ def check_windows(lines: list[Line]) -> Check:
 
 
 def check_spacing(parsed: Parsed, lines: list[Line], minutes: int) -> Check:
-    """Item 4 checks that settled answers come about once a second up to the last minute."""
+    """Check that settled answers come about once a second up to the last minute."""
     t0s = stretch_t0s(parsed)
     problems: list[str] = []
     by_stretch: dict[int, list[int]] = {}
@@ -139,7 +138,7 @@ def check_spacing(parsed: Parsed, lines: list[Line], minutes: int) -> Check:
 
 
 def check_gaps(parsed: Parsed, lines: list[Line]) -> Check:
-    """Item 5 checks one GAP line for each later stretch, before its first answer."""
+    """Check one GAP line for each later stretch, before its first answer."""
     problems: list[str] = []
     for record_line in (line for line in lines if line.word == "STRETCH"):
         number = record_line.fields.get("number", "")
@@ -158,7 +157,7 @@ def check_gaps(parsed: Parsed, lines: list[Line]) -> Check:
 
 
 def check_face(lines: list[Line]) -> Check:
-    """Item 6 runs the face model over the GAP and ANSWER lines and checks every face."""
+    """Run the face model over the GAP and ANSWER lines and checks every face."""
     face = WAITING
     before: int | None = None
     expected: list[int] = []
@@ -190,7 +189,7 @@ def check_face(lines: list[Line]) -> Check:
 
 
 def check_share(lines: list[Line]) -> Check:
-    """Item 7 checks the share counts and the counted field against the answers."""
+    """Check the share counts and the counted field against the answers."""
     tremor = still = moving = 0
     problems: list[str] = []
     for line in lines:
@@ -216,7 +215,7 @@ def check_share(lines: list[Line]) -> Check:
 
 
 def check_drops(parsed: Parsed, minutes: int) -> Check:
-    """Item 8 checks that nothing was dropped and no fault answer came."""
+    """Check that nothing was dropped and no fault answer came."""
     pipeline = table_run.minute_record(parsed, "PIPELINE_MINUTE", minutes) or {}
     state = table_run.minute_record(parsed, "STATE_MINUTE", minutes) or {}
     sensor = table_run.minute_record(parsed, "SENSOR_MINUTE", minutes) or {}
@@ -232,7 +231,7 @@ def check_drops(parsed: Parsed, minutes: int) -> Check:
 
 
 def check_screen_face(parsed: Parsed, lines: list[Line], minutes: int) -> Check:
-    """Item 9 checks that the screen shows the face of the last FACE line."""
+    """Check that the screen shows the face of the last FACE line."""
     screen_line = next(
         (
             line
@@ -252,7 +251,7 @@ def check_screen_face(parsed: Parsed, lines: list[Line], minutes: int) -> Check:
 
 
 def judge_pipeline(parsed: Parsed, minutes: int) -> list[Check]:
-    """Give the result of every pass check of this feature."""
+    """Give the result of every pass check of this script."""
     lines = lines_of(parsed)
     return [
         check_detector(parsed),
@@ -274,7 +273,7 @@ def spread(values: list[int]) -> str:
 
 
 def measurements(parsed: Parsed, minutes: int) -> list[str]:
-    """Give the measurements of check 9 as report lines."""
+    """Give the measurements as report lines."""
     lines = lines_of(parsed)
     answers = [line.fields for line in answers_of(lines) if line.fields.get("window") != "none"]
     run_us = [int(f["run_us"]) for f in answers]

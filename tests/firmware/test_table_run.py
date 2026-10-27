@@ -87,7 +87,7 @@ def check_lines(report: str) -> dict[str, bool]:
 
 
 def test_clean_log_passes(tmp_path: Path) -> None:
-    """Case 1 judges a clean log and checks the counts and the lengths."""
+    """Judge a clean log and checks the counts and the lengths."""
     code, report = judge(clean_lines(), tmp_path)
     assert code == 0
     assert all(check_lines(report).values())
@@ -99,7 +99,7 @@ def test_clean_log_passes(tmp_path: Path) -> None:
 
 
 def test_loss_fails(tmp_path: Path) -> None:
-    """Case 2 adds an end of the first kind and checks that only the loss check fails."""
+    """Add an end of the first kind and checks that only the loss check fails."""
     lines = clean_lines()
     lines.insert(
         lines.index("RATE number=2 rate_uhz=114329800") + 1,
@@ -114,7 +114,7 @@ def test_loss_fails(tmp_path: Path) -> None:
 
 
 def test_rate_and_restart_fail(tmp_path: Path) -> None:
-    """Case 3 checks a rate 1100 parts per million high and a second START line."""
+    """Check a rate 1100 parts per million high and a second START line."""
     lines = clean_lines()
     lines[lines.index("RATE number=2 rate_uhz=114329800")] = "RATE number=2 rate_uhz=114456000"
     code, _ = judge(lines, tmp_path)
@@ -127,7 +127,7 @@ def test_rate_and_restart_fail(tmp_path: Path) -> None:
 
 
 def test_python_rules() -> None:
-    """Case 4 checks the user's Python rules in table_run.py and test_model_copy.py."""
+    """Check the Python style rules in table_run.py and test_model_copy.py."""
     for path in (TABLE_RUN, MODEL_TEST):
         source = path.read_text()
         for node in ast.walk(ast.parse(source)):

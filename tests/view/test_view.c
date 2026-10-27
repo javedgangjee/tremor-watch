@@ -1,6 +1,6 @@
 /*
  * Unit tests for the face's texts in core/view.c. They hold cases 23 to 36 of
- * feature 11's validation.md.
+ * specs/features/11-watch-face/validation.md.
  *
  * O is 1792713600000000, which is 2026-10-23 00:00:00 in microseconds since
  * 1970. The cases call dose_set_clock() with offset O, so timer value 0 is

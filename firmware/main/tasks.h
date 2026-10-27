@@ -30,8 +30,7 @@
 #include "record.h"
 #include "view.h"
 
-/* The firmware version that the B line carries. Each later feature that
- * changes the firmware sets its own number. */
+/* The firmware version that the B line carries. */
 #define FIRMWARE_VERSION 11
 
 /* A sensor message holds at most this many readings. */
@@ -39,11 +38,9 @@
 /* A text line holds at most this many characters before its end. The
  * PIPELINE_MINUTE line is about 300 characters long. */
 #define LINE_CHARS 319
-/* One minute of uptime in microseconds. */
 #define MINUTE_US 60000000LL
 
-/* The task priorities. The sensor task has the highest, and the USB task has
- * the lowest. */
+/* FreeRTOS task priorities. Higher runs first. */
 #define SENSOR_PRIORITY 12
 #define PIPELINE_PRIORITY 8
 #define STATE_PRIORITY 6
@@ -58,7 +55,6 @@
 typedef struct {
     /* The flags that rt_burst() returned for the burst. */
     unsigned flags;
-    /* overflow is true when the burst carried the overflow flag. */
     bool overflow;
     /* The stretch number and its rate after the rt_burst() call. */
     uint32_t stretch;
@@ -67,7 +63,6 @@ typedef struct {
     int64_t stamp_us;
     /* The number of this part's first reading, counted from power-on. */
     uint64_t first_reading;
-    /* The number of readings in this part. */
     uint32_t count;
     /* The raw counts of each reading. Axes 0 to 2 are the accelerometer x, y,
      * and z, and axes 3 to 5 are the gyroscope x, y, and z. */
@@ -84,7 +79,6 @@ typedef struct {
     /* The flags that rt_burst() returned for the burst. Only the first part
      * carries them. */
     unsigned flags;
-    /* first_part is true on the burst's first part. */
     bool first_part;
     /* The stretch number and its rate after the rt_burst() call. */
     uint32_t stretch;
@@ -105,7 +99,6 @@ typedef struct {
     char text[LINE_CHARS + 1];
 } line_t;
 
-/* The kinds of state message. */
 typedef enum {
     STATE_MSG_STRETCH,
     STATE_MSG_ANSWER,
@@ -127,7 +120,6 @@ typedef struct {
      * per second, which is 0 while the stretch has no rate. */
     uint32_t stretch;
     uint32_t rate_uhz;
-    /* has_window is true when the answer comes from a window. */
     bool has_window;
     uint32_t window;
     /* The result code, as a res_code_t from core/window.h. */
@@ -185,7 +177,6 @@ bool usb_send(const char *fmt, ...) __attribute__((format(__printf__, 1, 2)));
 /* send_task_line() sends the TASK line of the calling task. */
 void send_task_line(const char *name);
 
-/* The task entry points. */
 void sensor_task(void *arg);
 void pipeline_task(void *arg);
 void state_task(void *arg);

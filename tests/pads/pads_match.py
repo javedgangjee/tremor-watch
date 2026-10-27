@@ -5,12 +5,12 @@ the laptop build of replay. Run it from the repo root after the C build.
 
     reference/.venv/bin/python tests/pads/pads_match.py
 
-For each recording it runs the toolbox in the way reference/pads_counts.py does and
-keeps the 12 numbers. It checks that this run gives the same answers as the
-committed reference/results/pads_windows.csv. It then runs replay on the file and
-compares replay window 4k with the toolbox's window k under the rule in
-match_window(). It compares the C counts with reference/results/pads_counts.csv
-and writes the match report. It exits with code 0 only when every check passes.
+For each recording it runs the toolbox as reference/pads_counts.py does and
+checks the answers against reference/results/pads_windows.csv. It then runs
+replay on the file and compares replay window 4k with the toolbox's window k
+under match_window(). It compares the C counts with
+reference/results/pads_counts.csv, writes the match report, and exits with
+code 0 only when every check passes.
 """
 from __future__ import annotations
 
@@ -57,7 +57,7 @@ FS = 100
 WINDOW_ROWS = 400
 REPLAY_EVERY = 4  # the toolbox cuts a window every 4 s, and replay every 1 s
 
-LIMIT = 0.0001  # the limit for the 12 numbers and the probability, from Build order step 5
+LIMIT = 0.0001  # the limit for the 12 numbers and the probability
 PROB_NEAR = 0.0001
 BELOW_NEAR = 0.005
 GAP_NEAR = 0.0001
@@ -90,7 +90,7 @@ class Match:
 
 
 def match_window(toolbox: Mapping[str, float], c: Mapping[str, float]) -> Match:
-    """Apply the match rule of requirements 9, 27, and 29 to one window.
+    """Apply the match rule to one window.
 
     The 12 numbers and the probability must agree within 0.0001. The tremor and
     arm at rest answers must agree unless the toolbox's window is near a cut-off.
@@ -121,7 +121,7 @@ def toolbox_rows(gyro: np.ndarray) -> pd.DataFrame:
     """Run the toolbox on one recording at 100 Hz as reference/pads_counts.py does.
 
     Return one row per 4 second window with the 12 numbers, the answers, and the
-    peak gap of requirement 27.
+    peak gap.
     """
     columns = ["window", *MFCC_COLUMNS, *ANSWER_COLUMNS, "peak_gap"]
     if len(gyro) < WINDOW_ROWS:
@@ -344,7 +344,6 @@ def write_report(run: Run, differs: pd.DataFrame, unexplained: list[str], passed
 
 
 def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
-    """Read the command-line options."""
     parser = argparse.ArgumentParser(description="Check the C detector against the toolbox on every PADS file.")
     parser.add_argument("--data", type=Path, default=Path("data/pads"), help="PADS 1.0.0 folder")
     parser.add_argument("--replay", type=Path, default=Path("build/core/replay"), help="the replay program")
@@ -353,7 +352,6 @@ def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    """Run the match, write the report, and exit with code 0 only when every check passes."""
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     args = parse_args(argv)
     if not args.replay.is_file():

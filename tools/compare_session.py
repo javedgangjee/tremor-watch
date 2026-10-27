@@ -15,8 +15,8 @@ R lines from its first reading on. For each checked window from window 1 on,
 the probability must agree within 0.0001, and the code and the peak must agree
 unless replay's numbers lie near a cut-off. It then runs the toolbox on each
 checked part with its conversion set to 100 readings a second and reports how
-often the toolbox's code agrees with the watch's. The requirements 27 to 32 of
-specs/features/10-laptop-tools/requirements.md give the rules.
+often the toolbox's code agrees with the watch's. The rules are in
+specs/features/10-laptop-tools/requirements.md.
 
 It writes a Markdown report and exits with code 0 only when every check of
 the replay comparison passes. The toolbox's agreement and the share have no
@@ -54,7 +54,7 @@ REPO = Path(__file__).resolve().parents[1]
 DEFAULT_REPLAY = REPO / "build" / "core" / "replay"
 MODEL_FILE = Path(paradigma.__file__).resolve().parent / "assets" / "tremor_detection_clf_package.pkl"
 
-# The limits of Build order step 5, as tests/pads/pads_match.py uses them.
+# The match limits, the same as in tests/pads/pads_match.py.
 LIMIT = 0.0001
 PROB_NEAR = 0.0001
 BELOW_NEAR = 0.005
@@ -213,7 +213,6 @@ def record_kind(line: str) -> str:
 
 
 def fits(values: Sequence[int], low: int, high: int) -> bool:
-    """Tell whether every value lies from low to high."""
     return all(low <= v <= high for v in values)
 
 
@@ -326,7 +325,7 @@ def checked_parts(boot: Boot) -> list[Part]:
 
 
 def match_window(replay_row: Mapping[str, float], watch: Mapping[str, float], peak_gap: float) -> Match:
-    """Apply the rule of requirement 28 to one window, with replay in the reference's place.
+    """Check one window of replay against the watch's W line.
 
     The probability must agree within 0.0001. The codes must agree unless
     replay's window lies near a cut-off, and the peaks must agree unless
@@ -387,7 +386,7 @@ def toolbox_code(tremor: np.ndarray, at_rest: np.ndarray) -> np.ndarray:
 
 
 def toolbox_windows(counts: np.ndarray, rate_uhz: int) -> pd.DataFrame:
-    """Run the toolbox on one checked part as one recording, as requirement 29 says.
+    """Run the toolbox on one checked part as one recording.
 
     It returns one row per 4 second window with k, the code, the toolbox's
     numbers, and the peak gap from the toolbox's own converted window.
@@ -513,7 +512,6 @@ def stretch_holding(boot: Boot, reading: int) -> int | None:
 
 
 def stretch_before(boot: Boot, number: int | None) -> int | None:
-    """Give the stretch number before a stretch, or None."""
     lower = [n for n in boot.s_lines if number is not None and n < number]
     return max(lower) if lower else None
 
@@ -682,7 +680,6 @@ def compare(lines: list[str], replay: Path) -> Result:
 
 
 def percent(value: float | None) -> str:
-    """Write a share as a percentage, or none."""
     return "none" if value is None else f"{value:.1f} percent"
 
 
@@ -779,7 +776,6 @@ def default_report(recording: Path) -> Path:
 
 
 def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
-    """Read the command-line options."""
     parser = argparse.ArgumentParser(description="Compare a recording with replay and the toolbox.")
     parser.add_argument("recording", type=Path, help="a recording from the watch, as gzip or plain text")
     parser.add_argument("--replay", type=Path, default=DEFAULT_REPLAY, help="the replay program")

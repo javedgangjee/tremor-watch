@@ -2,12 +2,10 @@
  * screens.h holds the face's screen rules: which screen shows, which taps
  * count, the BOOT button, and when a screen goes back to Home.
  *
- * The rules follow the build spec's Watch face section, under Who wears it,
- * Behaviour, and Screens, with feature 11's requirements 54 to 57. Home takes
- * a tap anywhere and opens Medication. Medication takes a tap only in its
- * lower half, which asks the state task to log a dose. A screen ignores every
- * tap for 1 second after it appears, so a double tap on Home cannot log a
- * dose. After a "Took it" tap, Medication ignores taps until the state task
+ * Home takes a tap anywhere and opens Medication. Medication takes a tap only
+ * in its lower half, which asks the state task to log a dose. A screen ignores
+ * every tap for 1 second after it appears, so a double tap on Home cannot log
+ * a dose. After a "Took it" tap, Medication ignores taps until the state task
  * answers or 1 second passes. The Logged view shows for 3 seconds. Medication,
  * Session, and Status go back to Home 5 minutes after their last use, and
  * Home never times out.
@@ -81,7 +79,6 @@ unsigned scr_logged(scr_t *s, int64_t now_us);
  * the flags. */
 unsigned scr_tick(scr_t *s, int64_t now_us);
 
-/* scr_screen() gives the screen that shows. */
 look_screen_t scr_screen(const scr_t *s);
 
 #endif /* SCREENS_H */

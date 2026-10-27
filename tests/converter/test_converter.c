@@ -2,8 +2,7 @@
  * Unit tests for the converter in core/converter.c.
  *
  * The saved stretches, their readings, and the toolbox's samples come from
- * tests/converter/make_cases.py. The match limit comes from Build order step 8
- * of the plan, and requirement 28 of feature 5 applies it to every sample from
+ * tests/converter/make_cases.py. The match limit applies to every sample from
  * sample 100 on.
  */
 

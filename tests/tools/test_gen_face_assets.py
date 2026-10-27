@@ -38,7 +38,7 @@ gen = load_gen()
 
 
 def test_case_41_line_at_24_pixels() -> None:
-    """Case 41: the path M5 12h14 at 24 pixels with a stroke of 2."""
+    """The path M5 12h14 at 24 pixels with a stroke of 2."""
     img = gen.draw_icon([("path", "M5 12h14")], 24, 2.0)
     for row in (11, 12):
         assert all(img[row, col] == 255 for col in range(5, 19))
@@ -51,7 +51,7 @@ def test_case_41_line_at_24_pixels() -> None:
 
 
 def test_case_42_line_at_88_pixels() -> None:
-    """Case 42: the same path at 88 pixels with a stroke of 5.5."""
+    """The same path at 88 pixels with a stroke of 5.5."""
     img = gen.draw_icon([("path", "M5 12h14")], 88, 5.5)
     for row in range(42, 46):
         assert img[row, 44] == 255
@@ -62,14 +62,14 @@ def test_case_42_line_at_88_pixels() -> None:
 
 
 def test_case_43_circle() -> None:
-    """Case 43: a circle at (12, 12) with radius 10 at 24 pixels with a stroke of 2."""
+    """A circle at (12, 12) with radius 10 at 24 pixels with a stroke of 2."""
     img = gen.draw_icon([("circle", 12.0, 12.0, 10.0)], 24, 2.0)
     assert img[2, 12] == 255
     assert img[12, 12] == 0
 
 
 def test_case_44_arc_and_numbers() -> None:
-    """Case 44: the ring of circle-check-big lies on its circle, and compact arc numbers read right."""
+    """The ring of circle-check-big lies on its circle, and compact arc numbers read right."""
     lines = gen.path_points("M21.801 10A10 10 0 1 1 17 3.335")
     points = [p for line in lines for p in line]
     assert len(points) > 2
@@ -79,7 +79,7 @@ def test_case_44_arc_and_numbers() -> None:
 
 
 def test_case_45_image_text() -> None:
-    """Case 45: write_image_c() of a 2 by 2 image."""
+    """write_image_c() of a 2 by 2 image."""
     text = gen.write_image_c("tiny", np.array([[0, 128], [255, 1]], dtype=np.uint8))
     assert "LV_COLOR_FORMAT_A8" in text
     assert re.search(r"\.w = 2\b", text)
@@ -112,7 +112,7 @@ const lv_font_t made_up = {
 
 
 def test_case_46_parse_font_output() -> None:
-    """Case 46: a made-up font output with a plain cmap and with a sparse cmap."""
+    """A made-up font output with a plain cmap and with a sparse cmap."""
     plain = (FONT_TEXT.replace("%UNICODE%", "").replace("%LENGTH%", "3").replace("%LIST%", "NULL")
              .replace("%LISTLEN%", "0").replace("%TYPE%", "LV_FONT_FMT_TXT_CMAP_FORMAT0_TINY"))
     m = gen.parse_font_output(plain)
@@ -133,7 +133,7 @@ def test_case_46_parse_font_output() -> None:
 
 
 def test_case_47_changed_font_writes_nothing(tmp_path: Path) -> None:
-    """Case 47: a font copy with one byte changed stops the run before any file is written."""
+    """A font copy with one byte changed stops the run before any file is written."""
     font = tmp_path / "font.ttf"
     shutil.copyfile(ASSETS / "RedHatDisplay-Bold.ttf", font)
     data = bytearray(font.read_bytes())
@@ -164,7 +164,7 @@ def define(text: str, name: str) -> int:
 
 
 def test_case_48_committed_files() -> None:
-    """Case 48: the committed metrics and the options line of each font file."""
+    """The committed metrics and the options line of each font file."""
     text = METRICS.read_text(encoding="ascii")
     for size in (28, 40, 56):
         widths = metrics_array(text, size)
@@ -194,7 +194,7 @@ def functions_of(path: Path) -> list[ast.FunctionDef]:
 
 
 def test_case_49_style() -> None:
-    """Case 49: type hints everywhere, and no print, os.path, or except Exception in the tool."""
+    """Type hints everywhere, and no print, os.path, or except Exception in the tool."""
     for path in (GEN, Path(__file__)):
         for fn in functions_of(path):
             args = fn.args.posonlyargs + fn.args.args + fn.args.kwonlyargs

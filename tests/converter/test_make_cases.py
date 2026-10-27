@@ -27,7 +27,6 @@ STRETCHES = {
 
 @pytest.fixture(scope="module")
 def stretches() -> pd.DataFrame:
-    """Read the committed stretches."""
     return pd.read_csv(HERE / "stretches.csv")
 
 

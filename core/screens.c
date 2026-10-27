@@ -1,11 +1,7 @@
-/*
- * screens.c holds the face's screen rules. screens.h describes them, and
- * feature 11's requirements 54 to 57 give the details.
- */
+/* screens.c holds the face's screen rules. See screens.h. */
 
 #include "screens.h"
 
-/* show() moves to a screen at now_us. */
 static unsigned show(scr_t *s, look_screen_t screen, int64_t now_us)
 {
     s->screen = screen;
@@ -15,7 +11,6 @@ static unsigned show(scr_t *s, look_screen_t screen, int64_t now_us)
     return SCR_CHANGED;
 }
 
-/* inside() is true when the point lies in the box. */
 static bool inside(const look_box_t *b, int x, int y)
 {
     return b != NULL && x >= b->x && x < b->x + b->w && y >= b->y && y < b->y + b->h;

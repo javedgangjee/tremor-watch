@@ -1,7 +1,6 @@
 /*
- * main.c starts the watch. It starts the settings store, sets up the shared
- * I2C bus and the queues, reads the power chip once, and starts the five
- * tasks. It calls no LVGL
+ * main.c starts the settings store, makes the queues, sets up the shared I2C
+ * bus, reads the power chip once, and starts the five tasks. It calls no LVGL
  * function, because only the screen task uses LVGL.
  */
 
@@ -33,7 +32,6 @@
 /* The stack sizes in bytes. */
 #define SENSOR_STACK 6144
 #define PIPELINE_STACK 4096
-/* The state task formats doubles, so its stack is larger. */
 #define STATE_STACK 4096
 #define SCREEN_STACK 4096
 #define USB_STACK 4096

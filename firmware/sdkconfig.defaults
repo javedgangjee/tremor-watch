@@ -29,5 +29,5 @@ CONFIG_LV_USE_FONT_COMPRESSED=y
 CONFIG_LV_TXT_BREAK_CHARS=" ,.;:-_"
 CONFIG_LV_USE_IMGFONT=y
 
-# The face uses its own Red Hat Display fonts, so only LVGL's default 14 pixel
-# Montserrat font stays at its default.
+# The face uses its own Red Hat Display fonts, so no Montserrat font beyond
+# LVGL's default 14 pixel one is turned on here.

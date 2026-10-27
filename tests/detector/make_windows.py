@@ -1,22 +1,19 @@
 """Make the saved test windows for the C detector and the toolbox's answers for them.
 
-The script runs in the reference venv, because it needs the toolbox. It uses fixed
-seeds, so every run writes the same two files. Run it from the repo root.
+Run it from the repo root in the reference venv. Fixed seeds make every run write the same files.
 
     reference/.venv/bin/python tests/detector/make_windows.py
 
-It writes windows.csv with one row per reading and answers.csv with one row per
-window. Every reading is a 32-bit float, and the toolbox runs on the same values
-as 64-bit floats, so the toolbox and the C detector see the same input.
+windows.csv has one row per reading and answers.csv one row per window. Every
+reading is a 32-bit float, and the toolbox gets the same values as 64-bit
+floats, so both sides see the same input.
 
-There are 322 windows. 200 come from the five kinds in reference/compare.py. 120
-sit near a cut-off, and the script tunes each of them by bisection on one
-amplitude, with the toolbox run on the rounded window at each step. 20 test the
-ends of the peak band, one is all zeros, and one is a clipped 5 Hz shake. At the
-end the toolbox runs once on all 322 windows as one recording, as compare.py
-does, and the answers come from that run. The script checks that every tuned
-window still lies in its target band in that run, and that the welch peak
-equals freq_peak on every window. It writes no file if a check fails.
+There are 322 windows. 200 come from the five kinds in reference/compare.py.
+120 sit near a cut-off, each tuned by bisection on one amplitude. 20 test the
+ends of the peak band, one is all zeros, and one is a clipped 5 Hz shake. The
+answers come from one toolbox run on all 322 windows as one recording, as
+compare.py does. The script writes nothing if a tuned window leaves its band in
+that run or the welch peak differs from freq_peak.
 """
 from __future__ import annotations
 
@@ -56,7 +53,7 @@ PEAK_STEPS = slice(4, 101)  # 1 to 25 Hz, both ends included
 
 MOVEMENT_THRESHOLD = 50.0
 CUT_OFF = float(ClassifierPackage.load(MODEL_FILE).threshold)
-# A window is near a cut-off under requirement 27 when one of these holds.
+# A window is near a cut-off when one of these holds.
 PROB_NEAR = 0.0001
 BELOW_NEAR = 0.005
 GAP_NEAR = 0.0001
@@ -134,7 +131,6 @@ def distance(target: Target, value: float) -> float:
 
 
 def in_band(target: Target, value: float) -> bool:
-    """Return True when the value lies in the band."""
     return target.near <= distance(target, value) <= target.far
 
 
@@ -192,7 +188,7 @@ def read_one(window: np.ndarray, steps: tuple[int, int] | None = None) -> Readin
 
 
 def near(reading: Reading) -> dict[str, bool]:
-    """Return which cut-offs of requirement 27 the reading lies near."""
+    """Return which cut-offs the reading lies near."""
     return {
         "prob": abs(reading.prob - CUT_OFF) <= PROB_NEAR,
         "below": abs(reading.below - MOVEMENT_THRESHOLD) <= BELOW_NEAR,
@@ -256,7 +252,7 @@ def sine(freq: float, amp: float, axes: np.ndarray, phase: float) -> np.ndarray:
 
 
 def compare_windows() -> tuple[list[np.ndarray], list[Spec]]:
-    """Make the 200 windows of reference/compare.py with seed 1. This copies its generator."""
+    """Make the 200 windows of reference/compare.py with a copy of its generator and seed 1."""
     rng = np.random.default_rng(1)
     t = T
 
@@ -453,7 +449,6 @@ def number(value: float) -> str:
 
 
 def write_files(windows: np.ndarray, out: pd.DataFrame, gaps: np.ndarray, specs: Sequence[Spec], folder: Path) -> None:
-    """Write windows.csv and answers.csv into the folder."""
     folder.mkdir(parents=True, exist_ok=True)
     readings = ["gyroscope_x,gyroscope_y,gyroscope_z"]
     readings += [",".join(str(v) for v in row) for row in windows.reshape(-1, 3)]
@@ -470,14 +465,12 @@ def write_files(windows: np.ndarray, out: pd.DataFrame, gaps: np.ndarray, specs:
 
 
 def parse_args(argv: Sequence[str] | None) -> argparse.Namespace:
-    """Read the command-line options."""
     parser = argparse.ArgumentParser(description="Make the saved test windows for the C detector.")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="the folder for windows.csv and answers.csv")
     return parser.parse_args(argv)
 
 
 def main(argv: Sequence[str] | None = None) -> None:
-    """Make every window, run the toolbox once on all of them, check the run, and write the files."""
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(message)s")
     args = parse_args(argv)
 

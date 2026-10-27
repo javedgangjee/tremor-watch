@@ -1,19 +1,16 @@
-/*
- * converter.c is the converter. converter.h describes it, and the feature 5
- * requirements 23 to 27 give the details.
- */
+/* converter.c resamples IMU readings to 100 Hz with a cubic spline. See
+ * converter.h. */
 
 #include "converter.h"
 
 #include <stddef.h>
 
-/* The position of sample k is k * rate_uhz / 1e8 readings, because a rate in
- * millionths divided by 100 samples a second gives readings per sample. This
- * comes from requirement 23. */
+/* Sample k sits at k * rate_uhz / 1e8 readings: the reading rate in micro-Hz
+ * divided by the 100 Hz output rate gives readings per sample. */
 #define UHZ_PER_OUT_HZ 100000000u
 #define UHZ_PER_OUT_HZ_F 1e8
-/* The right side of a block takes the reading after the last sample's reading
- * plus 16 more. This comes from requirement 23. */
+/* A block's spline runs to the reading after the last sample's reading, plus
+ * CONV_MARGIN more. */
 #define RIGHT_EXTRA (CONV_MARGIN + 1)
 
 void conv_start(conv_t *c)
@@ -53,7 +50,7 @@ void conv_position(uint32_t rate_uhz, uint64_t sample, uint64_t *reading, float 
     *frac = (float)((double)(scaled % UHZ_PER_OUT_HZ) / UHZ_PER_OUT_HZ_F);
 }
 
-/* first_reading() gives the first reading that block b uses. */
+/* Gives the first reading that block b uses. */
 static uint64_t first_reading(uint32_t rate_uhz, uint64_t block)
 {
     uint64_t reading;
@@ -62,11 +59,10 @@ static uint64_t first_reading(uint32_t rate_uhz, uint64_t block)
     return reading >= CONV_MARGIN ? reading - CONV_MARGIN : 0;
 }
 
-/* solve() finds the second derivatives of a natural cubic spline through the
- * n values in y, with the reading period folded in. It follows
- * natural_spline_block() in reference/spline_test.py, as requirement 25 says.
- * factor holds the forward sweep's factors, which are the same for every
- * axis, and sweep holds the forward sweep's values. */
+/* Finds the second derivatives of a natural cubic spline through the n values
+ * in y, with the reading period folded in. Follows natural_spline_block() in
+ * reference/spline_test.py. factor holds the forward sweep's factors, which
+ * are the same for every axis. sweep is scratch space for the sweep. */
 static void solve(const float *y, float *m, const float *factor, float *sweep, size_t n)
 {
     for (size_t i = 1; i + 1 < n; i++) {

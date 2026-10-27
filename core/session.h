@@ -7,8 +7,7 @@
  * stretch after the first, because every such stretch follows a gap. It ticks
  * the doses once a second and sets the face's dose due flag from the result.
  *
- * The feature 8 requirements 24 to 26 give the details. The caller owns the
- * state. The file has no static data that changes.
+ * The caller owns the state. The file has no static data that changes.
  */
 
 #ifndef SESSION_H

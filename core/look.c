@@ -1,8 +1,5 @@
-/*
- * look.c holds the face's colours, its layout, and the text measures.
- * look.h describes them, and feature 11's requirements 42 to 46, 51, and 61
- * give the details.
- */
+/* look.c holds the face's colours, its layout and the text measures. See
+ * look.h. */
 
 #include "look.h"
 
@@ -17,15 +14,12 @@
 #define CIRCLE_Y ((LOOK_H - LOOK_CIRCLE) / 2)
 #define CIRCLE_CX (CIRCLE_X + LOOK_CIRCLE / 2)
 #define CIRCLE_CY (CIRCLE_Y + LOOK_CIRCLE / 2)
-/* The icon sits in the top of the circle and the word under it, which the
- * user chose on 2026-10-24. On 2026-10-26 the user had Tremor say "Tremor
- * Detected" on two lines, so the icon shrank from 136 to 128 pixels and its
- * box ends 164 pixels below the circle's top. The word's first line starts at
- * 168 and its second line at 198. The word is 28 pixels because "Arm moving"
- * at 40 pixels would cross the circle's edge. The first line's box is as wide
- * as "Arm moving" at 28 pixels, the widest one-line word, and the second
- * line's box is as wide as "Detected". Every box keeps each corner at least
- * 10 pixels inside the circle's edge. */
+/* The icon sits in the top of the circle and its box ends 164 pixels below
+ * the circle's top. The word sits under it, on up to two lines. The word is 28
+ * pixels because "Arm moving" at 40 pixels would cross the circle's edge. The
+ * first line's box is as wide as "Arm moving" at 28 pixels, the widest
+ * one-line word. The second line's box is as wide as "Detected". Every box
+ * keeps each corner at least 10 pixels inside the circle's edge. */
 #define WORD_W 164
 #define WORD_2_W 128
 #define ICON_Y (CIRCLE_Y + 164 - LOOK_CIRCLE_ICON_PX)
@@ -136,7 +130,7 @@ const look_box_t *look_tap_box(look_screen_t screen)
     }
 }
 
-/* widths_of() gives the advance widths of a size, or NULL. */
+/* Gives the advance widths of a font size, or NULL. */
 static const uint8_t *widths_of(int size)
 {
     switch (size) {
@@ -169,7 +163,7 @@ int look_line_height(int size)
     }
 }
 
-/* span_width() gives the width of n bytes of text, or -1. */
+/* Gives the width of n bytes of text, or -1 if a character has no glyph. */
 static int span_width(const char *text, size_t n, const uint8_t *widths)
 {
     int sum = 0;

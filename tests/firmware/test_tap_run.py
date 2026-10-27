@@ -1,8 +1,7 @@
 """Tests for tests/firmware/tap_run.py and the style of the two face scripts.
 
-Each case writes a made-up gzip log of every step of check 13 of
-specs/features/11-watch-face/validation.md and judges it with --log-only, so
-no watch is needed. The dose clock makes watch time 120 seconds 10:00:00 on
+Each case writes a made-up gzip log of every step of tap_run.py and judges it
+with --log-only, so no watch is needed. The dose clock makes watch time 120 seconds 10:00:00 on
 23 October 2026, and the dose minute is 10:02. The judge runs replay, so the
 laptop build must exist. They run in the reference venv with this command.
 
@@ -111,7 +110,7 @@ def tap_took_it(log: Log, at: int, count: int, answered: str, local: int) -> Non
 
 
 def make_log(change: str | None = None) -> list[tuple[float, str]]:
-    """Give a log of every step of check 13, with one change or none."""
+    """Give a log of every step, with one change or none."""
     log = Log()
     version = load("record_run", HERE / "record_run.py").FIRMWARE_VERSION
     log.add(1 * S, f"B,305419896,11,{version},{table_hash()}")
@@ -227,12 +226,12 @@ def judge(tmp_path: Path, lines: list[tuple[float, str]]) -> int:
 
 
 def test_clean_log(tmp_path: Path) -> None:
-    """Case 53: the clean log of every step passes."""
+    """The clean log of every step passes."""
     assert judge(tmp_path, make_log()) == 0
 
 
 def test_changed_logs(tmp_path: Path) -> None:
-    """Case 54: each of the nine changed copies fails."""
+    """Each of the nine changed copies fails."""
     for change in CHANGES:
         folder = tmp_path / change
         folder.mkdir()
@@ -246,7 +245,7 @@ def functions_of(path: Path) -> list[ast.FunctionDef]:
 
 
 def test_style() -> None:
-    """Case 55: type hints everywhere, one prompt function with print, no os.path,
+    """Check type hints everywhere, one prompt function with print, no os.path,
     no except Exception, and no line that starts with import serial."""
     for path in SCRIPTS + TEST_FILES:
         for fn in functions_of(path):

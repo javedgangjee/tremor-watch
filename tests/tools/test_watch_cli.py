@@ -1,4 +1,6 @@
-"""Tests for tools/watch_cli.py, the cases of check 4 of feature 10.
+"""Tests for tools/watch_cli.py.
+
+Cases follow specs/features/10-laptop-tools/validation.md.
 
 They need no watch and no pyserial. A fake port stands in for the watch, and a
 fake serial module stands in for pyserial where the tool opens a port. They run
@@ -84,8 +86,7 @@ class FakePort:
 
 
 class PortOpener:
-    """Stands in for watch_cli.open_port(). It hands out fake ports and keeps
-    the arguments of every call."""
+    """Stands in for watch_cli.open_port(), handing out fake ports and keeping each call's arguments."""
 
     def __init__(self: PortOpener, ports: list[FakePort]) -> None:
         self.ports = list(ports)
@@ -97,7 +98,7 @@ class PortOpener:
 
 
 def boot_lines(answer: str) -> list[str]:
-    """Give the lines of case 19, with the clock answer given."""
+    """Give the lines of one boot, with the given answer to the clock command."""
     lines = [
         "ESP-ROM:esp32s3-20210327",
         "T,500,11,123",
@@ -182,8 +183,7 @@ def test_16_send_command(monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCapt
     assert watch_cli.send_command(third, "TONE,0", first_line_s=0.1) == 5
     assert watch_cli.send_command(fourth, "TONE,0", first_line_s=0.1, answer_s=0.2) is None
 
-    # main() waits as requirement 35 says. Shorter waits keep the test quick
-    # and change nothing else.
+    # Shorter waits than main()'s keep the test quick and change nothing else.
     monkeypatch.setattr(watch_cli, "FIRST_LINE_S", 0.1)
     monkeypatch.setattr(watch_cli, "ANSWER_S", 0.2)
     fresh = ports()

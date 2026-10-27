@@ -29,13 +29,13 @@
 #define RATE_NEAR 10
 /* A stretch takes its rate after 10 seconds of stamps. */
 #define RATE_SPAN_US 10000000
-/* Every stretch except the last must last at least 60 seconds, because the
- * plan says a stretch "is minutes long". */
+/* Every stretch except the last must last at least 60 seconds, because a
+ * stretch is minutes long. */
 #define MIN_STRETCH_US 60000000
 
 /* The twenty one-minute rates in firmware/bringup/rate_log.txt, in millionths
- * of a reading per second. They are copied here because feature 7 may delete
- * that folder. */
+ * of a reading per second. They are copied here so the test does not need that
+ * file. */
 static const uint32_t board_minutes[20] = {
     114338600u, 114336300u, 114336000u, 114333300u, 114333300u, 114333300u, 114331400u,
     114329500u, 114330600u, 114328900u, 114329500u, 114327600u, 114328100u, 114327600u,

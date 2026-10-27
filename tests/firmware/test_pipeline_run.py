@@ -157,7 +157,7 @@ def find(lines: list[str], start: str) -> int:
 
 
 def test_clean_log_passes(tmp_path: Path) -> None:
-    """Case 1 judges the clean log and checks the measurements in the report."""
+    """Judge the clean log and checks the measurements in the report."""
     code, report = judge(make_log(gap=False), tmp_path)
     assert code == 0, report
     assert "FAIL" not in report
@@ -167,7 +167,7 @@ def test_clean_log_passes(tmp_path: Path) -> None:
 
 
 def test_changed_logs_fail(tmp_path: Path) -> None:
-    """Case 2 checks six changed copies of the clean log."""
+    """Check six changed copies of the clean log."""
     clean = make_log(gap=False)
 
     lines = list(clean)
@@ -203,7 +203,7 @@ def test_changed_logs_fail(tmp_path: Path) -> None:
 
 
 def test_gap_log(tmp_path: Path) -> None:
-    """Case 3 judges a log whose stretch ends at 100 seconds, with and without its GAP line."""
+    """Judge a log whose stretch ends at 100 seconds, with and without its GAP line."""
     lines = make_log(gap=True)
     code, report = judge(lines, tmp_path)
     assert code == 0, report
@@ -214,7 +214,7 @@ def test_gap_log(tmp_path: Path) -> None:
 
 
 def test_type_hints() -> None:
-    """Case 4 checks the type hints in pipeline_run.py and the two test files."""
+    """Check the type hints in pipeline_run.py and the two test files."""
     for path in TEST_FILES:
         for node in ast.walk(ast.parse(path.read_text())):
             if isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):

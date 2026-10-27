@@ -1,7 +1,7 @@
 """Tests for the copy of the toolbox's model file in tests/model/.
 
 `make hash` hashes the copy, so the commit checks need no toolbox. These tests
-need the toolbox, so they run in the reference venv with this command.
+need the toolbox, so they run in the reference venv.
 
     reference/.venv/bin/python -m pytest tests/model -q
 
@@ -56,13 +56,13 @@ def expected_in_tables() -> str:
 
 
 def test_copies_match_the_toolbox() -> None:
-    """Case 1 checks that both copies match the installed files byte for byte."""
+    """Both copies match the installed files byte for byte."""
     assert MODEL_COPY.read_bytes() == toolbox_model().read_bytes()
     assert LICENSE_COPY.read_bytes() == toolbox_license().read_bytes()
 
 
 def test_copy_hash_matches_the_tables() -> None:
-    """Case 2 checks the copy's SHA-256 hash against both stored values."""
+    """The copy's SHA-256 hash matches both stored values."""
     digest = hashlib.sha256(MODEL_COPY.read_bytes()).hexdigest()
     assert digest == expected_in_gen_tables()
     assert digest == expected_in_tables()

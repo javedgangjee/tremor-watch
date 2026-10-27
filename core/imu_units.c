@@ -1,7 +1,4 @@
-/*
- * imu_units.c holds the gyroscope's unit rule. imu_units.h describes it, and
- * requirement 27 of feature 7 gives the details.
- */
+/* imu_units.c converts raw gyroscope counts. See imu_units.h. */
 
 #include "imu_units.h"
 

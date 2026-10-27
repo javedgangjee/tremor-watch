@@ -119,7 +119,7 @@ def clean_log() -> list[str]:
     for stamp, lines in burst_lines(t0, readings):
         for line in lines:
             timed.append((stamp, 1, line))
-    # The S line of the stretch must come before its first T line, so record
+    # The S line of a stretch must come before its first T line, so record
     # lines at the same time go after the diagnostic lines.
     timed.sort(key=lambda e: (e[0], e[1]))
     return [text for _, _, text in timed]
@@ -144,7 +144,7 @@ def find(lines: list[str], start: str, last: bool = False) -> int:
 
 
 def test_clean_log_passes(tmp_path: Path) -> None:
-    """Case 1 judges the clean log and checks the report's measurements."""
+    """Judge the clean log and checks the report's measurements."""
     code, report = judge(clean_log(), tmp_path)
     assert code == 0, report
     assert "FAIL" not in report
@@ -154,7 +154,7 @@ def test_clean_log_passes(tmp_path: Path) -> None:
 
 
 def test_changed_logs_fail(tmp_path: Path) -> None:
-    """Case 2 checks eleven changed copies of the clean log."""
+    """Check eleven changed copies of the clean log."""
     clean = clean_log()
     copies: list[list[str]] = []
 
@@ -216,7 +216,7 @@ def test_changed_logs_fail(tmp_path: Path) -> None:
 
 
 def test_rom_lines_before_boot(tmp_path: Path) -> None:
-    """Case 3 puts the first ten lines of pipeline_log.txt before the B line."""
+    """Put the first ten lines of pipeline_log.txt before the B line and judge the log."""
     rom = [line.split("\t", 1)[1] for line in PIPELINE_LOG.read_text().splitlines()[:10]]
     clean = clean_log()
     lines = rom + clean[find(clean, "B,") :]
@@ -226,7 +226,7 @@ def test_rom_lines_before_boot(tmp_path: Path) -> None:
 
 
 def test_type_hints_and_rules() -> None:
-    """Case 4 checks the type hints and the Python rules in the scripts and their tests."""
+    """Check the type hints and the Python rules in the scripts and their tests."""
     for path in SCRIPTS + TEST_FILES:
         source = path.read_text()
         for node in ast.walk(ast.parse(source)):

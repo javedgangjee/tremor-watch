@@ -1,6 +1,6 @@
 """Tests for tests/firmware/command_run.py.
 
-Each case writes a made-up gzip log of every step of check 9 and judges it with
+Each case writes a made-up gzip log of every step of command_run.py and judges it with
 --log-only, so no watch is needed. The scheduled minute is 600, the offset is
 60 minutes, and the CLOCK command's UTC time is 08:57:00 on 23 October 2026.
 They run in the reference venv with this command.
@@ -191,7 +191,7 @@ def boot2() -> list[tuple[int, str]]:
 
 
 def make_log() -> list[str]:
-    """Give the clean log of every step of check 9 in order."""
+    """Give the clean log of every step in order."""
     out = ["> RESET"]
     out += [text for _, text in sorted(boot1(), key=lambda e: e[0])]
     out.append("> RESET")
@@ -215,14 +215,14 @@ def find(lines: list[str], start: str, after: int = 0) -> int:
 
 
 def test_clean_log_passes(tmp_path: Path) -> None:
-    """Case 5 judges the clean log."""
+    """Judge the clean log."""
     code, report = judge(make_log(), tmp_path)
     assert code == 0, report
     assert "FAIL" not in report
 
 
 def test_changed_logs_fail(tmp_path: Path) -> None:
-    """Case 6 checks eleven changed copies of the clean log."""
+    """Check eleven changed copies of the clean log."""
     clean = make_log()
     boot2_at = find(clean, "> RESET", 1)
     due_f = f"F,{T_WATCH + TICK + 1},4"
@@ -285,7 +285,7 @@ def test_changed_logs_fail(tmp_path: Path) -> None:
 
 
 def test_restore_commands() -> None:
-    """Case 7 checks the commands that put back the settings of a SETTINGS line."""
+    """Check the commands that put back the settings of a SETTINGS line."""
     command_run = load("command_run", COMMAND_RUN)
     fields = load("table_run", HERE / "table_run.py").fields_of
     empty = fields("SETTINGS source=boot store=empty tone=1 times=none name=")

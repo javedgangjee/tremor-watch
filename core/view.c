@@ -1,6 +1,5 @@
 /*
- * view.c builds the texts and values that the face draws. view.h describes
- * them, and feature 11's requirements 48 to 53 and 62 give the details.
+ * view.c builds the texts and values that the face draws. See view.h.
  *
  * Day and minute sums use 64-bit whole numbers with division that rounds down.
  */
@@ -30,7 +29,7 @@ const char *view_status_label(unsigned row)
     return row < LOOK_STATUS_ROWS ? STATUS_LABELS[row] : "";
 }
 
-/* floor_div() divides by a positive number and rounds down. */
+/* Divides by a positive number and rounds down. */
 static int64_t floor_div(int64_t a, int64_t b)
 {
     int64_t q = a / b;
@@ -40,7 +39,7 @@ static int64_t floor_div(int64_t a, int64_t b)
     return q;
 }
 
-/* clock_text() writes "HH:MM" for a local time in microseconds since 1970. */
+/* Writes "HH:MM" for a local time in microseconds since 1970. */
 static void clock_text(char *out, size_t size, int64_t local_us)
 {
     int64_t day = floor_div(local_us, DAY_US);
@@ -48,9 +47,8 @@ static void clock_text(char *out, size_t size, int64_t local_us)
     snprintf(out, size, "%02d:%02d", (int)(minutes / 60), (int)(minutes % 60));
 }
 
-/* date_text() writes the short weekday, the day, and the short month, as in
- * "Fri 23 Oct". The day and month come from the days since 1970 by the civil
- * calendar rule, and 1 January 1970 was a Thursday. */
+/* Writes the date as in "Fri 23 Oct". The day and month come from the days
+ * since 1970 by the civil calendar rule. 1 January 1970 was a Thursday. */
 static void date_text(char *out, size_t size, int64_t local_us)
 {
     int64_t days = floor_div(local_us, DAY_US);
@@ -66,14 +64,13 @@ static void date_text(char *out, size_t size, int64_t local_us)
     snprintf(out, size, "%s %d %s", WEEKDAYS[weekday], day, MONTHS[month - 1]);
 }
 
-/* round_half_up() rounds a percent to a whole number with halves going up. */
 static int round_half_up(double percent)
 {
     return (int)floor(percent + 0.5);
 }
 
-/* dose_value() writes a Medication value: the name, a comma, a space, and
- * the time, or the time alone when the schedule has no name. */
+/* Writes a Medication value as "name, HH:MM", or the time alone when the
+ * schedule has no name. The name is the part that may be cut. */
 static void dose_value(view_cut_t *out, const char *name, const char *time)
 {
     size_t name_len = strlen(name);
@@ -88,7 +85,7 @@ static void dose_value(view_cut_t *out, const char *name, const char *time)
     out->cut_len = (uint8_t)name_len;
 }
 
-/* plain_value() writes a value that holds no name. */
+/* Writes a value that holds no name, so nothing in it may be cut. */
 static void plain_value(view_cut_t *out, const char *text)
 {
     snprintf(out->text, sizeof out->text, "%s", text);
@@ -96,8 +93,8 @@ static void plain_value(view_cut_t *out, const char *text)
     out->cut_len = 0;
 }
 
-/* local_or_dashes() writes "HH:MM" for a timer value when the clock is set,
- * and dashes when it is not. */
+/* Writes "HH:MM" for a timer value when the clock is set, and dashes when it
+ * is not. */
 static void local_or_dashes(char *out, size_t size, const dose_t *d, int64_t timer_us)
 {
     if (d->clock_set) {
@@ -172,8 +169,8 @@ static void build_tremor(view_t *v, const sess_t *s)
     } else {
         local_or_dashes(v->last_tremor_short, sizeof v->last_tremor_short, &s->dose, last_us);
     }
-    /* With no tremor yet the line is empty, so Home hides it. The user chose
-     * this on 2026-10-24. last_tremor_short keeps "none" for the record line. */
+    /* With no tremor yet the line is empty, so Home hides it.
+     * last_tremor_short keeps "none" for the record line. */
     if (strcmp(v->last_tremor_short, "none") == 0) {
         v->last_tremor[0] = '\0';
     } else {
@@ -233,8 +230,7 @@ static void build_status(view_t *v, const view_input_t *in)
         snprintf(st[3], n, "--");
     }
     if (in->has_answer) {
-        /* A run time is far below a second, so the tenths of a millisecond
-         * are kept under 100000. */
+        /* Clamp the run time so the whole milliseconds fit in five digits. */
         int64_t run_us = in->run_us < 0 ? 0 : in->run_us > INT64_C(9999999) ? INT64_C(9999999) : in->run_us;
         uint32_t tenths = (uint32_t)((run_us + 50) / 100);
         snprintf(st[4], n, "%" PRIu32, in->stretch);

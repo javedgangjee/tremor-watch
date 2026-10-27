@@ -40,10 +40,10 @@
  * is pressed. */
 #define BOOT_GPIO GPIO_NUM_0
 #define ROUND_MS 20
-/* From the face's build on, malloc() puts every block of this many bytes or
- * more in PSRAM, so LVGL's small allocations stay out of internal memory. The
- * display driver needs a block of about 82 KB of internal memory for each
- * transfer, and LVGL's objects in internal memory broke that block up. */
+/* malloc() puts every block of this many bytes or more in PSRAM, so LVGL's
+ * small allocations stay out of internal memory. The display driver needs a
+ * block of about 82 KB of internal memory for each transfer, and LVGL objects
+ * there would break that block up. */
 #define EXTERNAL_FROM_BYTES 0
 
 static scr_t s_scr;
@@ -93,11 +93,12 @@ static void rounder(lv_event_t *e)
 
 /*
  * start_display() does the display part of the board support package's own
- * display start function with one change. Waveshare's board support package 2.0.0 adds its SH8601 panel with
- * lvgl_port_add_disp_rgb(), which registers RGB panel callbacks on a panel
- * that is not an RGB panel. That writes past the panel's memory and broke the
- * heap on the watch. This function adds the panel with lvgl_port_add_disp()
- * and keeps every other setting of the board support package.
+ * display start function with one change. Waveshare's board support package
+ * 2.0.0 adds its SH8601 panel with lvgl_port_add_disp_rgb(), which registers
+ * RGB panel callbacks on a panel that is not an RGB panel. That writes past
+ * the panel's memory and corrupts the heap. This function adds the panel with
+ * lvgl_port_add_disp() and keeps every other setting of the board support
+ * package.
  */
 static lv_display_t *start_display(void)
 {
@@ -140,7 +141,6 @@ static lv_display_t *start_display(void)
     return disp;
 }
 
-/* start_touch() starts the touch and adds it to LVGL. */
 static bool start_touch(lv_display_t *disp)
 {
     esp_lcd_touch_handle_t touch = NULL;

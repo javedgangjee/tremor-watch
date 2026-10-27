@@ -1,15 +1,12 @@
 /*
- * record.c holds the recording line format and the command parser. record.h
- * describes them, and the feature 9 requirements 26 to 34 give the details.
- *
- * The line functions use snprintf() from the C library. The parser reads the
- * line in place and keeps no copy of it.
+ * record.c holds the recording line format and the command parser. See
+ * record.h. The parser reads the line in place and keeps no copy of it.
  *
  * The W line writes the probability and the low-frequency sum as the shortest
- * text that reads back as the same double, laid out as %.17g lays it out. The
- * watch's C library, picolibc, gives this text for %.17g, so the W line
- * matches the ANSWER line. The laptop's C library gives all 17 digits for
- * %.17g, so the file finds the shortest text itself and both sides agree.
+ * text that reads back as the same double, laid out as %.17g lays it out.
+ * picolibc on the watch prints %.17g that way, so the W line matches the
+ * ANSWER line. The laptop's C library prints all 17 digits, so this file finds
+ * the shortest text itself and both sides agree.
  */
 
 #include "record.h"
@@ -30,21 +27,21 @@
 #define MINUTE_MAX (DOSE_DAY_MINUTES - 1)
 #define MINUTE_US INT64_C(60000000)
 
-/* field_t is one comma-separated field of a command line. */
+/* One comma-separated field of a command line. */
 typedef struct {
     const char *p;
     size_t n;
 } field_t;
 
-/* cursor_t walks the fields of a command line. */
+/* Walks the fields of a command line. */
 typedef struct {
     const char *p;
     const char *end;
     bool done;
 } cursor_t;
 
-/* finish() gives the length that snprintf() wrote, or 0 when the line and its
- * zero byte did not fit. */
+/* Gives the length that snprintf() wrote, or 0 when the line and its zero
+ * byte did not fit. */
 static size_t finish(int n, size_t size)
 {
     if (n < 0 || (size_t)n >= size) {
@@ -79,10 +76,10 @@ size_t rec_reading(char *buf, size_t size, uint64_t number, const int16_t gyro[3
         size);
 }
 
-/* shortest_double() writes the shortest text that reads back as v, laid out
- * as %.17g lays it out. It finds the fewest significant digits from 1 to 17
- * that read back as v, then writes them in fixed form when the exponent lies
- * from -4 to 16 and in exponent form otherwise, with no trailing zeros. */
+/* Writes the shortest text that reads back as v, laid out as %.17g lays it
+ * out. It finds the fewest significant digits from 1 to 17 that read back as
+ * v. It writes them in fixed form when the exponent lies from -4 to 16 and in
+ * exponent form otherwise, with no trailing zeros. */
 static void shortest_double(char out[NUMBER_MAX], double v)
 {
     if (!isfinite(v)) {
@@ -184,8 +181,8 @@ size_t rec_reply(char *buf, size_t size, rec_cmd_t command, rec_result_t result)
     return finish(snprintf(buf, size, "A,%d,%d", (int)command, (int)result), size);
 }
 
-/* next_field() gives the next field and returns false when no field is left.
- * A line with n commas has n + 1 fields, and a field may be empty. */
+/* Gives the next field, or returns false when no field is left. A line with n
+ * commas has n + 1 fields, and a field may be empty. */
 static bool next_field(cursor_t *c, field_t *f)
 {
     if (c->done) {
@@ -205,16 +202,15 @@ static bool next_field(cursor_t *c, field_t *f)
     return true;
 }
 
-/* same() is true when the field is exactly the word. */
 static bool same(const field_t *f, const char *word)
 {
     size_t n = strlen(word);
     return f->n == n && memcmp(f->p, word, n) == 0;
 }
 
-/* parse_whole() reads an optional minus sign and 1 to 19 digits. A value
- * beyond the 64-bit range becomes the nearest 64-bit value, which lies
- * outside every range that a command accepts. */
+/* Reads an optional minus sign and 1 to 19 digits. A value beyond the 64-bit
+ * range becomes the nearest 64-bit value, which lies outside every range that
+ * a command accepts. */
 static bool parse_whole(const field_t *f, int64_t *out)
 {
     size_t i = 0;
@@ -243,7 +239,7 @@ static bool parse_whole(const field_t *f, int64_t *out)
     return true;
 }
 
-/* name_char() is true for a letter, a digit, or one of - . / and +. */
+/* True for a letter, a digit, or one of - . / + */
 static bool name_char(char ch)
 {
     return (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '-' ||

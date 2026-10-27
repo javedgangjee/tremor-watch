@@ -1,7 +1,7 @@
 """Tests for tests/firmware/face_run.py.
 
-Each case writes a made-up gzip log of every step of check 9 of feature 11 and
-judges it with --log-only, so no watch is needed. The watch's clock is set at
+Each case writes a made-up gzip log of every step of face_run.py and judges
+it with --log-only, so no watch is needed. The watch's clock is set at
 watch time 20 seconds to 16:56:30 local time on 23 October 2026. The first
 dose is at 16:59, and the second at 17:16. They run in the reference venv
 with this command.
@@ -300,12 +300,12 @@ def change(lines: list[tuple[float, str]], i: int, key: str, value: str) -> list
 
 
 def test_case_50_clean(tmp_path: Path) -> None:
-    """Case 50: the clean log passes."""
+    """The clean log passes."""
     assert judge(tmp_path, make_lines()) == 0
 
 
 def changed_copies(lines: list[tuple[float, str]]) -> dict[str, list[tuple[float, str]]]:
-    """Give the twelve changed copies of case 51."""
+    """Give the twelve changed copies of the clean log."""
     start = index_of(lines, lambda t: t.startswith("SCREEN_START"))
     clock = index_of(lines, lambda t: t.startswith("> CLOCK"))
     first_view = index_of(lines, lambda t: t.startswith("SCREEN_VIEW"))
@@ -349,7 +349,7 @@ def changed_copies(lines: list[tuple[float, str]]) -> dict[str, list[tuple[float
 
 
 def test_case_51_changed_copies(tmp_path: Path) -> None:
-    """Case 51: each of the twelve changed copies fails."""
+    """Each of the twelve changed copies fails."""
     copies = changed_copies(make_lines())
     assert len(copies) == 12
     failed = [name for name, lines in copies.items() if judge(tmp_path, lines) != 1]
@@ -357,7 +357,7 @@ def test_case_51_changed_copies(tmp_path: Path) -> None:
 
 
 def test_case_52_dose_minute() -> None:
-    """Case 52: the dose minute is the next whole minute at least 90 seconds ahead."""
+    """The dose minute is the next whole minute at least 90 seconds ahead."""
     face_run = load("face_run", FACE_RUN)
     assert face_run.dose_minute(datetime(2026, 10, 23, 16, 58, 30)) == 1020
     assert face_run.dose_minute(datetime(2026, 10, 23, 16, 58, 31)) == 1021

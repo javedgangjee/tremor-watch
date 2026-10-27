@@ -1,6 +1,7 @@
 /*
  * Unit tests for the face's colours, layout, and text measures in
- * core/look.c. They hold cases 1 to 12 of feature 11's validation.md.
+ * core/look.c. They hold cases 1 to 12 of
+ * specs/features/11-watch-face/validation.md.
  *
  * The contrast ratio is the WCAG 2 ratio of relative luminances. The colour
  * distance is the Euclidean distance in OKLab. Protan and deutan vision are
@@ -121,8 +122,8 @@ static void test_2_distance(void)
                                      "a pair is under 0.10 apart");
         }
     }
-    /* The Dose due and Tremor pair is left out, because the user chose the
-     * design's purple. Its deutan distance is below 0.05. */
+    /* The Dose due and Tremor pair is left out to keep the design's purple.
+     * Its deutan distance is below 0.05. */
     TEST_ASSERT_TRUE(distance(0x1B2E42, 0x3F2559, VISION_DEUTAN) < 0.05);
 }
 

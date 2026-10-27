@@ -1,14 +1,13 @@
 /*
  * record.h holds the recording line format and the command parser.
  *
- * The lines follow the plan's USB recording section, and
  * core/recording_format.md describes every field. Each line function writes
  * one line with no newline into the caller's buffer and returns its length.
  * It returns 0 when the line and its zero byte do not fit in size bytes.
  *
  * The laptop sends four commands over the same port. rec_parse_command()
  * checks one command line, and the watch answers it with one A line from
- * rec_reply(). The feature 9 requirements 26 to 34 give the details.
+ * rec_reply().
  *
  * The file has no static data that changes, and it allocates no memory.
  */

@@ -1,8 +1,8 @@
 /*
  * share.h holds the session share and the Session screen's blocks.
  *
- * The share follows the plan's Windows section and aggregate_tremor() in
- * ParaDigMa 1.1.2. It counts only the windows whose number divides by 4,
+ * The share follows aggregate_tremor() in ParaDigMa 1.1.2. It counts only the
+ * windows whose number divides by 4,
  * because these are the windows the toolbox cuts. It leaves out window 0 of
  * each stretch, which is warming up. It counts only tremor, no tremor, and arm
  * moving answers. The share is the number of tremor windows divided by the

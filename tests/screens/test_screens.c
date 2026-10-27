@@ -1,7 +1,7 @@
 /*
  * Unit tests for the face's screen rules in core/screens.c. They hold cases
- * 13 to 19 of feature 11's validation.md. Times are in seconds from
- * scr_init() at 0.
+ * 13 to 19 of specs/features/11-watch-face/validation.md. Times are in seconds
+ * from scr_init() at 0.
  */
 
 #include <stdbool.h>

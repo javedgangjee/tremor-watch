@@ -1,59 +1,39 @@
 /*
  * replay runs the C detector on a PADS recording or on a recording from the
- * watch, and it prints one answer for every window.
+ * watch, and prints one CSV row for every window.
  *
  *     build/core/replay --pads FILE
  *     build/core/replay --recording FILE [--samples OUT]
  *
- * A PADS file has one reading on each line, with seven values. They are the
- * time, three accelerometer axes, and three gyroscope axes in radians per
- * second. replay converts the gyroscope to degrees per second as numpy's
- * degrees function does, rounds each value to a 32-bit float, and cuts the
- * first 50 rows, which hold the watch's start vibration. PADS is already at
- * 100 readings a second, so replay does no rate conversion.
+ * A PADS line holds seven values: the time, three accelerometer axes, and
+ * three gyroscope axes in radians per second. replay converts the gyroscope to
+ * degrees per second as numpy's degrees function does, rounds to 32-bit
+ * floats, and cuts the first 50 rows, which hold the watch's start vibration.
+ * PADS is already at 100 Hz, so there is no rate conversion. Window n holds
+ * rows 100n to 100n + 399 after the cut. Columns use the toolbox's names.
  *
- * Window n holds rows 100n to 100n + 399 after the cut. replay prints a CSV
- * header and then one row for each window that fits, with the toolbox's
- * column names.
+ * A recording is the text the watch writes over USB, as described in
+ * core/recording_format.md. FILE may be - for standard input. replay times the
+ * readings with core/reading_time.h and feeds each whole burst to
+ * core/pipeline.h as one part, as the pipeline task does. It makes no sensor
+ * fault answers, because those come from the watch's timer.
  *
- * A recording is the text that the watch writes over USB, as
- * core/recording_format.md describes it. FILE may be - for the standard
- * input. replay gives every reading its time with the time rule of
- * core/reading_time.h from the T lines, and it feeds each whole burst to the
- * pipeline rules of core/pipeline.h as one part, as the pipeline task does.
- * It turns each gyroscope count into degrees per second with imu_gyro_dps(),
- * runs the detector on each window, and takes the result code from
- * res_from_answer(). It makes no sensor fault answer, because those come from
- * the watch's timer. It prints one CSV row for each window, with the boot ID,
- * its own stretch from the time rule, the window, the time of the window's
- * last 100 Hz sample, the code, and the toolbox's column names.
+ * The T line holds no overflow flag, so replay finds stretch starts from the S
+ * lines. A burst whose first reading equals the first reading of an earlier S
+ * line in the same boot, with a stretch number above every earlier one in that
+ * boot, goes to rt_burst() with the overflow flag set. The time rule still
+ * runs on every burst, so it finds a drift end by itself.
  *
- * The T line holds no overflow flag, so replay finds every stretch start from
- * the S lines. When it passes on a burst whose first reading equals the first
- * reading of an S line that came before it in the same boot, with a stretch
- * number above every stretch number of the boot before it, it calls
- * rt_burst() with the overflow flag set. Otherwise the flag is clear. The time
- * rule still runs on every burst, so it finds a drift end by itself.
+ * replay skips every line before the first B line and every line that is not
+ * a record line. A record line that breaks its pattern counts as bad and is
+ * skipped, as does a line of more than 1022 characters or a T line with more
+ * than 256 readings. W, F, D and A lines are checked and ignored. A B line
+ * with a new boot ID restarts the time rule and the pipeline.
  *
- * replay skips every line before the first B line, every line that starts
- * with "> ", every diagnostic line, and every other line that is not a record
- * line. A line that starts with a record letter and a comma but breaks its
- * pattern counts as a bad line and is skipped, and so does a line of more
- * than 1022 characters and a T line with more than 256 readings. replay
- * ignores the W, F, D, and A lines. A B line first passes on the burst that
- * replay holds. A B line with a new boot ID then starts the time rule and the
- * pipe again, and a B line with the same boot ID changes nothing more.
- * replay keeps each T line until its R lines are in. It passes a burst on
- * only when the burst holds exactly its count of R lines, numbered in order,
- * and otherwise it drops the burst and counts it. The one exception is the
- * last burst of the file when its R lines are in order but too few, because
- * the capture stopped in it. replay leaves that burst out without counting it.
+ * With --samples, replay also writes its 100 Hz samples to OUT as CSV, each
+ * sample once.
  *
- * With --samples, replay also writes its 100 Hz samples to OUT as CSV. It
- * writes all 400 samples of window 0 and the last 100 samples of each later
- * window, so each sample appears once.
- *
- * At the end replay writes one line of counts to the standard error. It exits
+ * At the end replay writes one line of counts to standard error. It exits
  * with code 1 when it cannot read a file or the recording holds no B line.
  */
 
@@ -84,8 +64,8 @@
 
 static float rows[MAX_ROWS][DET_AXES];
 
-/* read_line_values() reads the seven values of one line. It returns false if
- * the line holds fewer than seven numbers. */
+/* Reads the seven values of one line. Returns false if the line holds fewer
+ * than seven numbers. */
 static bool read_line_values(const char *line, double values[PADS_VALUES])
 {
     const char *p = line;
@@ -110,8 +90,8 @@ static bool read_line_values(const char *line, double values[PADS_VALUES])
     return true;
 }
 
-/* read_pads() reads the gyroscope of one file into rows. It returns the number
- * of rows, or -1 after it prints an error. */
+/* Reads the gyroscope of one file into rows. Returns the number of rows, or -1
+ * after it prints an error. */
 static int read_pads(const char *path)
 {
     FILE *file = fopen(path, "r");
@@ -177,7 +157,6 @@ static void print_window(int index, const det_result_t *r)
            r->tremor ? 1 : 0);
 }
 
-/* A T line may hold at most this many readings. */
 #define BURST_MAX 256
 /* Window 0 gives all of its samples, and each later window gives its last
  * 100, which no earlier window held. */
@@ -187,15 +166,12 @@ static void print_window(int index, const det_result_t *r)
 #define RECORD_LETTERS "BSTRWFDA"
 
 typedef struct {
-    /* has_boot is true once the first B line has been read. */
     bool has_boot;
     uint32_t boot_id;
-    /* has_stretch is true once the boot has had an S line, and top_stretch
-     * is the highest stretch number of its S lines. */
+    /* top_stretch is the highest stretch number of the boot's S lines. */
     bool has_stretch;
     uint32_t top_stretch;
-    /* has_pending is true while an S line's first reading waits for its
-     * burst. */
+    /* pending_first is an S line's first reading, waiting for its burst. */
     bool has_pending;
     uint64_t pending_first;
     /* The burst that replay holds until its R lines are in. */
@@ -220,8 +196,8 @@ static float s_window[DET_WINDOW_LEN][DET_AXES];
 static float s_burst[BURST_MAX][CONV_AXES];
 static rec_t s_rec;
 
-/* read_uint() reads a run of digits that fits in max. It moves *p past the
- * digits and returns false when there is no digit or the value is too big. */
+/* Reads a run of digits that fits in max and moves *p past them. Returns false
+ * when there is no digit or the value is too big. */
 static bool read_uint(const char **p, uint64_t max, uint64_t *out)
 {
     const char *q = *p;
@@ -241,8 +217,8 @@ static bool read_uint(const char **p, uint64_t max, uint64_t *out)
     return true;
 }
 
-/* read_int() reads a run of digits with an optional leading minus sign. The
- * value must lie from min to max. */
+/* Reads digits with an optional leading minus sign. The value must lie from
+ * min to max. */
 static bool read_int(const char **p, int64_t min, int64_t max, int64_t *out)
 {
     const char *q = *p;
@@ -264,7 +240,6 @@ static bool read_int(const char **p, int64_t min, int64_t max, int64_t *out)
     return true;
 }
 
-/* read_comma() moves *p past one comma. */
 static bool read_comma(const char **p)
 {
     if (**p != ',') {
@@ -274,8 +249,7 @@ static bool read_comma(const char **p)
     return true;
 }
 
-/* read_chars() moves *p past a run of characters from `allowed`, which may be
- * empty. */
+/* Moves *p past a run of characters from `allowed`. The run may be empty. */
 static void read_chars(const char **p, const char *allowed)
 {
     while (**p != '\0' && strchr(allowed, **p) != NULL) {
@@ -303,7 +277,7 @@ typedef struct {
     int16_t gyro[CONV_AXES];
 } r_line_t;
 
-/* parse_b() reads ^B,(\d+),(\d+),(\d+),([0-9a-f]{64})$. */
+/* Reads ^B,(\d+),(\d+),(\d+),([0-9a-f]{64})$. */
 static bool parse_b(const char *line, b_line_t *out)
 {
     const char *p = line + 2;
@@ -323,7 +297,7 @@ static bool parse_b(const char *line, b_line_t *out)
     return true;
 }
 
-/* parse_s() reads ^S,(\d+),(\d+),(-?\d+),(\d+),(\d+)$. */
+/* Reads ^S,(\d+),(\d+),(-?\d+),(\d+),(\d+)$. */
 static bool parse_s(const char *line, s_line_t *out)
 {
     const char *p = line + 2;
@@ -342,7 +316,7 @@ static bool parse_s(const char *line, s_line_t *out)
     return true;
 }
 
-/* parse_t() reads ^T,(\d+),(\d+),(-?\d+)$ with at most BURST_MAX readings. */
+/* Reads ^T,(\d+),(\d+),(-?\d+)$ with at most BURST_MAX readings. */
 static bool parse_t(const char *line, t_line_t *out)
 {
     const char *p = line + 2;
@@ -359,7 +333,7 @@ static bool parse_t(const char *line, t_line_t *out)
     return true;
 }
 
-/* parse_r() reads ^R,(\d+),(-?\d+),(-?\d+),(-?\d+),(-?\d+),(-?\d+),(-?\d+)$,
+/* Reads ^R,(\d+),(-?\d+),(-?\d+),(-?\d+),(-?\d+),(-?\d+),(-?\d+)$,
  * where each count fits in 16 bits. */
 static bool parse_r(const char *line, r_line_t *out)
 {
@@ -379,8 +353,7 @@ static bool parse_r(const char *line, r_line_t *out)
     return *p == '\0';
 }
 
-/* follows_ignored() checks the patterns of the W, F, D, and A lines, which
- * replay does not use. */
+/* Checks the patterns of the W, F, D and A lines, which replay does not use. */
 static bool follows_ignored(const char *line)
 {
     const char *p = line + 2;
@@ -426,8 +399,7 @@ static void print_recording_header(void)
     printf(",pred_tremor_proba,below_tremor_power,freq_peak,pred_arm_at_rest,pred_tremor_checked\n");
 }
 
-/* run_windows() runs the detector on every complete window and prints the
- * rows. */
+/* Runs the detector on every complete window and prints the rows. */
 static void run_windows(FILE *samples)
 {
     uint32_t number;
@@ -456,8 +428,8 @@ static void run_windows(FILE *samples)
     }
 }
 
-/* pass_on() passes the held burst on when it holds its count of R lines in
- * order, and drops it and counts it otherwise. */
+/* Passes the held burst on when it holds exactly its count of R lines in
+ * order. Otherwise drops it and counts it. */
 static void pass_on(FILE *samples)
 {
     if (!s_rec.held) {
@@ -497,7 +469,8 @@ static void pass_on(FILE *samples)
     run_windows(samples);
 }
 
-/* take_line() applies one line of the recording, without its line end. */
+/* Applies one line of the recording, without its line end. A B line first
+ * passes on the held burst. */
 static void take_line(const char *line, FILE *samples)
 {
     /* Only a record letter and a comma make a record line. Every other line,
@@ -586,8 +559,7 @@ static void take_line(const char *line, FILE *samples)
     }
 }
 
-/* run_recording() reads one recording and prints its rows. It returns the
- * exit code. */
+/* Reads one recording and prints its rows. Returns the exit code. */
 static int run_recording(const char *path, const char *samples_path)
 {
     bool from_stdin = strcmp(path, "-") == 0;

@@ -2,8 +2,7 @@
  * Unit tests for the C detector in core/detector.c.
  *
  * The saved windows in windows.csv and the toolbox's answers in answers.csv
- * come from tests/detector/make_windows.py. The match limits come from Build
- * order step 5 of the plan.
+ * come from tests/detector/make_windows.py.
  */
 
 #include <math.h>
