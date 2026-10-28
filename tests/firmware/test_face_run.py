@@ -85,6 +85,8 @@ class Fields:
 
 LOOKS = {0: ("fill", "1b2e42"), 1: ("outline", "26292b"), 2: ("fill", "2a7242"), 3: ("outline", "5c6265"),
          4: ("fill", "3f2559")}
+# The looks of version 11 before commit 7f6b90e, with Rest and Arm moving the other way round.
+FIRST_LOOKS = {**LOOKS, 1: ("fill", "2a7242"), 2: ("outline", "26292b")}
 
 
 @dataclass
@@ -94,6 +96,7 @@ class Maker:
     lines: list[tuple[float, str]] = field(default_factory=list)
     view: Fields = field(default_factory=Fields)
     clock_set: bool = False
+    looks: dict[int, tuple[str, str]] = field(default_factory=lambda: dict(LOOKS))
 
     def add(self, at: int, text: str) -> None:
         """Add one watch line that arrives on the laptop a little after its watch time."""
@@ -111,7 +114,7 @@ class Maker:
         if vars(before) == vars(self.view) and self.lines and "SCREEN_VIEW" in "".join(t for _, t in self.lines):
             return
         v = self.view
-        circle, colour = LOOKS[v.face]
+        circle, colour = self.looks[v.face]
         self.add(at, f"SCREEN_VIEW at_us={at} screen={v.screen} face={v.face} circle={circle} colour={colour} "
                      f"time={v.time} due={v.due} next={v.next} last_tremor={v.last_tremor} share={v.share} "
                      f"blocks={v.blocks} hollow={v.hollow}")
@@ -128,10 +131,12 @@ def window_time(n: int) -> int:
     return T0 + 10_000 * (100 * n + 399)
 
 
-def make_lines() -> list[tuple[float, str]]:
-    """Give every line of a clean run in order of laptop time."""
-    version = load("record_run", HERE / "record_run.py").FIRMWARE_VERSION
-    m = Maker()
+def make_lines(looks: dict[int, tuple[str, str]] | None = None, version: int | None = None) -> list[tuple[float, str]]:
+    """Give every line of a clean run in order of laptop time, with the looks and the version of the firmware
+    now or others."""
+    if version is None:
+        version = load("record_run", HERE / "record_run.py").FIRMWARE_VERSION
+    m = Maker(looks=dict(looks or LOOKS))
     m.lines.append((0.0, "> RESET"))
     m.lines.append((0.05, "ESP-ROM:esp32s3-20210327"))
     m.add(60_000, f"B,305419896,11,{version},{table_hash()}")
@@ -354,6 +359,41 @@ def test_case_51_changed_copies(tmp_path: Path) -> None:
     assert len(copies) == 12
     failed = [name for name, lines in copies.items() if judge(tmp_path, lines) != 1]
     assert failed == []
+
+
+def test_looks_of_each_version(tmp_path: Path) -> None:
+    """A saved log of version 11 may show either set of looks, but not a mix. A log of version 12 and a run
+    with the watch need the looks of the firmware now."""
+    face_run = load("face_run", FACE_RUN)
+    assert face_run.LOOKS == LOOKS
+    assert face_run.FIRST_LOOKS == FIRST_LOOKS
+    assert [looks for _, looks in face_run.LOOKS_BY_VERSION[11]] == [LOOKS, FIRST_LOOKS]
+    assert face_run.look_sets(11, live=True) == [("the looks of the firmware now", LOOKS)]
+    record_run = load("record_run", HERE / "record_run.py")
+    assert record_run.FIRMWARE_VERSION in face_run.KNOWN_VERSIONS
+
+    assert judge(tmp_path, make_lines(FIRST_LOOKS, version=12)) == 1
+    first = make_lines(FIRST_LOOKS, version=11)
+    assert judge(tmp_path, first) == 0
+    assert "the looks before commit 7f6b90e" in (tmp_path / "r.md").read_text()
+    log = face_run.parse([record_run.Entry(t, text) for t, text in first])
+    assert face_run.check_faces(log, 11, live=False).passed
+    assert not face_run.check_faces(log, 11, live=True).passed
+
+    rest = index_of(first, lambda t: t.startswith("SCREEN_VIEW") and " face=1 " in t)
+    mixed = change(change(first, rest, "circle", "outline"), rest, "colour", "26292b")
+    assert judge(tmp_path, mixed) == 1
+
+
+def test_unknown_version_refused(tmp_path: Path) -> None:
+    """A saved log of a version with no face is refused, and no report is written."""
+    lines = make_lines()
+    i = index_of(lines, lambda t: t.startswith("B,"))
+    fields = lines[i][1].split(",")
+    fields[3] = "9"
+    lines[i] = (lines[i][0], ",".join(fields))
+    assert judge(tmp_path, lines) == 1
+    assert not (tmp_path / "r.md").exists()
 
 
 def test_case_52_dose_minute() -> None:

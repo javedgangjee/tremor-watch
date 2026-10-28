@@ -81,4 +81,4 @@ The steps run in this order. Every command runs from the repo root. No step chan
 - tests/share/test_share_toolbox.py checks its own text for the banned words in case 3, so it builds those words from two parts and does not hold them whole.
 - Validate found that the face never showed Waiting after a gap, because each new stretch gives only one warming up answer. core/face.h and core/face.c now have `face_gap()`, as requirement 28 says. The state task calls it when a new stretch starts after a gap, and it sets Waiting at once, clears the answer before, and keeps the last tremor time. The first stretch after face_init() needs no call. tests/face/test_face.c has cases 8 and 9 for it. The user chose this rule on 23 October 2026.
 
-The agent decided this on 22 October 2026, and the user has not reviewed it yet.
+The agent decided this on 22 October 2026, and the user accepted it on 27 October 2026.

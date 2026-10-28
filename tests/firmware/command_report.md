@@ -1,5 +1,7 @@
 # Command run
 
+The judge applies the rules of firmware version 9, which the log's first B line gives.
+
 ## Pass checks
 
 - PASS: boot 1. B,3162426297,11,9,4be2ac2b511c501257ea8186068f06a94d0084d653840e907be72cd103dc5b0e

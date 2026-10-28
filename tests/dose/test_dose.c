@@ -401,6 +401,99 @@ static void test_15_empty_schedule(void)
     TEST_ASSERT_FALSE(dose_next(&dose, AT(12, 0, 0), &next));
 }
 
+/* A tick comes at 0.6 s past each second, as on the watch, where the ticks do
+ * not line up with the minute. */
+#define PHASE_US 600000
+
+static void test_16_tap_before_the_tick(void)
+{
+    const uint16_t two[] = {7 * 60 + 55, 8 * 60};
+    dose_entry_t last;
+
+    /* A tap at 08:00:00.4 answers 08:00, so the tick at 08:00:00.6 makes
+     * nothing due. */
+    start_default();
+    quiet(AT(7, 0, 0) + PHASE_US, AT(7, 59, 59) + PHASE_US);
+    TEST_ASSERT_TRUE(dose_took_it(&dose, AT(8, 0, 0) + 400000));
+    TEST_ASSERT_TRUE(dose_last(&dose, &last));
+    TEST_ASSERT_EQUAL_INT64(LOCAL(0, 8, 0), last.answers_local_us);
+    quiet(AT(8, 0, 0) + PHASE_US, AT(8, 16, 0) + PHASE_US);
+    TEST_ASSERT_FALSE(dose_is_due(&dose));
+    TEST_ASSERT_EQUAL_UINT32(1, dose_count(&dose));
+
+    /* With 07:55 due, a tap at 08:00:00.4 answers 08:00, as it would if a
+     * tick had come at the tap. Nothing becomes due after it. */
+    dose_init(&dose);
+    dose_set_clock(&dose, OFFSET_US, AT(6, 0, 0));
+    set_times(2, two);
+    const event_t became = {AT(7, 55, 0) + PHASE_US, DOSE_BECAME_DUE, LOCAL(0, 7, 55)};
+    run(AT(7, 0, 0) + PHASE_US, AT(7, 59, 59) + PHASE_US, &became, 1);
+    TEST_ASSERT_TRUE(dose_took_it(&dose, AT(8, 0, 0) + 400000));
+    TEST_ASSERT_TRUE(dose_last(&dose, &last));
+    TEST_ASSERT_EQUAL_INT64(LOCAL(0, 8, 0), last.answers_local_us);
+    quiet(AT(8, 0, 0) + PHASE_US, AT(8, 16, 0) + PHASE_US);
+    TEST_ASSERT_FALSE(dose_is_due(&dose));
+
+    /* The state task may take a tap after a tick that came later than the
+     * tap. The tick at 08:00:00.6 makes 08:00 due, and the tap at 08:00:00.4
+     * then answers it. Nothing becomes due after it. */
+    start_default();
+    const event_t eight = {AT(8, 0, 0) + PHASE_US, DOSE_BECAME_DUE, LOCAL(0, 8, 0)};
+    run(AT(7, 0, 0) + PHASE_US, AT(8, 0, 0) + PHASE_US, &eight, 1);
+    TEST_ASSERT_TRUE(dose_took_it(&dose, AT(8, 0, 0) + 400000));
+    TEST_ASSERT_TRUE(dose_last(&dose, &last));
+    TEST_ASSERT_EQUAL_INT64(LOCAL(0, 8, 0), last.answers_local_us);
+    TEST_ASSERT_FALSE(dose_is_due(&dose));
+    quiet(AT(8, 0, 1) + PHASE_US, AT(8, 16, 0) + PHASE_US);
+    TEST_ASSERT_FALSE(dose_is_due(&dose));
+}
+
+/* due_at_eight() runs the default schedule from 06:00:00 to 08:01:00, so
+ * 08:00 is due. */
+static void due_at_eight(void)
+{
+    const event_t became = {AT(8, 0, 0), DOSE_BECAME_DUE, LOCAL(0, 8, 0)};
+    start_default();
+    run(AT(6, 0, 0), AT(8, 1, 0), &became, 1);
+    TEST_ASSERT_TRUE(dose_is_due(&dose));
+}
+
+static void test_17_schedule_change_while_due(void)
+{
+    const uint16_t later[] = {12 * 60, 16 * 60};
+    const uint16_t keeps[] = {8 * 60, 20 * 60};
+    const event_t ended_now = {AT(8, 1, 1), DOSE_DUE_ENDED, 0};
+    const event_t ended_late = {AT(8, 15, 0), DOSE_DUE_ENDED, 0};
+    dose_schedule_t s;
+    int64_t next;
+
+    /* A schedule without 08:00 ends the due dose at the next tick. */
+    due_at_eight();
+    s = schedule("Levodopa", 2, later);
+    TEST_ASSERT_TRUE(dose_set_schedule(&dose, &s, AT(8, 1, 0)));
+    run(AT(8, 1, 1), AT(11, 59, 59), &ended_now, 1);
+    TEST_ASSERT_FALSE(dose_is_due(&dose));
+    TEST_ASSERT_TRUE(dose_next(&dose, AT(11, 59, 59), &next));
+    TEST_ASSERT_EQUAL_INT64(LOCAL(0, 12, 0), next);
+
+    /* An empty schedule ends the due dose at the next tick. */
+    due_at_eight();
+    s = schedule("Levodopa", 0, NULL);
+    TEST_ASSERT_TRUE(dose_set_schedule(&dose, &s, AT(8, 1, 0)));
+    run(AT(8, 1, 1), AT(9, 0, 0), &ended_now, 1);
+    TEST_ASSERT_FALSE(dose_is_due(&dose));
+    TEST_ASSERT_FALSE(dose_next(&dose, AT(9, 0, 0), &next));
+
+    /* A schedule that still holds 08:00 keeps it due until 08:15. */
+    due_at_eight();
+    s = schedule("Levodopa", 2, keeps);
+    TEST_ASSERT_TRUE(dose_set_schedule(&dose, &s, AT(8, 1, 0)));
+    run(AT(8, 1, 1), AT(8, 14, 59), NULL, 0);
+    TEST_ASSERT_TRUE(dose_is_due(&dose));
+    run(AT(8, 15, 0), AT(8, 15, 0), &ended_late, 1);
+    TEST_ASSERT_FALSE(dose_is_due(&dose));
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -419,5 +512,7 @@ int main(void)
     RUN_TEST(test_13_new_session);
     RUN_TEST(test_14_ten_taps);
     RUN_TEST(test_15_empty_schedule);
+    RUN_TEST(test_16_tap_before_the_tick);
+    RUN_TEST(test_17_schedule_change_while_due);
     return UNITY_END();
 }

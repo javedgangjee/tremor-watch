@@ -25,5 +25,5 @@ The steps run in this order. Every command runs from the repo root in the refere
 
 ## Changes during implement
 
-- The toolbox's classifier stores its 12 weights as a flat array of shape (12,), not as one row of shape (1, 12). tools/gen_tables.py treats a flat array of 12 weights as one row, and it still stops on any other shape. The agent decided this on 22 October 2026, and the user has not reviewed it yet.
-- Check 1 case 10 names no seed for its 50 random spectra. The test uses numpy's default_rng with seed 10. The agent decided this on 22 October 2026, and the user has not reviewed it yet.
+- The toolbox's classifier stores its 12 weights as a flat array of shape (12,), not as one row of shape (1, 12). tools/gen_tables.py treats a flat array of 12 weights as one row, and it still stops on any other shape. The agent decided this on 22 October 2026, and the user accepted it on 27 October 2026.
+- Check 1 case 10 names no seed for its 50 random spectra. The test uses numpy's default_rng with seed 10. The agent decided this on 22 October 2026, and the user accepted it on 27 October 2026.

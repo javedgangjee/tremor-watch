@@ -13,8 +13,11 @@ from __future__ import annotations
 import ast
 import gzip
 import logging
+import os
 import re
+import signal
 import sys
+import threading
 import time
 import types
 from datetime import datetime, timedelta, timezone
@@ -328,6 +331,121 @@ def test_20b_record_sets_the_clock_after_each_restart(tmp_path: Path, monkeypatc
     monkeypatch.setattr(watch_cli, "open_port", PortOpener([port]))
     assert watch_cli.record("/dev/fake", tmp_path / "busy.txt.gz", None) == 1
     assert len(port.writes) == 1 + watch_cli.CLOCK_TRIES
+
+
+class SignalPort(FakePort):
+    """A port that sends a signal to this process when its lines run out."""
+
+    def __init__(self: SignalPort, lines: list[str], number: int) -> None:
+        super().__init__(lines)
+        self.number = number
+
+    def readline(self: SignalPort) -> bytes:
+        if not self.waiting:
+            os.kill(os.getpid(), self.number)
+        return super().readline()
+
+
+class LostPort(FakePort):
+    """A port whose lines end in an OSError, as when the cable comes out."""
+
+    def readline(self: LostPort) -> bytes:
+        if not self.waiting:
+            raise OSError(6, "Device not configured")
+        return super().readline()
+
+
+class GoneOpener(PortOpener):
+    """Hands out a first port, then fails for some seconds as a port that is gone, then hands out the rest."""
+
+    def __init__(self: GoneOpener, ports: list[FakePort], gone_s: float) -> None:
+        super().__init__(ports)
+        self.gone_s = gone_s
+        self.gone_at: float | None = None
+
+    def __call__(self: GoneOpener, port: str, reset: bool) -> FakePort:
+        if not reset:
+            if self.gone_at is None:
+                self.gone_at = time.monotonic()
+            if time.monotonic() < self.gone_at + self.gone_s:
+                self.calls.append((port, reset))
+                raise OSError(2, "No such file or directory")
+        return super().__call__(port, reset)
+
+
+@pytest.mark.parametrize("number", [signal.SIGTERM, signal.SIGHUP])
+def test_21a_record_stops_whole_at_sigterm_and_sighup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                                      number: int) -> None:
+    before = signal.getsignal(number)
+    lines = boot_lines("A,1,0")
+    port = SignalPort(lines, number)
+    monkeypatch.setattr(watch_cli, "open_port", PortOpener([port]))
+    out = tmp_path / "rec.txt.gz"
+    assert watch_cli.record("/dev/fake", out, None) == 0
+    assert port.closed
+    # The file reads to its end, so the gzip stream was closed whole.
+    texts = [text for _, text in saved_entries(out)]
+    assert texts[:3] + texts[4:] == lines
+    assert signal.getsignal(number) == before
+
+
+def test_21b_held_stops_wait_for_the_block() -> None:
+    stops = watch_cli.StopSignals()
+    before = {number: signal.getsignal(number) for number in watch_cli.STOP_SIGNALS}
+    # A second thread can take the signal from the kernel, as threads in the
+    # test run do. The stop must still wait for the block.
+    done = threading.Event()
+    other = threading.Thread(target=done.wait)
+    other.start()
+    stops.install()
+    try:
+        reached = False
+        with pytest.raises(watch_cli.Stopped):
+            with stops.held():
+                os.kill(os.getpid(), signal.SIGTERM)
+                time.sleep(0.05)
+                reached = True
+        assert reached
+        with pytest.raises(KeyboardInterrupt):
+            with stops.held():
+                with stops.held():
+                    os.kill(os.getpid(), signal.SIGINT)
+                    time.sleep(0.05)
+                assert stops.pending is not None
+        with pytest.raises(watch_cli.Stopped):
+            os.kill(os.getpid(), signal.SIGHUP)
+            time.sleep(0.05)
+    finally:
+        stops.restore()
+        done.set()
+        other.join()
+    assert {number: signal.getsignal(number) for number in watch_cli.STOP_SIGNALS} == before
+
+
+def test_21c_record_waits_for_a_port_that_is_gone(tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+                                                  caplog: pytest.LogCaptureFixture) -> None:
+    monkeypatch.setattr(watch_cli, "PORT_WAIT_S", 0.1)
+    first = LostPort(boot_lines("A,1,0"))
+    later = FakePort(["T,11,11,346200"], interrupt=True)
+    opener = GoneOpener([first, later], gone_s=0.5)
+    monkeypatch.setattr(watch_cli, "open_port", opener)
+    out = tmp_path / "rec.txt.gz"
+    started = time.monotonic()
+    with caplog.at_level(logging.INFO):
+        assert watch_cli.record("/dev/fake", out, None) == 0
+    assert time.monotonic() - started >= 0.5
+    assert "has been gone" in caplog.text and "is back" in caplog.text
+    assert first.closed and later.closed
+    texts = [text for _, text in saved_entries(out)]
+    assert texts[-1] == "T,11,11,346200"
+
+    opener = GoneOpener([LostPort(boot_lines("A,1,0"))], gone_s=1e9)
+    monkeypatch.setattr(watch_cli, "open_port", opener)
+    caplog.clear()
+    with caplog.at_level(logging.INFO):
+        assert watch_cli.record("/dev/fake", tmp_path / "gone.txt.gz", 0.01) == 0
+    assert "while the port /dev/fake was gone" in caplog.text
+    assert len(saved_entries(tmp_path / "gone.txt.gz")) == len(boot_lines("A,1,0")) + 1
 
 
 def test_21_python_rules() -> None:

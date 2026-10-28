@@ -41,6 +41,18 @@ static bool covered(const dose_t *d, int64_t dose_local_us)
     return false;
 }
 
+/* True when the schedule holds the minute of the day of a local time. */
+static bool in_schedule(const dose_t *d, int64_t local_us)
+{
+    int64_t minute = (local_us - floor_div(local_us, DAY_US) * DAY_US) / MINUTE_US;
+    for (uint8_t i = 0; i < d->schedule.count; i++) {
+        if (d->schedule.minutes[i] == minute) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static bool is_on(const dose_t *d)
 {
     return d->clock_set && d->schedule.count > 0;
@@ -147,7 +159,9 @@ unsigned dose_tick(dose_t *d, int64_t now_us)
         }
     }
 
-    if (d->due && now_local >= d->due_local_us + DOSE_DUE_US) {
+    /* A due dose ends 15 minutes after its time, or when a new schedule no
+     * longer holds its time. */
+    if (d->due && (now_local >= d->due_local_us + DOSE_DUE_US || !in_schedule(d, d->due_local_us))) {
         d->due = false;
         return DOSE_DUE_ENDED;
     }
@@ -183,6 +197,13 @@ bool dose_took_it(dose_t *d, int64_t now_us)
     dose_entry_t last;
     if (dose_last(d, &last) && now_us - last.time_us < DOSE_LOCK_US) {
         return false;
+    }
+    /* The due rule runs at the tap's time first, as a tick would, so a dose
+     * time that passed since the last tick is due when the tap answers it.
+     * A tap that the state task takes after a later tick skips this, so the
+     * last tick never moves back. */
+    if (d->ticked && now_us > d->last_tick_us) {
+        (void)dose_tick(d, now_us);
     }
     dose_entry_t entry;
     entry.time_us = now_us;

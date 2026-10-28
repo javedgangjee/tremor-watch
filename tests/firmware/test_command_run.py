@@ -221,6 +221,34 @@ def test_clean_log_passes(tmp_path: Path) -> None:
     assert "FAIL" not in report
 
 
+def test_saved_log_judged_by_its_version(tmp_path: Path) -> None:
+    """Judge a saved log of version 9 by version 9, and refuse version 10."""
+    record_run = load("record_run", HERE / "record_run.py")
+    assert record_run.FIRMWARE_VERSION in record_run.KNOWN_VERSIONS
+
+    def with_version(lines: list[str], version: int) -> list[str]:
+        out = []
+        for line in lines:
+            if line.startswith("B,"):
+                fields = line.split(",")
+                fields[3] = str(version)
+                line = ",".join(fields)
+            out.append(line)
+        return out
+
+    code, report = judge(with_version(make_log(), 9), tmp_path)
+    assert code == 0, report
+    assert "The judge applies the rules of firmware version 9, which the log's first B line gives." in report
+    (tmp_path / "report.md").unlink()
+    log = tmp_path / "log.txt.gz"
+    with gzip.open(log, "wt") as out:
+        out.write("".join(f"{i * 0.001:.3f}\t{line}\n" for i, line in enumerate(with_version(make_log(), 10))))
+    code = load("command_run", COMMAND_RUN).main(["--log-only", "--log", str(log), "--report",
+                                                  str(tmp_path / "report.md")])
+    assert code == 1
+    assert not (tmp_path / "report.md").exists()
+
+
 def test_changed_logs_fail(tmp_path: Path) -> None:
     """Check eleven changed copies of the clean log."""
     clean = make_log()

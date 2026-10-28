@@ -1,5 +1,7 @@
 # Recording run of 30 minutes
 
+The judge applies the rules of firmware version 9, which the log's first B line gives.
+
 ## Pass checks of table_run.py
 
 - PASS: one start, no reset or error. 0 bad lines

@@ -13,12 +13,19 @@
  * When a stretch loses readings, the task asks the sensor task to end it
  * through the end queue. The task never waits on the state queue, and it
  * counts each message it drops.
+ *
+ * det_init() fails only when the FFT buffers are too small, which is a fault
+ * of the build, so a restart would not help. The task then keeps taking the
+ * sensor messages and their sums but gives none of them to the pipe. So the
+ * pipe's fault clock runs out, a sensor fault answer comes each second, and
+ * the face shows Waiting. The task writes a PIPELINE_ERROR line each minute.
  */
 
 #include <math.h>
 #include <stdint.h>
 #include <string.h>
 
+#include "esp_task_wdt.h"
 #include "esp_timer.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
@@ -211,12 +218,10 @@ void pipeline_task(void *arg)
     (void)arg;
     send_task_line("pipeline");
 
-    bool ok = det_init();
-    usb_send("DETECTOR_INIT ok=%d", ok ? 1 : 0);
-    if (!ok) {
+    bool detector_ok = det_init();
+    usb_send("DETECTOR_INIT ok=%d", detector_ok ? 1 : 0);
+    if (!detector_ok) {
         usb_send("PIPELINE_ERROR detector_init");
-        vTaskDelete(NULL);
-        return;
     }
     pipe_init(&s_pipe, esp_timer_get_time());
 
@@ -228,7 +233,12 @@ void pipeline_task(void *arg)
     memset(&sums, 0, sizeof sums);
     uint32_t minute = 1;
 
+    /* The task waits at most until the next fault answer, which is at most 2
+     * seconds away, and det_run() takes about 9 milliseconds, so the
+     * watchdog's 5 seconds run out only when the task is stuck. */
+    ESP_ERROR_CHECK(esp_task_wdt_add(NULL));
     for (;;) {
+        esp_task_wdt_reset();
         int64_t minute_us = (int64_t)minute * MINUTE_US;
         int64_t fault_us = pipe_next_fault_us(&s_pipe);
         int64_t due_us = fault_us < minute_us ? fault_us : minute_us;
@@ -241,14 +251,19 @@ void pipeline_task(void *arg)
             readings += s_msg.count;
             add_message(&sums, &s_msg);
 
-            take_message(&s_msg);
-            run_windows(s_msg.stamp_us);
+            if (detector_ok) {
+                take_message(&s_msg);
+                run_windows(s_msg.stamp_us);
+            }
         }
         while (pipe_fault_due(&s_pipe, esp_timer_get_time())) {
             send_fault();
         }
         if (esp_timer_get_time() >= minute_us) {
             send_minute_line(minute, readings, breaks, &sums);
+            if (!detector_ok) {
+                usb_send("PIPELINE_ERROR detector_init");
+            }
             memset(&sums, 0, sizeof sums);
             minute++;
         }

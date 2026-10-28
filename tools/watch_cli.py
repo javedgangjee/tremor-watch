@@ -16,7 +16,10 @@ It needs pyserial, so it runs with the ESP-IDF Python.
 
 A command exits with code 0 only when the watch answers it with result 0. The
 tool refuses a name or a time that the watch would refuse, before it opens the
-port, and exits with code 2. A recording stops after --minutes or at Ctrl-C.
+port, and exits with code 2. A recording stops after --minutes, at Ctrl-C, or
+at SIGTERM or SIGHUP, which a closed terminal sends, and it closes the file
+whole in each case. When the port goes, as it does while the cable is out, the
+recording waits for it to come back until it stops.
 """
 from __future__ import annotations
 
@@ -26,7 +29,8 @@ import logging
 import re
 import signal
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, TextIO
@@ -47,6 +51,8 @@ MAX_TIMES = 6
 # watch answers busy or gives no answer.
 CLOCK_TRIES = 3
 RESULT_BUSY = 5
+# The signals that stop a recording. SIGHUP comes when the terminal closes.
+STOP_SIGNALS = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
 RESULTS = {
     0: "The watch applied the command.",
     1: "The watch does not know the command.",
@@ -127,19 +133,86 @@ def open_port(port: str, reset: bool) -> Any:
     return ser
 
 
-def reopen(port: str) -> Any:
-    """Open the port again with no reset, waiting up to PORT_WAIT_S seconds.
+def reopen(port: str, end: float | None) -> Any | None:
+    """Open the port again with no reset, or give None when the end time passes first.
 
-    The port can vanish for a moment while the watch resets.
+    The port vanishes for a moment while the watch resets, and for as long as
+    the cable is out. With no end time it waits until the port comes back.
+    After PORT_WAIT_S seconds it says once that it is still waiting.
     """
-    end = time.monotonic() + PORT_WAIT_S
+    warn_at = time.monotonic() + PORT_WAIT_S
+    warned = False
     while True:
         try:
-            return open_port(port, reset=False)
-        except OSError:
-            if time.monotonic() > end:
-                raise
+            ser = open_port(port, reset=False)
+        except OSError as error:
+            now = time.monotonic()
+            if end is not None and now >= end:
+                return None
+            if not warned and now >= warn_at:
+                LOG.warning("The port %s has been gone for %.0f seconds (%s). The recording waits for it.",
+                            port, PORT_WAIT_S, error)
+                warned = True
             time.sleep(0.2)
+            continue
+        if warned:
+            LOG.info("The port %s is back.", port)
+        return ser
+
+
+class Stopped(Exception):
+    """SIGTERM or SIGHUP asked the recording to stop."""
+
+
+class StopSignals:
+    """Turns the stop signals into an exception that waits while the file is written.
+
+    A stop that came in the middle of a gzip write or close would leave the
+    file broken. Inside held(), the handler keeps the stop, and held() raises
+    it when the block ends. SIGINT gives KeyboardInterrupt, as before, and
+    SIGTERM and SIGHUP give Stopped. Python runs signal handlers in the main
+    thread between steps of the code, so the handler sees the right depth.
+    """
+
+    def __init__(self: StopSignals) -> None:
+        self.depth = 0
+        self.pending: BaseException | None = None
+        self.before: dict[int, Any] = {}
+
+    def install(self: StopSignals) -> None:
+        """Put this handler on every stop signal and keep the old handlers."""
+        for number in STOP_SIGNALS:
+            self.before[number] = signal.signal(number, self.handle)
+
+    def restore(self: StopSignals) -> None:
+        """Put the old handlers back and forget a kept stop."""
+        for number, handler in self.before.items():
+            signal.signal(number, handler)
+        self.before = {}
+        self.pending = None
+
+    def handle(self: StopSignals, signum: int, frame: object) -> None:
+        """Raise the stop, or keep it while a block is held."""
+        stop = KeyboardInterrupt() if signum == signal.SIGINT else Stopped(signal.Signals(signum).name)
+        if self.depth == 0:
+            raise stop
+        if self.pending is None:
+            self.pending = stop
+
+    @contextmanager
+    def held(self: StopSignals) -> Iterator[None]:
+        """Keep any stop that comes in the block, and raise it when the block ends."""
+        self.depth += 1
+        try:
+            yield
+        finally:
+            self.depth -= 1
+        if self.depth == 0 and self.pending is not None:
+            stop, self.pending = self.pending, None
+            raise stop
+
+
+STOPS = StopSignals()
 
 
 def read_raw(ser: Any) -> bytes:
@@ -205,8 +278,9 @@ def send_command(
 
 
 def write_entry(out: TextIO, started: float, text: str) -> None:
-    """Write one line to the open gzip file with the laptop's time."""
-    out.write(f"{time.monotonic() - started:.3f}\t{text}\n")
+    """Write one line to the open gzip file with the laptop's time, with the stop signals held."""
+    with STOPS.held():
+        out.write(f"{time.monotonic() - started:.3f}\t{text}\n")
 
 
 def laptop_clock_command() -> str:
@@ -224,9 +298,10 @@ def record(port: str, out: Path, minutes: float | None) -> int:
     follows as a line that starts with "> ", so a watch that restarts during
     the recording gets its clock again. A busy answer or no answer sends the
     command again, up to CLOCK_TRIES times. It stops after the given minutes,
-    or at KeyboardInterrupt when no minutes are given. It gives 1 when the file
-    exists or the last boot's clock command did not get result 0, and 0
-    otherwise.
+    at KeyboardInterrupt, or at SIGTERM or SIGHUP, and closes the file whole.
+    While the port is gone it waits for the port until it stops. It gives 1
+    when the file exists or the last boot's clock command did not get result
+    0, and 0 otherwise.
     """
     if out.exists():
         LOG.error("%s exists already. The tool does not write over a saved recording.", out)
@@ -242,7 +317,9 @@ def record(port: str, out: Path, minutes: float | None) -> int:
     # The boot ID whose clock the watch set.
     clock_boot: str | None = None
     lines = 0
-    with gzip.open(out, "xt") as saved:
+    saved = gzip.open(out, "xt")
+    try:
+        STOPS.install()
 
         def save(text: str) -> None:
             nonlocal lines
@@ -251,12 +328,12 @@ def record(port: str, out: Path, minutes: float | None) -> int:
 
         LOG.info("Saving the recording to %s. Press Ctrl-C to stop.", out)
         try:
-            while end is None or time.monotonic() < end:
+            while ser is not None and (end is None or time.monotonic() < end):
                 try:
                     raw = read_raw(ser)
                 except OSError:
                     ser.close()
-                    ser = reopen(port)
+                    ser = reopen(port, end)
                     continue
                 if not raw:
                     continue
@@ -281,17 +358,28 @@ def record(port: str, out: Path, minutes: float | None) -> int:
                         LOG.warning("The clock command got %s", answer_text(clock_result))
                 except OSError:
                     ser.close()
-                    ser = reopen(port)
+                    ser = reopen(port, end)
                     continue
                 if clock_result == 0:
                     clock_boot = boot
                     LOG.info("The watch set its clock.")
                 else:
                     LOG.error("The clock command got %s", answer_text(clock_result))
+            if ser is None:
+                LOG.warning("The recording reached its end while the port %s was gone.", port)
         except KeyboardInterrupt:
             LOG.info("The recording was stopped.")
+        except Stopped as stop:
+            LOG.info("The recording was stopped by %s.", stop)
         finally:
-            ser.close()
+            if ser is not None:
+                ser.close()
+    finally:
+        # The recording is stopping anyway, so a stop during the close is
+        # dropped once the file is whole.
+        with STOPS.held():
+            saved.close()
+            STOPS.restore()
     LOG.info("Saved %d lines to %s.", lines, out)
     if not clock_sent:
         LOG.error("No B line came, so the clock was not set.")

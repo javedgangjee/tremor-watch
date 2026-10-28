@@ -15,6 +15,8 @@
  * LVGL. It sends each "Took it" tap to the state task.
  * The USB task owns the USB port, and no other task writes to it. It writes
  * the recording and reads the laptop's commands.
+ * Each task joins the task watchdog before its main loop and checks in once a
+ * round, so a task that is stuck for 5 seconds restarts the chip.
  */
 
 #ifndef TASKS_H
@@ -22,6 +24,7 @@
 
 #include <stdatomic.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 #include "freertos/FreeRTOS.h"
@@ -31,13 +34,15 @@
 #include "view.h"
 
 /* The firmware version that the B line carries. */
-#define FIRMWARE_VERSION 11
+#define FIRMWARE_VERSION 12
 
 /* A sensor message holds at most this many readings. */
 #define SENSOR_MSG_READINGS 16
-/* A text line holds at most this many characters before its end. The
- * PIPELINE_MINUTE line is about 300 characters long. */
-#define LINE_CHARS 319
+/* A text line holds at most this many characters before its end. The longest
+ * line is STATE_MINUTE, which reaches about 550 characters when every count
+ * has 10 digits. usb_send() replaces a line that does not fit with a LINE_CUT
+ * line and counts it in g_line_cuts. */
+#define LINE_CHARS 639
 #define MINUTE_US 60000000LL
 
 /* FreeRTOS task priorities. Higher runs first. */
@@ -168,6 +173,21 @@ extern QueueHandle_t g_record_queue;
 /* The number of lines that the other tasks dropped since boot, because the
  * line queue was full. */
 extern atomic_uint g_line_drops;
+
+/* The number of lines that did not fit their buffer since boot. Each one
+ * went out as a LINE_CUT line or not at all, and USB_MINUTE gives the count. */
+extern atomic_uint g_line_cuts;
+
+/* line_made() takes the length that a rec_ line function in core/record.h
+ * returned. A length of 0 means the line did not fit, and line_made() counts
+ * it in g_line_cuts. It gives the length back. */
+static inline size_t line_made(size_t len)
+{
+    if (len == 0) {
+        atomic_fetch_add(&g_line_cuts, 1u);
+    }
+    return len;
+}
 
 /* g_recording_on is true while the last line that the USB task wrote fitted
  * in the port's send buffer. The USB task sets it. */

@@ -245,6 +245,54 @@ static void test_31_no_times(void)
     check_fits();
 }
 
+/* change_schedule() sets "Levodopa" with the given times at 16:01:00. */
+static void change_schedule(int count, const uint16_t *minutes)
+{
+    dose_schedule_t s;
+    memset(&s, 0, sizeof s);
+    strcpy(s.name, "Levodopa");
+    s.count = (uint8_t)count;
+    for (int i = 0; i < count; i++) {
+        s.minutes[i] = minutes[i];
+    }
+    TEST_ASSERT_TRUE(dose_set_schedule(&sess.dose, &s, AT(16, 1, 0)));
+}
+
+/* A schedule change while 16:00 is due. A schedule without 16:00 ends the due
+ * state at the next tick, and the face and Medication drop Dose due. A
+ * schedule that still holds 16:00 keeps it due. */
+static void test_schedule_change_while_due(void)
+{
+    const uint16_t without[] = {12 * 60, 20 * 60};
+    const uint16_t with[] = {16 * 60, 20 * 60};
+
+    due_at_four();
+    change_schedule(2, without);
+    TEST_ASSERT_TRUE((sess_tick(&sess, AT(16, 1, 1)) & SESS_FACE_CHANGED) != 0);
+    build(AT(16, 1, 1));
+    TEST_ASSERT_FALSE(view.due);
+    TEST_ASSERT_EQUAL_INT(FACE_TREMOR, view.face);
+    entries("Last Dose:", "None yet", "Next Dose:", "Levodopa, 20:00");
+
+    sess_init(&sess, 0);
+    due_at_four();
+    change_schedule(0, NULL);
+    TEST_ASSERT_TRUE((sess_tick(&sess, AT(16, 1, 1)) & SESS_FACE_CHANGED) != 0);
+    build(AT(16, 1, 1));
+    TEST_ASSERT_FALSE(view.due);
+    TEST_ASSERT_EQUAL_INT(FACE_TREMOR, view.face);
+    entries("Last Dose:", "None yet", "Next Dose:", "No schedule");
+
+    sess_init(&sess, 0);
+    due_at_four();
+    change_schedule(2, with);
+    TEST_ASSERT_EQUAL_UINT(0u, sess_tick(&sess, AT(16, 1, 1)));
+    build(AT(16, 1, 1));
+    TEST_ASSERT_TRUE(view.due);
+    TEST_ASSERT_EQUAL_INT(FACE_DOSE_DUE, view.face);
+    entries("Dose Due:", "Levodopa, 16:00", "Last Dose:", "None yet");
+}
+
 /* add_windows() counts tremor and no tremor windows in block 0. */
 static void add_windows(uint32_t tremor, uint32_t no_tremor)
 {
@@ -274,6 +322,45 @@ static void test_32_share(void)
     add_windows(1, 7);
     build(AT(0, 5, 0));
     TEST_ASSERT_EQUAL_STRING("Tremor 13%", view.share);
+    check_fits();
+}
+
+/* add_in_block_0() counts tremor and no tremor windows, all at 60 s after the
+ * session start, so they all go in block 0. */
+static void add_in_block_0(uint32_t tremor, uint32_t no_tremor)
+{
+    for (uint32_t k = 1; k <= tremor + no_tremor; k++) {
+        res_code_t code = k <= tremor ? RES_TREMOR : RES_NO_TREMOR;
+        TEST_ASSERT_TRUE((sess_answer(&sess, true, 4 * k, code, 60 * SECOND_US) & SESS_COUNTED) != 0);
+    }
+}
+
+/* Requirement 52 rounds halves up. 23 of 40 is 57.5 percent and 29 of 200 is
+ * 14.5 percent, which a double holds just under the half. */
+static void test_halves_round_up(void)
+{
+    with_clock();
+    add_in_block_0(23, 17);
+    build(AT(0, 5, 0));
+    TEST_ASSERT_EQUAL_STRING("Tremor 58%", view.share);
+    TEST_ASSERT_EQUAL_INT(58, view.percent);
+    TEST_ASSERT_EQUAL_INT(58, view.block_percent[0]);
+
+    sess_init(&sess, 0);
+    with_clock();
+    add_in_block_0(29, 171);
+    build(AT(0, 5, 0));
+    TEST_ASSERT_EQUAL_STRING("Tremor 15%", view.share);
+    TEST_ASSERT_EQUAL_INT(15, view.percent);
+    TEST_ASSERT_EQUAL_INT(15, view.block_percent[0]);
+
+    sess_init(&sess, 0);
+    with_clock();
+    add_in_block_0(40, 0);
+    build(AT(0, 5, 0));
+    TEST_ASSERT_EQUAL_STRING("Tremor 100%", view.share);
+    TEST_ASSERT_EQUAL_INT(100, view.block_percent[0]);
+    TEST_ASSERT_EQUAL_INT(-1, view.block_percent[1]);
     check_fits();
 }
 
@@ -360,5 +447,7 @@ int main(void)
     RUN_TEST(test_33_hollow);
     RUN_TEST(test_34_twelve_blocks);
     RUN_TEST(test_35_status);
+    RUN_TEST(test_schedule_change_while_due);
+    RUN_TEST(test_halves_round_up);
     return UNITY_END();
 }

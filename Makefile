@@ -6,15 +6,27 @@
 #            core/detector_tables.h.
 #   firmware builds the watch firmware in firmware/ with ESP-IDF.
 #
-# The full PADS match needs the toolbox, so it is not run here.
+# `make python` runs the pytest tests in tests/ with the reference venv, which
+# holds the toolbox. They include the full PADS match, the check that the
+# detector tables regenerate from the model file, the laptop tools, and the
+# judges of the watch logs. Some need the build that `make laptop` makes, and
+# the whole run takes several minutes. PYTHON names another interpreter.
+#
+# `make full` runs `make check` and then `make python`.
 
 MODEL ?= tests/model/tremor_detection_clf_package.pkl
 TABLES ?= core/detector_tables.h
 IDF_ACTIVATE ?= $(HOME)/.espressif/tools/activate_idf_v6.1.sh
+PYTHON ?= reference/.venv/bin/python
 
-.PHONY: check laptop hash firmware
+.PHONY: check laptop hash firmware python full
 
 check: laptop hash firmware
+
+python:
+	"$(PYTHON)" -m pytest -q tests
+
+full: check python
 
 laptop:
 	cmake -S . -B build && cmake --build build && ctest --test-dir build --output-on-failure

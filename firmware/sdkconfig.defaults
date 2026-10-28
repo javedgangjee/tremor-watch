@@ -17,6 +17,16 @@ CONFIG_FREERTOS_HZ=1000
 # to UART0 only and never reach that port.
 CONFIG_ESP_CONSOLE_SECONDARY_NONE=y
 
+# Each app task joins the task watchdog. A task that does not check in for 5
+# seconds restarts the chip, so a stuck task cannot leave the face on an old
+# state.
+CONFIG_ESP_TASK_WDT_TIMEOUT_S=5
+CONFIG_ESP_TASK_WDT_PANIC=y
+
+# The sensor's INT1 interrupt runs from IRAM and calls esp_timer_get_time(),
+# which must stay in IRAM too. This is ESP-IDF's default.
+CONFIG_ESP_TIMER_IN_IRAM=y
+
 # LVGL settings from the same example.
 CONFIG_LV_USE_CLIB_MALLOC=y
 CONFIG_LV_USE_CLIB_STRING=y

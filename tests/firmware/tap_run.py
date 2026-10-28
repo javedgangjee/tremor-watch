@@ -14,7 +14,10 @@ has pyserial, and takes about 12 minutes.
     ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/tap_run.py
 
 The judge reads the log alone, so --log-only gives the same result. It exits
-with code 0 only when every pass check holds.
+with code 0 only when every pass check holds. A run with the watch needs the B
+line to give FIRMWARE_VERSION from firmware/main/tasks.h. With --log-only the
+judge applies the rules of the version in the log's B line, as record_run.py
+does.
 """
 from __future__ import annotations
 
@@ -37,7 +40,7 @@ if str(HERE) not in sys.path:
 import command_run  # noqa: E402
 import record_run  # noqa: E402
 from command_run import Line, Runner  # noqa: E402
-from record_run import Entry, kind_of, read_log, record_fields  # noqa: E402
+from record_run import Entry, kind_of, record_fields  # noqa: E402
 from table_run import Check, fields_of  # noqa: E402
 
 LOG = logging.getLogger("tap_run")
@@ -47,6 +50,9 @@ DEFAULT_PORT = "/dev/cu.usbmodem101"
 DEFAULT_LOG = REPO / "tests" / "firmware" / "tap_log.txt.gz"
 DEFAULT_REPORT = REPO / "tests" / "firmware" / "tap_report.md"
 REPLAY = REPO / "build" / "core" / "replay"
+# The firmware versions whose saved logs this judge has rules for. The taps
+# and the D line came in version 11, and version 12 kept them.
+KNOWN_VERSIONS = (11, 12)
 
 STEP = "STEP"
 DOSE_NAME = "TapTest"
@@ -427,7 +433,7 @@ def check_steps(log: TapLog) -> Check:
     return result("every step ran", [f"step {n} is missing" for n in missing])
 
 
-def check_format(log: TapLog) -> Check:
+def check_format(log: TapLog, version: int) -> Check:
     """Check one B line and that every record line follows its pattern.
 
     The port opens with no reset. The watch repeats its B line after lines were
@@ -436,8 +442,8 @@ def check_format(log: TapLog) -> Check:
     bad = [line.text for line in log.lines if kind_of(line.text) and not record_run.is_record(line.text)]
     problems = [f"{len(boots)} B lines"] if len(boots) != 1 else []
     problems += [f"bad record line {text!r}" for text in bad]
-    if boots and record_run.boot_problems(boots[0].text):
-        problems += record_run.boot_problems(boots[0].text)
+    if boots:
+        problems += record_run.boot_problems(boots[0].text, version)
     return result("B line and record format", problems, f"{len(boots)} B lines, {len(bad)} bad record lines")
 
 
@@ -466,8 +472,8 @@ def check_settings(log: TapLog) -> Check:
     return Check("settings put back", first == last, f"first {first}, last {last}")
 
 
-def judge(log: TapLog) -> list[Check]:
-    """Give the result of every pass check."""
+def judge(log: TapLog, version: int) -> list[Check]:
+    """Give the result of every pass check by the rules of one firmware version."""
     return [
         check_steps(log),
         check_step1(log),
@@ -479,15 +485,15 @@ def judge(log: TapLog) -> list[Check]:
         check_step7(log),
         check_step8(log),
         check_step9(log),
-        check_format(log),
+        check_format(log, version),
         check_replay(log),
         check_settings(log),
     ]
 
 
-def write_report(path: Path, checks: list[Check]) -> None:
-    """Write the report with the checks."""
-    lines = ["# Tap run", "", "## Pass checks", ""]
+def write_report(path: Path, checks: list[Check], notes: list[str]) -> None:
+    """Write the report with the notes and the checks."""
+    lines = ["# Tap run", "", *notes, "", "## Pass checks", ""]
     lines += [f"- {'PASS' if c.passed else 'FAIL'}: {c.name}. {c.detail}" for c in checks]
     path.write_text("\n".join(lines) + "\n")
 
@@ -504,9 +510,16 @@ def main(argv: list[str] | None = None) -> int:
 
     if not args.log_only:
         run(args.port, args.log)
-    log = parse_log(read_log(args.log))
-    checks = judge(log)
-    write_report(args.report, checks)
+    saved = record_run.load_log(args.log)
+    live = not args.log_only
+    try:
+        version = record_run.judged_version([e.text for e in saved.entries], live, KNOWN_VERSIONS)
+    except record_run.UnknownVersion as error:
+        LOG.error("The judge refuses the log: %s.", error)
+        return 1
+    log = parse_log(saved.entries)
+    checks = judge(log, version)
+    write_report(args.report, checks, record_run.report_notes(saved, version, live))
     for check in checks:
         LOG.info("%s: %s. %s", "PASS" if check.passed else "FAIL", check.name, check.detail)
     return 0 if all(check.passed for check in checks) else 1

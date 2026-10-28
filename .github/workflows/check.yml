@@ -1,0 +1,46 @@
+# Runs the checks that need no watch and no PADS download on every push and
+# pull request.
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  laptop:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: C build and unit tests
+        run: make laptop
+      - name: Model hash
+        run: make hash
+
+  python:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Toolbox venv
+        run: |
+          python -m venv reference/.venv
+          reference/.venv/bin/pip install -r reference/requirements.txt
+      # Several tests run build/core/replay, so the laptop build comes first.
+      - name: Laptop build
+        run: cmake -S . -B build && cmake --build build
+      - name: Python tests
+        run: make python
+
+  firmware:
+    runs-on: ubuntu-24.04
+    container: espressif/idf:v6.1
+    steps:
+      - uses: actions/checkout@v4
+      - name: Firmware build
+        shell: bash
+        run: |
+          . "$IDF_PATH/export.sh"
+          idf.py -C firmware build
+          idf.py -C firmware/detector_check build

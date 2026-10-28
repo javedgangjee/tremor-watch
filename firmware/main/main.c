@@ -7,6 +7,7 @@
 #include "driver/gpio.h"
 #include "esp_err.h"
 #include "esp_heap_caps.h"
+#include "esp_intr_alloc.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/idf_additions.h"
 #include "freertos/queue.h"
@@ -35,6 +36,14 @@
 #define STATE_STACK 4096
 #define SCREEN_STACK 4096
 #define USB_STACK 4096
+
+/* The screen task's on_touch() relies on every flash call coming from the
+ * core of the GPIO interrupt. app_main() installs that interrupt, and the
+ * state task makes every settings store call. */
+#if !CONFIG_ESP_MAIN_TASK_AFFINITY_CPU0
+#error "app_main must run on core 0, the state task's core"
+#endif
+_Static_assert(STATE_CORE == 0, "the state task must run on the GPIO interrupt's core");
 
 QueueHandle_t g_sensor_queue;
 QueueHandle_t g_line_queue;
@@ -91,8 +100,13 @@ void app_main(void)
     ESP_ERROR_CHECK(bsp_i2c_init());
 
     /* The touch driver and the sensor task both add GPIO interrupts. The
-     * service goes in here, before either task starts. */
-    esp_err_t err = gpio_install_isr_service(0);
+     * service goes in here, before either task starts. It runs from IRAM, so
+     * the sensor's INT1 stamp stays on time while the settings store writes
+     * to flash with the cache off. A stamp more than half a reading late would
+     * end a stretch. Every handler on it must then be safe with the cache off.
+     * The sensor task's on_int1() is, and the screen task wraps the touch
+     * handler in on_touch(). The service runs on this core, which is core 0. */
+    esp_err_t err = gpio_install_isr_service(ESP_INTR_FLAG_IRAM);
     ESP_ERROR_CHECK(err == ESP_ERR_INVALID_STATE ? ESP_OK : err);
 
     send_power_line();
