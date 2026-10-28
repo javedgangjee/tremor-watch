@@ -149,7 +149,7 @@ EDFbrowser and edfio keep the gaps. MNE-Python 1.13.2 places the data records of
 
 ## Status
 
-Features 1 to 11 in `specs/roadmap.md` are built, and their laptop tests pass. On the watch, the detector, the time rule, the recording, and the face states have run with the watch on a table. The tap, the BOOT button, the tones, and the battery have not been checked on the watch yet, and firmware version 12, which holds the fixes of a code review, has not run on it. Feature 12, a recording viewer, feature 13, an EDF export, and feature 14, the wrist tests, are still to come.
+Features 1 to 11 in `specs/roadmap.md` are built, and their laptop tests pass. On the watch, the detector, the time rule, the recording, and the face states have run with the watch on a table. The tap, the BOOT button, the tones, and the battery have not been checked on the watch yet, and firmware version 12, which holds the fixes of a code review, has not run on it. Feature 12, a recording viewer, feature 13, an EDF export, feature 14, a record button in the viewer, and feature 15, the wrist tests, are still to come.
 
 ## Licence
 
