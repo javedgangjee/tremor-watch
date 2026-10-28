@@ -1,0 +1,176 @@
+/* Colours from core/look.h, so the viewer matches the watch face. */
+:root {
+  --bg: #F6F3EE;
+  --card: #FFFFFF;
+  --text: #111315;
+  --text-2: #5C6265;
+  --line: #DDD9D2;
+  --tremor: #1B2E42;
+  --focus: #2A7242;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--card);
+}
+
+.bar h1 {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 650;
+}
+
+button,
+select {
+  font: inherit;
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  padding: 6px 12px;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--bg);
+}
+
+button:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.picker {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-2);
+}
+
+.file-name {
+  margin-left: auto;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.note {
+  margin: 12px 20px 0;
+  padding: 8px 12px;
+  border-left: 3px solid var(--tremor);
+  background: var(--card);
+}
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 24px;
+  margin: 12px 20px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.summary div {
+  display: flex;
+  gap: 6px;
+}
+
+.summary dt {
+  color: var(--text-2);
+}
+
+.summary dd {
+  margin: 0;
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 20px;
+  margin: 10px 20px 0;
+  padding: 0;
+  list-style: none;
+  color: var(--text-2);
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  width: 18px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.swatch.line {
+  height: 3px;
+}
+
+.stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  margin: 12px 20px 20px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.plot {
+  position: absolute;
+  inset: 12px 12px 4px 4px;
+}
+
+.empty,
+.message {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 24px;
+  text-align: center;
+  color: var(--text-2);
+}
+
+.message h2 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  color: var(--text);
+}
+
+.message p {
+  max-width: 640px;
+  margin: 0;
+  overflow-wrap: anywhere;
+}

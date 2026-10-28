@@ -75,6 +75,16 @@
 - reference/pads_counts.py runs the toolbox on every PADS recording. Its results in reference/results/ are pads_windows.csv, pads_counts.csv, and pads_counts.md, and they are committed as the counts the C port must reproduce.
 - PADS 1.0.0 lives in data/pads/ and is never committed.
 
+## Recording viewer
+
+- The recording viewer in viewer/ is a small Electron app that shows a saved recording on the Mac. It reads saved files only and never opens the watch's port.
+- It uses Electron 44.7.1 and uPlot 1.6.32, which are its only two packages. viewer/package.json pins both exactly, viewer/.npmrc sets save-exact, and viewer/package-lock.json is committed. The app uses no framework, no bundler, and no TypeScript, and it runs from the repo without packaging.
+- Node v22.22.1 and npm 11.20.0 from nvm run npm and the unit tests.
+- The modules in viewer/src/lib/ read the file (read_text.js), read the line patterns from core/recording_format.md (format.js), parse the lines (parse.js), give each reading its time (timeline.js), place the windows (windows.js), and join these steps (load.js). args.js reads the command line and pixels.js checks captured colours. They use only Node's built-in modules, so their tests need no installed packages.
+- viewer/src/main.js owns the window, the menu, the open dialog, and the file reading, and viewer/src/capture.js runs the capture mode. viewer/src/preload.js gives the page three calls, and the page in viewer/src/renderer/ only draws.
+- The command `npm --prefix viewer ci` installs the packages, which needs the network. The command `npm --prefix viewer start -- [FILE] [--boot ID] [--capture OUT.png]` starts the app. With `--capture` it draws FILE with no person, saves OUT.png and OUT.json, and exits. `make viewer-start [FILE=FILE] [BOOT=ID]` runs `npm --prefix viewer start` and first runs `npm --prefix viewer ci` when viewer/node_modules is missing or older than viewer/package-lock.json.
+- The command `node viewer/scripts/make_synthetic.js` writes the made-up recording viewer/test/fixtures/synthetic.txt.gz again, and `--long OUT --minutes M` writes a long one.
+
 ## Tests and checks
 
 - The C unit tests use Unity v2.6.1, which is commit cbcd08fa7de711053a3deec6339ee89cad5d2697 of github.com/ThrowTheSwitch/Unity, and they run on the laptop through CTest. Unity has an MIT licence, and its files in tests/unity/ stay unchanged.
@@ -89,7 +99,7 @@
 - tests/firmware/record_session.md is the session report of tests/firmware/record_log.txt.gz from compare_session.py.
 - The command `reference/.venv/bin/python tests/detector/make_windows.py` makes the 322 saved windows in tests/detector/windows.csv and tests/detector/answers.csv. The C unit tests read these files, so they need no toolbox.
 - The command `reference/.venv/bin/python tests/converter/make_cases.py` makes the saved converter cases in tests/converter/. The C unit tests read these files, so they need no toolbox.
-- The command `make check` runs the checks for every commit from the Makefile at the repo root. Its three parts are `make laptop`, which builds core/ and replay and runs the C unit tests with the saved windows and the saved converter cases, `make hash`, which compares the SHA-256 hash of the model file copy with DET_MODEL_SHA256 in core/detector_tables.h, and `make firmware`, which builds firmware/. None of them needs the toolbox, and nothing runs them by itself.
+- The command `make check` runs the checks for every commit from the Makefile at the repo root. Its four parts are `make laptop`, which builds core/ and replay and runs the C unit tests with the saved windows and the saved converter cases, `make hash`, which compares the SHA-256 hash of the model file copy with DET_MODEL_SHA256 in core/detector_tables.h, `make viewer`, which runs the recording viewer's unit tests with `node --test viewer/test/*.test.js`, and `make firmware`, which builds firmware/. None of them needs the toolbox, and nothing runs them by itself.
 - tests/model/ holds an unchanged copy of the ParaDigMa 1.1.2 model file and its licence, so the hash check needs no toolbox. tests/model/test_model_copy.py checks the copy against the toolbox's file.
 - The command `caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/table_run.py` runs the 30-minute table run on the watch and judges it.
 - The command `idf.py -C firmware/detector_check -p /dev/cu.usbmodem101 flash` and then `~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/chip_windows.py` run the saved windows on the chip and judge them. The watch firmware must be flashed again afterwards.
@@ -99,6 +109,7 @@
 - The command `~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/drop_run.py` closes the port for 60 seconds and opens it again without a reset, which takes about 5 minutes.
 - The command `caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/face_run.py` runs the face's scripted check with two doses and nobody touching the watch, which takes about 22 minutes.
 - The command `~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/tap_run.py` guides a person through the taps, the dose flow, and the BOOT presses and judges the log, which takes about 12 minutes.
+- The command `npm --prefix viewer run smoke -- --out DIR` runs the real viewer in capture mode on the made-up recording, the committed logs, a bad file, and a two hour recording, and checks each report. It needs the installed packages and a logged-in screen, so it stays out of `make check` and CI. `make viewer-smoke [OUT=DIR]` runs it.
 - The full PADS match test needs the toolbox, so it runs before each release and not on every commit.
 - The test data is PADS from PhysioNet, which holds 100 Hz gyroscope recordings in radians per second.
 
@@ -108,3 +119,4 @@
 - PADS has a non-commercial licence. Its paper is Varghese and colleagues, npj Parkinson's Disease, 2024, and the PhysioNet page asks for its own citation as well.
 - KISS FFT has a BSD licence.
 - Lucide icons have an ISC licence, and Red Hat Display has the SIL Open Font Licence.
+- Electron and uPlot have MIT licences. npm fetches them into viewer/node_modules/, which is never committed.
