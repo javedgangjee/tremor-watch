@@ -28,4 +28,6 @@ These are not kept in the repo. ESP-IDF's component manager fetches them into fi
 | Waveshare qmi8658 and esp_lcd_sh8601 drivers | 2.0.2 and the version the package needs | Apache-2.0 |
 | Espressif components, such as esp_lvgl_port, esp_lcd_touch, and usb | the versions the package needs | Apache-2.0 |
 
-The Python toolbox in reference/ installs ParaDigMa and its dependencies from PyPI, as reference/requirements.txt pins them.
+The Python toolbox in reference/ installs ParaDigMa and its dependencies from PyPI, as reference/requirements.txt pins them. It also pins edfio 0.4.18, which only the tests use and which is under the Apache-2.0 licence.
+
+npm fetches the recording viewer's two packages into viewer/node_modules/, as viewer/package-lock.json pins them. They are Electron 44.7.1 and uPlot 1.6.32, and both are under the MIT licence.

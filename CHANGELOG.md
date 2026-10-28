@@ -89,11 +89,28 @@ This file records each change to Tremor log that a person who reads or runs the 
 - LICENSE puts the project's own code under MIT, and THIRD_PARTY.md lists every part from another project with its licence. reference/results/LICENSE.md says the PADS results are under CC BY-NC-SA 4.0.
 - `make python` runs the Python tests, and `make full` runs `make check` and then `make python`.
 - .github/workflows/check.yml runs the laptop build and tests, the model hash check, the Python tests, and the firmware build on every push.
+- Feature 12 adds the recording viewer in viewer/, a small Electron 44.7.1 app with uPlot 1.6.32 that plots a saved recording's gyroscope readings against time, shades the windows the watch answered with tremor, and shows each window's answer in a lane under the plot.
+- Feature 12 lets the viewer pick one boot of a file, zoom in by dragging, show the whole boot with a double click, and move the view with the arrow keys. A file it cannot read gets one plain message and no plot.
+- Feature 12 adds a capture mode, `npm --prefix viewer start -- FILE --capture OUT.png`, which draws a file with no person and saves the image and a JSON report of what it drew.
+- Feature 12 adds 26 viewer unit tests in viewer/test/, which need no installed packages, and `make check` and the CI workflow now run them through `make viewer`.
+- Feature 12 adds viewer/scripts/smoke.js, which runs the real viewer in capture mode on a made-up recording with tremor windows, the committed logs, a bad file, and a two hour recording, and `make viewer-smoke` runs it.
+- Feature 12 adds `make viewer-start`, which opens the viewer and first installs its packages when they are missing or out of date.
+- Feature 12 shows that the viewer draws a two hour made-up recording in about 0.36 seconds, and that it places every W line of a 3-minute recording from the watch.
+- Feature 13 adds tools/export_edf.py, which writes each boot of a saved recording as an EDF+ file with replay's 100 Hz gyroscope samples and with the answers, face changes, doses, and stretch starts as annotations. `make edf FILE=RECORDING` runs it.
+- Feature 13 keeps each gap between stretches as a gap, so a boot with a gap gives a discontinuous EDF+D file, and the boot's clock gives the file's start date and time.
+- Feature 13 adds tools/edfplus.py, which writes the EDF+ bytes and knows nothing about the watch, and tools/recording_text.py, which holds the recording readers that compare_session.py and export_edf.py share.
+- Feature 13 adds 26 tests in tests/tools/test_export_edf.py, which read the files back with edfio 0.4.18, a test-only package now pinned in reference/requirements.txt.
+- Feature 13 shows that edfio reads back replay's samples from the exported files, and that pyedflib and MNE-Python read the same samples from an EDF+C file. pyedflib refuses an EDF+D file, and MNE-Python joins its segments with no gap.
+- Feature 14 adds a Record button to the viewer. It runs `tools/watch_cli.py record`, stops it as Ctrl-C does on a second press, and then opens the saved file. Quitting the viewer during a recording stops watch_cli.py first, and the viewer still never opens the watch's port.
+- Feature 14 saves the viewer's recordings in recordings/ at the repo root, which git leaves out. TREMOR_RECORDINGS names another folder, and TREMOR_PYTHON names another Python.
+- Feature 14 adds `--record-for SECONDS` to capture mode, 14 recorder tests that run a fake watch_cli.py, and two smoke cases.
+- Feature 14 shows a 60-second recording from the watch through the viewer, with the clock set after the B line and 55 windows drawn.
 
 ### Changed
 
-- The older entries below name the wrist tests as feature 12. The recording viewer became feature 12 on 27 October 2026, and the wrist tests are now feature 13.
+- The older entries below name the wrist tests as feature 12. The recording viewer became feature 12 on 27 October 2026, the EDF export became feature 13 and the Record button feature 14 on 28 October 2026, and the wrist tests are now feature 15.
 - On 24 and 25 October 2026 the user had Home's top row of time, date, and battery removed, had the Home circle centred, swapped the Rest and Arm moving looks, and renamed No tremor to Rest. The Tremor circle now reads "Tremor Detected" on two lines.
+- On 28 October 2026 the user had the Session and Status backgrounds made pure white #FFFFFF through look_bg() in core/look.c, against the build spec's faintly warm background, and the README's Session and Status screenshots were drawn again. The change has not been flashed to the watch yet.
 
 - The tech stack now names ESP-IDF v6.1, LVGL 9.5.0, the Waveshare repo commit 30f3b23, board support package 2.0.0, and QMI8658 driver 2.0.2.
 - The .gitignore file now leaves out the ESP-IDF build folders, the downloaded components, and the sdkconfig.old files under firmware/.
@@ -152,6 +169,14 @@ This file records each change to Tremor log that a person who reads or runs the 
 - The roadmap entries for features 11 and 12 now say how watch_cli.py sets up the dose flow and records a session, how compare_session.py makes the session report, and what the two tools do not check.
 - The user had three checks reworded that failed as written while the code met the requirement. Feature 9's check 4 item 9 now leaves out ESP-IDF's "# default:" marker lines, and its check 10 item 6 now allows the laptop's loss at the port close, so tests/firmware/drop_run.py and its tests changed and the drop log and report were made again. Feature 10's check 5 case 27 now counts only the toolbox windows whose watch window 4k exists, which is 9.
 - Feature 10's check 7 item 3 now names the boot 3492590314 of the refreshed drop log, so check 7 passes as written.
+- The build spec now allows a small viewer app on the Mac with a Record button and an EDF export, which the user asked for on 27 and 28 October 2026.
+- Feature 13 moves the recording readers from tools/compare_session.py to tools/recording_text.py, and compare_session.py gives byte-identical reports on the four committed recordings.
+- The tech stack now records the recording viewer, its packages, its commands, and its Makefile targets, and the EDF export, its helper modules, and edfio as a test-only package.
+- The tech stack now says that the viewer's first start needs the network, that smoke case 27 fails about once in five runs, that `npm audit` flags Electron 44.7.1, that pyedflib refuses an EDF+D file, and that the white backgrounds kept firmware version 12.
+- The roadmap entries for features 12 to 14 now record the merges, the agent's choices that wait for the user's review, the checks that fail as written or wait for the user, the Electron advisory, and the small defects that are not fixed.
+- The roadmap entry for feature 7 now records the two drift ends in feature 12's 3-minute table recording, and the user still decides on a drift fix.
+- THIRD_PARTY.md now lists Electron, uPlot, and edfio with their licences.
+- The README now describes the viewer, the Record button, and the EDF export, and its Status section says that features 1 to 14 are built and that firmware 12 ran on the watch on 28 October 2026.
 
 ### Fixed
 
@@ -165,3 +190,4 @@ This file records each change to Tremor log that a person who reads or runs the 
 - tools/watch_cli.py record now closes its file whole on SIGTERM and SIGHUP as well as Ctrl-C, and it waits for the port when the cable is out. The readers accept a gzip file that was cut short.
 - tools/compare_session.py now checks the probability within 1e-6, down from 0.0001, and checks the low-frequency sum, which it did not check before.
 - test_detector now checks each of the detector's cut-offs exactly, through the new det_decide().
+- Feature 13 fixes the shared gzip reader, which lost up to 64 KiB of text before the cut in a file that was cut short, so compare_session.py now reads a little more of such a file.
