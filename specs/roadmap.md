@@ -200,7 +200,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
     - The page takes the design system's colours, type, and controls. The gyroscope chart gains a chip for each axis that shows or hides it, and a control that draws the axes overlaid in one plot or stacked in three. A hover readout gives the time, the three values, and the answer at the pointer. Each answer is a block that a click selects, and two lines mark the start and end of the selected window's 4 seconds. The legend gives the count of each answer.
     - The user chose on 2026-10-28 to keep the boot picker, the summary facts, the cut-short note, the record status, and the error message, which the mock leaves out, restyled with the design system.
     - Every rule of features 12 and 14 for reading a file, placing the windows, recording, and the window's security settings still holds. The viewer still never opens the watch's port.
-    - The status is planned.
+    - The status is in progress.
 
 16. Wrist tests, demo, and deliverables
     - Files written before 2026-10-27 call this feature feature 12, files written on 27 October 2026 call it feature 13, files written on 28 October 2026 before the record button was added call it feature 14, and files written on 28 October 2026 before the viewer redesign was added call it feature 15. The recording viewer took number 12 on 27 October, the EDF export took number 13 on 28 October, the record button took number 14 on 28 October, and the viewer redesign took number 15 on 28 October.

@@ -1,0 +1,89 @@
+# Feature 15 validation: Viewer redesign
+
+Every command runs from the repo root with Node v22.22.1 and npm 11.20.0 from nvm. Checks 1 and 3 need no network, no node_modules, no toolbox, and no watch. Check 2 needs the installed packages and a logged-in screen on the Mac. Check 5 is manual and waits for the user. SCRATCH means a new folder in the session's scratch folder.
+
+The limits come from these sources. The 10 second load and draw limit comes from feature 12's requirement 24. The colour tolerance of 8 in each channel is feature 12's. The alignment limit of 1 page pixel allows for rounding to device pixels. The font hashes come from requirement 26.
+
+## Terms
+
+- "Chart" means `require('viewer/src/lib/chart.js')`, and "title" means viewer/src/lib/title.js. MINUS is the character U+2212.
+- "A window at n" is the placed window `{ stretch: 0, window: n, code: 1, startS: n, endS: n + 4, cellStartS: n + 3 }`, and "windows 0 to 9" is the array of the windows at 0 to 9 in that order.
+- "Boot A" is boot 305419896 of the made-up recording viewer/test/fixtures/synthetic.txt.gz, loaded with loadRecording().
+- INK light is #16181D and INK dark is #F4F7FA.
+
+## Automated checks
+
+1. The unit tests pass.
+   - The command is `make viewer`, which runs `node --test viewer/test/*.test.js`.
+     1. formatValue() gives "0" for 0, "12" for 12.4, "13" for 12.5, MINUS + "13" for -12.6, "1,234" for 1234.4, MINUS + "1,024" for -1023.96875, "0" for -0.4, and "1,234,567" for 1234567. With decimals it gives MINUS + "0.25" for (-0.25, 2), "0.5" for (0.5, 1), "1,500.3" for (1500.25, 1), and "0.0" for (-0.04, 1). No result holds the hyphen U+002D.
+     2. decimalsFor() gives 0 for 5 and 1, 1 for 0.5 and 0.1, and 2 for 0.05 and 0.01. formatClock() gives "0:00:00" for (0, 0), "0:00:05" for (5, 0), "1:02:03.5" for (3723.46, 1), "0:01:00.0" for (59.96, 1), "0:01:00" for (59.6, 0), and "2:00:00" for (7200, 0). timeLabel() gives "0:00:30.25" for (30.25, 0.05), "0:00:30.3" for (30.25, 0.5), and "0:01:30" for (90, 30).
+     3. timeTicks(0, 30, 900) has step 5 and the ticks 0, 5, 10, 15, 20, 25, and 30, labelled "0:00:00" to "0:00:30". timeTicks(0, 7200, 1300) has step 600 and 13 ticks, the last labelled "2:00:00". timeTicks(100.2, 101, 900) has step 0.1 and 9 ticks from 100.2 to 101.0, each within 1e-9 of its value, labelled "0:01:40.2" to "0:01:41.0". timeTicks(0, 86400, 900) has step 10800 and 9 ticks.
+     4. xAt(5, { min: 0, max: 10 }, 1000) is 500, and timeAt(250, { min: 0, max: 10 }, 1000) is 2.5. With the view { min: 0, max: 10 } and a width of 1000, blockLayout() gives `{ x: 300, width: 98, joined: false }` for a cell from 3, `{ x: 950, width: 50, joined: false }` for a cell from 9.5, `{ x: 0, width: 48, joined: false }` for a cell from -0.5, and null for cells from 10 and from -1. With { min: 0, max: 250 } it gives `{ x: 400, width: 2, joined: false }` for a cell from 100. With { min: 0, max: 7200 } and a width of 1300 it gives `{ x: 650, width: 1, joined: true }` for a cell from 3600.
+     5. The W lines `W,0,5,0,0.5,10,5` and `W,0,6,2,0.5,10,5` placed with `S,0,0,250000,114330200,1024` have cells from 8.25 and 9.25. answerAt() gives window 5 for 8.25 and 9.2499, window 6 for 9.25, and null for 8.2, for 10.25, and for an empty array. answerText() gives "Tremor" for 8.5, "Arm moving" for 9.5, and "No answer yet" for 11. answerName() gives "Tremor", "No tremor", "Arm moving", and "Warming up" for codes 0 to 3. For each of the 151 placed windows of boot A, answerAt() at the middle of its cell gives that window.
+     6. windowText() of window 5 of stretch 0 with code 0, startS 5.25, and endS 9.25 is "Window 5 of stretch 0: tremor, from 0:00:05.3 to 0:00:09.3". For each placed window of boot A, endS minus startS is 4 within 1e-9.
+     7. With windows 0 to 9 and the view { min: 5, max: 8 }, stepSelection() gives 2 for (null, ArrowRight), 4 for (null, ArrowLeft), 4 for (3, ArrowRight), 9 for (9, ArrowRight), 0 for (0, ArrowLeft), 0 for (3, Home), 9 for (3, End), null for (3, Escape), and 3 for (3, "a"). With no windows it gives null for (null, ArrowRight).
+     8. With the bounds { min: 0, max: 100 }, keepInView() of the view { min: 0, max: 10 } gives { min: 0, max: 10 } for the span 3 to 4, { min: 45.5, max: 55.5 } for 50 to 51, and { min: 90, max: 100 } for 99 to 100, and keepInView() of { min: 20, max: 30 } gives { min: 0, max: 10 } for 1 to 2. panView() gives { min: 15, max: 25 } for ({ min: 10, max: 20 }, 1), { min: 5, max: 15 } for ({ min: 10, max: 20 }, -1), { min: 0, max: 10 } for ({ min: 0, max: 10 }, -1), { min: 95, max: 100 } for ({ min: 95, max: 100 }, 1), and { min: 0, max: 100 } for ({ min: 0, max: 100 }, 1).
+     9. toggleAxis() gives ['x', 'z'] for (['x', 'y', 'z'], 'y'), ['x', 'y', 'z'] for (['x', 'z'], 'y'), and ['x'] for (['x'], 'x').
+     10. startText(name, []) gives "Oct 28, 2026 at 14:28" for `tremor-2026-10-28-142813.txt.gz`, "Jan 5, 2027 at 09:05" for `tremor-2027-01-05-090500-2.txt.gz`, and "Feb 29, 2024 at 23:59" for `tremor-2024-02-29-235959.txt.gz`. It gives null for `tremor-2026-13-01-000000.txt.gz`, `tremor-2026-02-30-120000.txt.gz`, `tremor-2025-02-29-120000.txt.gz`, `tremor-2026-10-28-240000.txt.gz`, `tremor-2026-10-28-126000.txt.gz`, `tremor-2026-10-28-142813.txt`, `xtremor-2026-10-28-142813.txt.gz`, and `record_log.txt.gz`.
+     11. Let L be `ESP-ROM:esp32s3-20210327`, `B,1,11,12,H`, `START uptime_us=1`, `> CLOCK,1793209555689292,-240`, and `T,0,2,1000`. startText('shake.txt.gz', L) is "Oct 28, 2026 at 13:45". With the CLOCK line changed to `> CLOCK,1761206400000000,840` it is "Oct 23, 2025 at 22:00", to `> CLOCK,1767225599000000,60` it is "Jan 1, 2026 at 00:59", and to `> CLOCK,1577836800000000,0` it is "Jan 1, 2020 at 00:00". It is null with `> TONE,1` put before the CLOCK line, and with the CLOCK line changed to `> CLOCK,abc,0`, `> CLOCK,1577836799999999,0`, `> CLOCK,4102444800000000,0`, `> CLOCK,1793209555689292,841`, or `> CLOCK,1793209555689292,-721`. It is null when the only CLOCK line comes before the B line, and when L has no B line. startText('tremor-2026-10-28-142813.txt.gz', L) is "Oct 28, 2026 at 14:28". loadRecording() gives startText null for the four logs in tests/firmware/ and the made-up recording, and "Oct 28, 2026 at 14:28" for a temporary copy of the made-up recording named `tremor-2026-10-28-142813.txt.gz`.
+     12. parseArgs(['a.gz', '--theme', 'dark', '--layout', 'stacked'], '/x') gives `{ file: '/x/a.gz', capture: null, bootId: null, recordFor: null, theme: 'dark', layout: 'stacked' }`, and parseArgs(['a.gz'], '/x') gives theme 'system' and layout 'overlaid'. ['--theme', 'blue'], ['--layout', 'grid'], and ['a.gz', '--theme'] each throw an ArgsError. Feature 12's case 23 and feature 14's case 13 pass with `theme: 'system'` and `layout: 'overlaid'` in their expected objects.
+     13. Each of the six files of requirement 26 in viewer/src/renderer/fonts/ has the SHA-256 that requirement 26 gives, and so does each of the three OFL texts. viewer/src/renderer/design/colors.css, typography-spacing-fonts.css, and components.css equal the files of the same name in context/viewer-design/ byte for byte. The url() paths in typography-spacing-fonts.css, read from viewer/src/renderer/design/, name exactly the six font files. THIRD_PARTY.md names Red Hat Display, Libre Franklin, IBM Plex Mono, and viewer/src/renderer/fonts/.
+     14. The policy in viewer/src/renderer/index.html is exactly that of requirement 27. Its head links design/colors.css, design/typography-spacing-fonts.css, design/components.css, `../../node_modules/uplot/dist/uPlot.min.css`, and viewer.css in that order and then loads theme.js. Its body loads `../../node_modules/uplot/dist/uPlot.iife.min.js`, `../lib/chart.js`, plot.js, answer_row.js, and viewer.js in that order. index.html holds no `style=`, and it holds the folder and play paths of the ICONS object in context/viewer-design/_ds_bundle.js. viewer.css, theme.js, plot.js, answer_row.js, and viewer.js hold no colour literal, which is a `#` with 3, 4, 6, or 8 hex digits and no letter or digit after them, or `rgb(`, `rgba(`, or `hsl(`. chart.js run with vm in a context that has no `module` sets a global TremorChart with the same keys as require() gives. INK in viewer/src/lib/pixels.js equals the `--ink` of colors.css for light and for dark, with each var() followed to its value.
+   - Feature 12's case 24 uses INK light in place of NAVY, with the same blocks and tolerance. Feature 12's case 26 checks the policy of requirement 27, looks for `http:` and `https:` only in the .html, .css, and .js files of viewer/src/renderer/, and leaves .woff2 files out of the dash check. Every other case of features 12 and 14 runs as before.
+   - The expected result is that node reports 0 failed, and every case above and every case of features 12 and 14 is a passing test.
+
+2. The real app passes the smoke cases.
+   - The command is `npm --prefix viewer run smoke -- --out SCRATCH/smoke`. Every case runs with `--theme light` unless it names a theme.
+   - Feature 12's cases 27 to 33 and feature 14's cases 34 and 35 run as before, with these changes. Case 27 checks the tremor blocks against INK light, with 39 checked and 39 matched, and also that the report gives theme light, layout overlaid, shownAxes ['x', 'y', 'z'], plotHeights [420], startText null, selection null, and rowAlignPx of 1 or less, that fontsLoaded holds Red Hat Display, Libre Franklin, and IBM Plex Mono, and that OUT.json's tremorColour is #16181D. Case 34 also checks that the report's startText equals title's startText() of the recording's file name and is not null. When case 27 alone fails and its PNG shows the empty start page, run the command once more and judge the second run, and report both runs, as feature 14's check 2 allows.
+     15. The made-up recording with `--theme dark` exits with code 0. The report gives theme dark and rowAlignPx of 1 or less, fontsLoaded holds the three families, OUT.json's tremorColour is #F4F7FA, and the pixel check gives 39 checked and 39 matched.
+     16. The made-up recording with `--layout stacked` exits with code 0. The report gives layout stacked, shownAxes ['x', 'y', 'z'], plotHeights [150, 150, 150], and rowAlignPx of 1 or less, and the pixel check gives 39 checked and 39 matched against INK light.
+     17. The two hour recording of case 33 with `--layout stacked` exits with code 0. The case makes the file with make_synthetic.js when it is missing. The report gives 823185 readings, 204 windows with code 0, and plotHeights [150, 150, 150], and the load time plus the draw time is under 10000 milliseconds.
+     18. A file SCRATCH/smoke/noreadings.txt holds the lines `B,1,11,12,H`, `S,0,0,1000,114330200,1024`, `W,0,0,3,0.5,10,5`, `B,2,11,12,H`, `S,0,0,1000,114330200,1024`, `T,0,2,1000`, `R,0,32,-32,64,0,0,4096`, and `R,1,0,0,0,0,0,4096`, each after a laptop time and a tab, where H is DET_MODEL_SHA256. With `--boot 1` it exits with code 0, and the report gives 0 readings, plotHeights [], no tremor cell, and windows 0, 0, 0, and 1 for codes 0 to 3.
+   - The expected result is that the script prints a pass for all 13 cases and exits with code 0.
+   - The validate agent opens these PNG files and checks each by eye.
+     - synthetic.png shows the white sticky header with "Tremor log" and the Open recording and Record buttons, the title block with only "synthetic.txt.gz" in a monospace font and the Boot picker at its right, and the chart card. The x, y, and z chips are on, and Overlaid is picked. Orange, blue, and green lines run across one plot with no shading. The Answer row holds near-black blocks from about 33 to 60 and 133 to 145 seconds, grey blocks from about 80 to 98 seconds, outlined blocks elsewhere, and a dashed block near the start, and the time labels sit under it. The legend gives Tremor 39, No tremor 92, Arm moving 18, Warming up 2, and Window span. The Summary card under it gives "Bad lines in the file" 1 and "Dropped bursts in the file" 1.
+     - synthetic_dark.png shows the same page with the dark tokens, with light tremor blocks on a dark card.
+     - synthetic_stacked.png shows three plots, each with its axis name x, y, or z in the left gutter, over one Answer row.
+     - noreadings.png shows "This boot holds no readings." in the chart card, with the chips and the layout control turned off.
+     - bad_file.png shows a danger notice titled "The viewer cannot show this file" with the gzip message, and no chart.
+
+3. `make check` runs the unit tests and needs no network.
+   - The commands are `mkdir SCRATCH/clean && git archive HEAD | tar -x -C SCRATCH/clean`, `make -C SCRATCH/clean viewer`, and then `make check`.
+   - The expected result is that `make viewer` passes in the clean copy, which has no viewer/node_modules, and `make check` exits with code 0.
+
+4. The feature changes only the files it should.
+   - The commands are `git diff --stat c15126f` and `git diff c15126f -- viewer/package.json viewer/package-lock.json`. Commit c15126f added feature 15 to the roadmap and saved the design in context/viewer-design/ before the plan.
+   - The expected result is that the first lists no file in firmware/, core/, reference/, tools/, tests/, or context/, and the second prints nothing.
+
+## Manual checks
+
+5. The new page works by hand.
+   - Set the Mac to light appearance and run `npm --prefix viewer start -- viewer/test/fixtures/synthetic.txt.gz`.
+   - Move the pointer across the plot. A vertical line follows it, and the readout card gives the time as h:mm:ss.s, the three values in whole numbers with a true minus sign, and the answer, such as Tremor over the first shake and "No answer yet" before 3 seconds. The card moves to the left of the pointer in the right part of the plot.
+   - Turn the y chip off, and the blue line goes. Turn x off, and only z shows. Press z, and it stays on. Turn x and y back on.
+   - Pick Stacked. Three plots of 150 px show with the names x, y, and z. Drag across about 10 seconds in the middle plot, and all three plots and the Answer row zoom to that span. Press the right arrow key with the focus on the page, and the view moves by half its width in all three. Double click a plot, and the whole boot shows in all three.
+   - Click a near-black block. It gets a blue ring, two blue lines mark its window 4 seconds apart in every plot, and the line at the right of the legend gives "Window N of stretch S: tremor, from ... to ...". Press Tab until the Answer row shows its focus ring, then press the right and left arrow keys, Home, and End. The selection moves, and the view follows it when it leaves the view. Press Escape, and the lines and the text go. Turn on VoiceOver with Cmd+F5, press an arrow key in the row, and VoiceOver reads the new window's text.
+   - Switch the Mac to dark appearance in System Settings while the app is open. Within a second the page, the plots, and the Answer row turn dark, and the zoom, the layout, and the selection stay.
+   - Pick boot 4294967295 in the Boot list. The plot and the Summary change, and the selection clears.
+   - Open a recording made by the Record button, or one in recordings/, with Cmd+O. The title gives its start as words, such as "Oct 28, 2026 at 14:28", over its file name. With the watch on USB, press Record, check that the button reads Stop with the square icon and the status line counts up, press Stop, and check that it reads Stopping and then Record and that the new file opens with its date in the title. Unplug the watch and press Record, and the failure shows as a red notice under the header.
+
+## Requirement coverage
+
+- Requirements 1 and 12 are covered by check 2's cases 27 to 35 and manual check 5.
+- Requirements 2 to 8, 10, 25, 29, 30, and 31 are covered by check 1 case 14, the look at the PNG files in check 2, and manual check 5.
+- Requirements 9 and 24 are covered by check 1 case 14, check 2 cases 27 and 15, and the dark appearance step of manual check 5.
+- Requirement 11 and requirement 21 are covered by check 1 cases 6 and 14, the look at synthetic.png, which shows no shading, and the selection step of manual check 5.
+- Requirement 13 is covered by feature 12's check 1 cases 25 and 26, check 2 cases 33 and 17, and check 4.
+- Requirements 14 and 26 are covered by check 1 case 13 and the fontsLoaded checks of check 2 cases 27 and 15.
+- Requirement 15 is covered by check 4.
+- Requirements 16 and 17 are covered by check 2 cases 27, 16, and 17 and manual check 5.
+- Requirement 18 is covered by check 1 cases 2 and 3.
+- Requirement 19 is covered by check 1 case 4, the rowAlignPx and pixel checks of check 2, and the look at the PNG files.
+- Requirement 20 is covered by check 1 cases 5 to 8 and manual check 5.
+- Requirements 22 and 23 are covered by check 1 cases 1, 2, and 5 and manual check 5.
+- Requirement 27 is covered by check 1 case 14 and feature 12's case 26.
+- Requirement 28 is covered by check 1 cases 10 and 11, check 2 case 34, and manual check 5.
+- Requirement 32 is covered by check 1 case 14, feature 12's case 24, and check 2 cases 27, 15, and 16.
+- Requirement 33 is covered by check 1 case 12 and check 2 cases 15 to 17.
+- Requirements 34 and 35 are covered by checks 1 and 3.
+- Requirement 36 is covered by check 1 case 13 for THIRD_PARTY.md and by reading specs/tech-stack.md and README.md in the validate stage.
