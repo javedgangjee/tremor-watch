@@ -1,9 +1,10 @@
 'use strict';
 
-// Runs the viewer with no person: open FILE, wait until the page has drawn,
-// save the window as a PNG with a JSON report beside it, and give the exit
-// code. Exit code 0 means the file was drawn, 1 that it could not be read,
-// and 2 that nothing was drawn within the limit.
+// Runs the viewer with no person: open FILE, or record for --record-for
+// seconds and open the new file, wait until the page has drawn, save the
+// window as a PNG with a JSON report beside it, and give the exit code. Exit
+// code 0 means the file was drawn, 1 that it could not be read or the
+// recording failed, and 2 that nothing was drawn within the limit.
 
 const fs = require('node:fs');
 const { performance } = require('node:perf_hooks');
@@ -68,21 +69,26 @@ function writeJson(pngPath, result) {
   fs.writeFileSync(jsonPath(pngPath), `${JSON.stringify(result, null, 2)}\n`);
 }
 
+/** @typedef {{message: object, loadMs: number, recording?: object}} Opened */
+
 /**
- * Run one capture and return the exit code.
+ * Run one capture and return the exit code. open() sends the page what to
+ * show. With --record-for it records first and also gives the recording's
+ * file, exit code, signal, and status text.
  *
- * @param {{win: object, args: {file: string, capture: string}, open: () => {message: object, loadMs: number}, isOwnPage: (event: object) => boolean}} run
+ * @param {{win: object, args: {file: string | null, capture: string}, open: () => Opened | Promise<Opened>, isOwnPage: (event: object) => boolean}} run
  * @returns {Promise<number>}
  */
 async function runCapture({ win, args, open, isOwnPage }) {
   const drawn = waitForDrawn(isOwnPage);
   const started = performance.now();
-  const { message, loadMs } = open();
+  const { message, loadMs, recording = null } = await open();
+  const file = recording === null ? args.file : recording.file;
   const report = await withLimit(drawn, DRAW_LIMIT_MS);
   if (report === null) {
     const text = `Nothing was drawn within ${DRAW_LIMIT_MS / 1000} seconds.`;
     console.error(text);
-    writeJson(args.capture, { file: args.file, exitCode: 2, message: text, loadMs });
+    writeJson(args.capture, { file, exitCode: 2, message: text, loadMs, recording });
     return 2;
   }
   const totalMs = performance.now() - started;
@@ -91,14 +97,17 @@ async function runCapture({ win, args, open, isOwnPage }) {
   const [pageHasRequire, pageHasProcess] = await win.webContents.executeJavaScript(
     "[typeof require !== 'undefined', typeof process !== 'undefined']",
   );
-  const exitCode = message.ok ? 0 : 1;
-  if (!message.ok) {
-    console.error(message.message);
+  const recordingFailed = recording !== null && recording.exitCode !== 0;
+  const exitCode = message.ok && !recordingFailed ? 0 : 1;
+  const failure = !message.ok ? message.message : recordingFailed ? recording.text : null;
+  if (failure !== null) {
+    console.error(failure);
   }
   writeJson(args.capture, {
-    file: args.file,
+    file,
     exitCode,
-    message: message.ok ? null : message.message,
+    message: failure,
+    recording,
     report,
     loadMs,
     drawMs: report.drawMs ?? null,

@@ -1,12 +1,15 @@
 'use strict';
 
-// The page: the Open button, the boot list, the summary, the legend, and the
-// message for a file that cannot be shown. TremorPlot in plot.js draws.
+// The page: the Open and Record buttons, the record status, the boot list,
+// the summary, the legend, and the message for a file that cannot be shown.
+// TremorPlot in plot.js draws.
 
 (function () {
   const $ = (id) => document.getElementById(id);
   const els = {
     open: $('open'),
+    record: $('record'),
+    recordStatus: $('record-status'),
     bootPicker: $('boot-picker'),
     boot: $('boot'),
     fileName: $('file-name'),
@@ -22,6 +25,9 @@
   let recording = null;
   let plot = null;
   let startedAt = 0;
+  // The last status from the recorder, and the timer that counts its time.
+  let recordStatus = { state: 'idle', startedAt: null, text: null, ok: null };
+  let recordTimer = null;
 
   const count = (n) => n.toLocaleString('en-GB');
 
@@ -128,6 +134,7 @@
       windowsByCode: boot.counts.windowsByCode,
       tremorCells: plot === null ? [] : plot.tremorCells(),
       drawMs: performance.now() - startedAt,
+      recordStatus: els.recordStatus.textContent,
     };
   }
 
@@ -163,11 +170,56 @@
       showRecording(message.recording, message.bootId);
     } else {
       showMessage(message.message);
-      report(() => ({ ok: false, message: message.message }));
+      report(() => ({ ok: false, message: message.message, recordStatus: els.recordStatus.textContent }));
     }
   });
 
+  /** Give a time in milliseconds as h:mm:ss. */
+  function clock(ms) {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    const two = (n) => String(n).padStart(2, '0');
+    return `${Math.floor(s / 3600)}:${two(Math.floor(s / 60) % 60)}:${two(s % 60)}`;
+  }
+
+  function showRecordStatus() {
+    const { state, startedAt: since, text, ok } = recordStatus;
+    let line = text ?? '';
+    if (state !== 'idle') {
+      const label = state === 'recording' ? 'Recording' : 'Stopping';
+      line = `${label} ${since === null ? '' : clock(Date.now() - since)}.${text ? ` ${text}` : ''}`;
+    }
+    els.recordStatus.textContent = line;
+    els.recordStatus.hidden = line === '';
+    els.recordStatus.classList.toggle('failed', ok === false);
+  }
+
+  const BUTTON_TEXT = { idle: 'Record', recording: 'Stop', stopping: 'Stopping' };
+
+  window.viewer.onRecordStatus((status) => {
+    recordStatus = status;
+    els.record.textContent = BUTTON_TEXT[status.state];
+    els.record.disabled = status.state === 'stopping';
+    els.record.classList.toggle('recording', status.state !== 'idle');
+    if (status.state === 'idle') {
+      clearInterval(recordTimer);
+      recordTimer = null;
+    } else if (recordTimer === null) {
+      recordTimer = setInterval(showRecordStatus, 1000);
+    }
+    showRecordStatus();
+  });
+
   els.open.addEventListener('click', () => window.viewer.openFile());
+  els.record.addEventListener('click', () => {
+    if (recordStatus.state === 'recording') {
+      window.viewer.stopRecording();
+    } else if (recordStatus.state === 'idle') {
+      // A failure message stays until the next press of Record.
+      recordStatus = { state: 'idle', startedAt: null, text: null, ok: null };
+      showRecordStatus();
+      window.viewer.startRecording();
+    }
+  });
   els.boot.addEventListener('change', () => {
     startedAt = performance.now();
     showBoot(recording.boots[Number(els.boot.value)]);

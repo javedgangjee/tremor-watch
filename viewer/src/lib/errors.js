@@ -16,4 +16,12 @@ class ArgsError extends Error {
   }
 }
 
-module.exports = { RecordingError, ArgsError };
+/** A recording that the viewer cannot start. The message is the plain sentence the page shows. */
+class RecordError extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'RecordError';
+  }
+}
+
+module.exports = { RecordingError, ArgsError, RecordError };

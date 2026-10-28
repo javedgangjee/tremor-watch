@@ -1,19 +1,28 @@
 'use strict';
 
 // The viewer's main process. It owns the window, the menu, the open dialog,
-// and the file reading, and it never opens the watch's port.
+// the file reading, and the recorder. It never opens the watch's port, and
+// the Record button runs tools/watch_cli.py record through lib/recorder.js.
 
+const os = require('node:os');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { performance } = require('node:perf_hooks');
 const { app, BrowserWindow, Menu, dialog, ipcMain, session } = require('electron');
-const { ArgsError, RecordingError } = require('./lib/errors');
+const { ArgsError, RecordError, RecordingError } = require('./lib/errors');
 const { parseArgs, USAGE } = require('./lib/args');
 const { loadRecording } = require('./lib/load');
+const { Recorder, recorderSettings } = require('./lib/recorder');
 const { runCapture } = require('./capture');
 
 const PAGE = path.join(__dirname, 'renderer', 'index.html');
 const PAGE_URL = pathToFileURL(PAGE).href;
+
+const recorder = new Recorder(
+  recorderSettings({ env: process.env, home: os.homedir(), cwd: process.env.INIT_CWD || process.cwd() }),
+);
+// Set when a quit waits for a recording to stop, so its file is not opened.
+let quitting = false;
 
 function readArgs() {
   try {
@@ -55,6 +64,68 @@ function openRecording(win, filePath, bootId = null) {
   const loadMs = performance.now() - started;
   win.webContents.send('viewer:recording', message);
   return { message, loadMs };
+}
+
+/** Send the page the reason a recording cannot be shown. */
+function showFailure(win, filePath, text) {
+  const message = { ok: false, file: filePath, message: text };
+  win.webContents.send('viewer:recording', message);
+  return { message, loadMs: 0 };
+}
+
+function sendRecordStatus(win, status) {
+  if (!win.isDestroyed() && !win.webContents.isDestroyed()) {
+    win.webContents.send('viewer:record-status', status);
+  }
+}
+
+/**
+ * Start a recording for the button or capture mode. Returns null when it
+ * started, or the status that says why it did not. The page is sent that
+ * status unless a recording runs, whose own status it keeps showing.
+ */
+function startRecording(win) {
+  try {
+    recorder.start();
+    return null;
+  } catch (err) {
+    if (!(err instanceof RecordError)) {
+      throw err;
+    }
+    const status = { state: 'idle', startedAt: null, file: null, text: err.message, ok: false };
+    if (recorder.state === 'idle') {
+      sendRecordStatus(win, status);
+    }
+    return status;
+  }
+}
+
+/** Stop the recording. The promise gives the outcome, or null when none ran. */
+function stopRecording() {
+  return recorder.stop();
+}
+
+/**
+ * Capture mode's --record-for: record through the same two functions as the
+ * button, stop after the given seconds unless the recording ended first, and
+ * open the file or send the page why it cannot be shown.
+ */
+async function recordThenOpen(win, seconds, bootId) {
+  const refused = startRecording(win);
+  if (refused !== null) {
+    const recording = { file: null, exitCode: null, signal: null, text: refused.text };
+    return { ...showFailure(win, null, refused.text), recording };
+  }
+  const outcome = await new Promise((resolve) => {
+    const timer = setTimeout(stopRecording, seconds * 1000);
+    recorder.once('done', (ended) => {
+      clearTimeout(timer);
+      resolve(ended);
+    });
+  });
+  const recording = { file: outcome.file, exitCode: outcome.code, signal: outcome.signal, text: outcome.text };
+  const opened = outcome.open ? openRecording(win, outcome.file, bootId) : showFailure(win, outcome.file, outcome.text);
+  return { ...opened, recording };
 }
 
 async function chooseRecording(win) {
@@ -122,14 +193,38 @@ async function start() {
       chooseRecording(win);
     }
   });
+  ipcMain.on('viewer:record-start', (event) => {
+    if (isOwnPage(win, event)) {
+      startRecording(win);
+    }
+  });
+  ipcMain.on('viewer:record-stop', (event) => {
+    if (isOwnPage(win, event)) {
+      stopRecording();
+    }
+  });
+  recorder.on('status', (status) => sendRecordStatus(win, status));
+  // In capture mode recordThenOpen() opens the file itself.
+  recorder.on('done', (outcome) => {
+    if (outcome.open && !quitting && args.capture === null && !win.isDestroyed()) {
+      openRecording(win, outcome.file);
+    }
+  });
   await win.loadFile(PAGE);
   if (args.capture !== null) {
-    const code = await runCapture({
-      win,
-      args,
-      open: () => openRecording(win, args.file, args.bootId),
-      isOwnPage: (event) => isOwnPage(win, event),
-    });
+    let code;
+    try {
+      code = await runCapture({
+        win,
+        args,
+        open: args.recordFor === null
+          ? () => openRecording(win, args.file, args.bootId)
+          : () => recordThenOpen(win, args.recordFor, args.bootId),
+        isOwnPage: (event) => isOwnPage(win, event),
+      });
+    } finally {
+      await stopRecording();
+    }
     app.exit(code);
   } else if (args.file !== null) {
     openRecording(win, args.file, args.bootId);
@@ -138,9 +233,22 @@ async function start() {
 
 app.on('window-all-closed', () => app.quit());
 
+// Closing the window and Cmd+Q both come here. A running recording holds the
+// quit until watch_cli.py has closed its file, and its file is not opened.
+app.on('before-quit', (event) => {
+  if (recorder.state === 'idle') {
+    return;
+  }
+  event.preventDefault();
+  if (!quitting) {
+    quitting = true;
+    stopRecording().then(() => app.quit());
+  }
+});
+
 // A failure here means the page was never drawn, which capture mode reports
-// with exit code 2.
+// with exit code 2. A running recording is stopped first.
 start().catch((err) => {
   console.error(err);
-  app.exit(2);
+  stopRecording().then(() => app.exit(2));
 });
