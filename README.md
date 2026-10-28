@@ -43,7 +43,7 @@ A tap anywhere on Home opens Medication. The lower half is one large "Took it" b
 
 ### Session and Status
 
-Session shows the share of still time with tremor in this session. Each block below it covers 10 minutes, and a hollow block had under two minutes of still time. Status lists build details such as the sensor rate, the detector's run time, the firmware version, and the hash of the detector tables. Both screens use a plain white background.
+Session shows the share of still time with tremor in this session. Each bar below it covers 10 minutes, with the oldest bar's start time on the left and now on the right, and a hollow bar had under two minutes of still time. Status shows the battery charge and voltage and the time since the watch started. For the last answer it shows the sensor rate, the number of the time rule's stretch, and how long the detector took. Recording reads On while a laptop is taking the watch's lines. The last two rows give the firmware version and the start of the detector tables' hash. Both screens use a plain white background.
 
 <table>
   <tr>
