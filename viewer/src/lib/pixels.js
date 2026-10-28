@@ -1,5 +1,9 @@
 'use strict';
 
+// The --ink colour of the page's light and dark themes, from
+// viewer/src/renderer/design/colors.css, which fills the tremor blocks.
+const INK = { light: '#16181D', dark: '#F4F7FA' };
+
 // A cell narrower than this has no centre pixel that is safely inside it.
 const MIN_CELL_WIDTH = 3;
 
@@ -55,4 +59,4 @@ function sampleCells(bitmap, imageWidth, imageHeight, scale, cells, colour, tole
   return { checked, matched, misses };
 }
 
-module.exports = { sampleCells, MIN_CELL_WIDTH };
+module.exports = { sampleCells, MIN_CELL_WIDTH, INK };

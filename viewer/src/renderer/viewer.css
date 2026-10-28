@@ -1,203 +1,493 @@
-/* Colours from core/look.h, so the viewer matches the watch face. */
-:root {
-  --bg: #F6F3EE;
-  --card: #FFFFFF;
-  --text: #111315;
-  --text-2: #5C6265;
-  --line: #DDD9D2;
-  --tremor: #1B2E42;
-  --focus: #2A7242;
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-  font-size: 14px;
-  color: var(--text);
-}
+/* The page's own layout, from context/viewer-design/Tremor Log Viewer.dc.html.
+   The tokens and the component classes come from design/. Every colour here
+   is a token. */
 
 [hidden] {
   display: none !important;
 }
 
-html,
-body {
-  height: 100%;
-  margin: 0;
+html {
+  background: var(--surface-page);
 }
 
 body {
+  min-height: 100vh;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+h1,
+h2,
+p,
+ul,
+dl,
+dd {
+  margin: 0;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+/* The sticky header. */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-header);
+}
+
+.app-header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-6);
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+/* The page. */
+.page {
   display: flex;
   flex-direction: column;
-  background: var(--bg);
-}
-
-.bar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 12px 20px;
-  border-bottom: 1px solid var(--line);
-  background: var(--card);
-}
-
-.bar h1 {
-  margin: 0;
-  font-size: 17px;
-  font-weight: 650;
-}
-
-button,
-select {
-  font: inherit;
-  color: var(--text);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--card);
-  padding: 6px 12px;
-}
-
-button {
-  cursor: pointer;
-}
-
-button:hover {
-  background: var(--bg);
-}
-
-button:disabled {
-  cursor: default;
-}
-
-/* Record turns into Stop, filled with the face's Tremor navy. */
-button.recording,
-button.recording:hover {
-  border-color: var(--tremor);
-  background: var(--tremor);
-  color: #FFFFFF;
-}
-
-button.recording:disabled {
-  opacity: 0.7;
-}
-
-button:focus-visible,
-select:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
-.picker {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-2);
-}
-
-.file-name {
-  margin-left: auto;
-  color: var(--text-2);
-  font-variant-numeric: tabular-nums;
+  gap: var(--space-5);
+  padding: var(--space-8) var(--space-6);
 }
 
 .record-status {
-  margin: 12px 20px 0;
-  color: var(--text-2);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-secondary);
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
 
-.record-status.failed {
-  color: var(--text);
+.md-notice-main {
+  overflow-wrap: anywhere;
 }
 
-.note {
-  margin: 12px 20px 0;
-  padding: 8px 12px;
-  border-left: 3px solid var(--tremor);
-  background: var(--card);
+.empty-card {
+  color: var(--ink-secondary);
 }
 
-.summary {
+/* The title block, with the boot picker at its right. */
+.title-block {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 24px;
-  margin: 12px 20px 0;
-  font-variant-numeric: tabular-nums;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-6);
 }
 
-.summary div {
+.title-text {
   display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.title-text .screen-title {
+  color: var(--ink);
+}
+
+.file-name {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-muted);
+  overflow-wrap: anywhere;
+}
+
+.boot-picker {
+  width: 260px;
+}
+
+.select-box {
+  position: relative;
+}
+
+.select-box .md-input {
+  appearance: none;
+  padding-right: var(--space-8);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.select-chevron {
+  position: absolute;
+  top: 8px;
+  right: var(--space-2);
+  color: var(--ink-secondary);
+  pointer-events: none;
+}
+
+/* The chart card. */
+.chart-head {
+  flex-wrap: wrap;
+}
+
+.chart-title {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+}
+
+.chart-unit {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-muted);
+}
+
+.chart-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.chips {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.chip-text {
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
 }
 
-.summary dt {
-  color: var(--text-2);
+.axis-line {
+  display: inline-block;
+  width: 12px;
+  height: 2px;
 }
 
-.summary dd {
-  margin: 0;
+.axis-line-x {
+  background: var(--warning);
+}
+
+.axis-line-y {
+  background: var(--link);
+}
+
+.axis-line-z {
+  background: var(--success);
+}
+
+.md-chip:disabled .axis-line {
+  background: var(--ink-disabled);
+}
+
+.md-chip:disabled .md-icon {
+  color: var(--ink-disabled);
+}
+
+.md-seg-opt:disabled,
+.md-seg-opt:disabled:hover {
+  color: var(--ink-disabled);
+  cursor: not-allowed;
+}
+
+.md-seg-on:disabled {
+  background: var(--surface-sunken);
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.chart-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-6) var(--space-4) var(--space-4);
+}
+
+/* Each chart has 8 px above and below its plotting area for the tick labels,
+   so the body's top padding is 8 px less than the design's 20 px, and the
+   margins below take the same 8 px back from the design's 12 px gaps. */
+.plots {
+  display: flex;
+  flex-direction: column;
+}
+
+.plot {
+  position: relative;
+}
+
+.plot + .plot {
+  margin-top: calc(var(--space-1) * -1);
+}
+
+/* The axis name of a stacked chart, in the left gutter. */
+.plot-name {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  z-index: 1;
+  transform: translateY(-50%);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+  pointer-events: none;
+}
+
+.uplot {
+  font-family: var(--font-sans);
+  line-height: 16px;
+}
+
+.u-over {
+  cursor: crosshair;
+}
+
+/* uPlot's own rule for the hover line is .u-hz .u-cursor-x, so this one
+   names the same classes. */
+.u-hz .u-cursor-x {
+  border-right: 1px solid var(--ink-secondary);
+}
+
+.u-select {
+  background: color-mix(in srgb, var(--link) 12%, transparent);
+}
+
+/* The Answer row. The canvas holds 28 px of blocks with 4 px above and
+   below for the ring, so the row's box reaches 4 px past the blocks. */
+.answer-line,
+.time-line {
+  display: grid;
+  grid-template-columns: var(--space-16) minmax(0, 1fr);
+  align-items: center;
+}
+
+.answer-line {
+  margin-top: calc(var(--space-3) * -1);
+}
+
+.answer-label {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+}
+
+.answer-row {
+  height: 36px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.answer-row:focus {
+  outline: none;
+}
+
+.answer-row:focus-visible {
+  outline: 2px solid transparent;
+  box-shadow: var(--shadow-focus);
+}
+
+.answer-canvas {
+  display: block;
+}
+
+.time-line {
+  margin-top: calc(var(--space-1) * -1);
+}
+
+.time-labels {
+  position: relative;
+  height: 16px;
+}
+
+.time-label {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.no-readings {
+  padding: var(--space-12) 0;
+  text-align: center;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--ink-secondary);
+}
+
+/* The hover readout, which floats over the charts. */
+.readout {
+  position: absolute;
+  top: var(--space-5);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 160px;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-card);
+  transform: translateX(12px);
+  pointer-events: none;
+}
+
+.readout-flip {
+  transform: translateX(calc(-100% - 12px));
+}
+
+.readout-time {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink);
+}
+
+.readout-values {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px var(--space-4);
+  font-size: 13px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.readout-axis {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-muted);
+}
+
+.readout-value {
+  text-align: right;
+  color: var(--ink);
+}
+
+.readout-answer {
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-secondary);
+}
+
+/* The legend row at the bottom of the chart card. */
+.legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-8);
+  padding: var(--space-4) var(--space-5);
+  border-top: 1px solid var(--border);
 }
 
 .legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 20px;
-  margin: 10px 20px 0;
+  align-items: center;
+  gap: var(--space-2) var(--space-5);
   padding: 0;
   list-style: none;
-  color: var(--text-2);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-secondary);
 }
 
 .legend li {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-2);
+}
+
+.legend-count {
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
 }
 
 .swatch {
-  width: 18px;
-  height: 12px;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
   border-radius: 2px;
 }
 
-.swatch.line {
-  height: 3px;
+.swatch-tremor {
+  background: var(--ink);
 }
 
-.stage {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  margin: 12px 20px 20px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--card);
+.swatch-no-tremor {
+  background: var(--surface-card);
+  border: 1px solid var(--border-control);
 }
 
-.plot {
-  position: absolute;
-  inset: 12px 12px 4px 4px;
+.swatch-arm-moving {
+  background: var(--border-strong);
 }
 
-.empty,
-.message {
-  position: absolute;
-  inset: 0;
+.swatch-warming-up {
+  background: var(--surface-sunken);
+  border: 1px dashed var(--border-control);
+}
+
+.swatch-span {
+  border-radius: 0;
+  border-right: 1px solid var(--link);
+  border-left: 1px solid var(--link);
+}
+
+.selection-text {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The summary card. */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-4) var(--space-6);
+}
+
+.facts div {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  margin: 0;
-  padding: 24px;
-  text-align: center;
-  color: var(--text-2);
+  gap: var(--space-1);
+  min-width: 0;
 }
 
-.message h2 {
-  margin: 0 0 8px;
-  font-size: 17px;
-  color: var(--text);
+.facts dt {
+  color: var(--ink-muted);
 }
 
-.message p {
-  max-width: 640px;
-  margin: 0;
+.facts dd {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
+}
+
+.facts .fact-mono {
+  font-family: var(--font-mono);
 }

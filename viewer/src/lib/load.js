@@ -7,6 +7,7 @@ const { readRecordingLines } = require('./read_text');
 const { parseLines } = require('./parse');
 const { buildTimeline } = require('./timeline');
 const { placeWindows, tremorSpans } = require('./windows');
+const { startText } = require('./title');
 
 // Result codes 0 to 4 of core/window.h.
 const CODE_COUNT = 5;
@@ -46,7 +47,7 @@ function showBoot(boot) {
  *
  * @param {string} filePath The recording.
  * @param {{docPath?: string, maxBytes?: number}} [options] The format document and the most text to read.
- * @returns {{file: string, fileName: string, cutShort: boolean, counts: object, boots: object[]}}
+ * @returns {{file: string, fileName: string, startText: string | null, cutShort: boolean, counts: object, boots: object[]}}
  */
 function loadRecording(filePath, { docPath, maxBytes } = {}) {
   const patterns = readRecordPatterns(docPath);
@@ -60,7 +61,7 @@ function loadRecording(filePath, { docPath, maxBytes } = {}) {
   if (shown.every((b) => b.counts.readings === 0)) {
     throw new RecordingError(`${fileName} holds no gyroscope reading that the viewer can place in time.`);
   }
-  return { file: filePath, fileName, cutShort, counts, boots: shown };
+  return { file: filePath, fileName, startText: startText(fileName, lines), cutShort, counts, boots: shown };
 }
 
 module.exports = { loadRecording };
