@@ -22,6 +22,8 @@ These come from the design system's readme.
 ## The user's decisions on 2026-10-28
 
 - The mock leaves out the boot picker, the summary facts, the cut-short note, the record status line, and the error message. The user chose to keep each of them, restyled with the design system.
-- The mock shades the span of the selected answer block. The user chose to mark the selected window with two vertical lines, one at its start and one at its end, in place of the shading.
-- The mock's span runs 7 seconds back from the window's end. A window covers 4 seconds, as feature 12's requirement 18 says, so the lines mark that 4-second span.
+- The mock shades the span of the selected answer block, and the viewer before feature 15 shaded the span of every tremor window. In place of shading, the user wants vertical lines in the signal area where tremor starts and where it ends. An earlier note here read this as two lines for the selected window only. The user corrected that on 2026-10-28.
+- The tremor lines follow the signal span. Consecutive and overlapping tremor windows join into one episode, as tremorSpans() joins them. One line marks the start of the first tremor window's 4 seconds of signal, and one marks the end of the last one's. The lines have no text on the plot, and a legend entry names them.
+- The two lines for the selected answer block stay, but dashed and grey, so they never look like the tremor lines or the blue y trace. A window covers 4 seconds, as feature 12's requirement 18 says, so they mark that 4-second span and not the mock's 7 seconds.
+- In stacked mode the plots share one y range, so each plot has readable labels and the same scale.
 - The work runs as spec-driven feature 15, and the wrist tests move to feature 16.
