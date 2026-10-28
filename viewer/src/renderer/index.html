@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'">
+  <title>Tremor log viewer</title>
+  <link rel="stylesheet" href="../../node_modules/uplot/dist/uPlot.min.css">
+  <link rel="stylesheet" href="viewer.css">
+</head>
+<body>
+  <header class="bar">
+    <h1>Tremor log</h1>
+    <button id="open" type="button">Open recording</button>
+    <label id="boot-picker" class="picker" hidden>
+      Boot
+      <select id="boot"></select>
+    </label>
+    <span id="file-name" class="file-name"></span>
+  </header>
+
+  <p id="cut-short" class="note" hidden>This file was cut short, so the viewer shows it up to the cut.</p>
+  <dl id="summary" class="summary" hidden></dl>
+  <ul id="legend" class="legend" hidden></ul>
+
+  <main id="stage" class="stage">
+    <div id="plot" class="plot"></div>
+    <p id="empty" class="empty">Open a recording that <code>tools/watch_cli.py record</code> saved.</p>
+    <div id="message" class="message" role="alert" hidden>
+      <h2>The viewer cannot show this file</h2>
+      <p id="message-text"></p>
+    </div>
+  </main>
+
+  <script src="../../node_modules/uplot/dist/uPlot.iife.min.js"></script>
+  <script src="plot.js"></script>
+  <script src="viewer.js"></script>
+</body>
+</html>

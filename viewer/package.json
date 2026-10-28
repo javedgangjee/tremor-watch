@@ -1,0 +1,19 @@
+{
+  "name": "tremor-log-viewer",
+  "private": true,
+  "description": "Shows a saved tremor log recording with the watch's tremor answers.",
+  "license": "MIT",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test test/*.test.js",
+    "smoke": "node scripts/smoke.js",
+    "fixture": "node scripts/make_synthetic.js"
+  },
+  "devDependencies": {
+    "electron": "44.7.1"
+  },
+  "dependencies": {
+    "uplot": "1.6.32"
+  }
+}

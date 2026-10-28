@@ -9,3 +9,4 @@ __pycache__/
 .pytest_cache/
 /build/
 firmware/.cache/
+viewer/node_modules/

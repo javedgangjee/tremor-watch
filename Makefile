@@ -4,7 +4,13 @@
 #   laptop   builds core/ and replay and runs the C unit tests.
 #   hash     compares the model file's SHA-256 with DET_MODEL_SHA256 in
 #            core/detector_tables.h.
+#   viewer   runs the recording viewer's unit tests in viewer/test/ with Node.
+#            They need no network and no installed packages.
 #   firmware builds the watch firmware in firmware/ with ESP-IDF.
+#
+# The viewer's capture checks run the real Electron app, so they need
+# `npm --prefix viewer ci` and a screen. They stay out of `make check`, and
+# `npm --prefix viewer run smoke` runs them.
 #
 # `make python` runs the pytest tests in tests/ with the reference venv, which
 # holds the toolbox. They include the full PADS match, the check that the
@@ -19,9 +25,9 @@ TABLES ?= core/detector_tables.h
 IDF_ACTIVATE ?= $(HOME)/.espressif/tools/activate_idf_v6.1.sh
 PYTHON ?= reference/.venv/bin/python
 
-.PHONY: check laptop hash firmware python full
+.PHONY: check laptop hash viewer firmware python full
 
-check: laptop hash firmware
+check: laptop hash viewer firmware
 
 python:
 	"$(PYTHON)" -m pytest -q tests
@@ -41,6 +47,9 @@ hash:
 		exit 1; \
 	fi; \
 	echo "model hash matches"
+
+viewer:
+	node --test viewer/test/*.test.js
 
 # The activate script sets IDF_TOOLS_PATH, which export.sh needs here. It also
 # makes idf.py a shell function that make cannot call, so this runs

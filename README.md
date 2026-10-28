@@ -98,6 +98,7 @@ In PADS the toolbox fires on about 4 percent of the Relaxed task's windows for h
 | `core/` | The shared C library: the detector, the converter, the state rules, and the replay program. It builds on the laptop and on the watch. |
 | `firmware/` | The ESP-IDF project for the watch. `firmware/main/` holds the five tasks and the face. `firmware/detector_check/` runs the saved windows on the chip, `firmware/bringup/` measured the sensor rate, and `firmware/components/` holds XPowersLib for the power chip. |
 | `reference/` | The Python toolbox that the C port must match, and the PADS results. |
+| `viewer/` | The recording viewer, a small Electron app that shows a saved recording. |
 | `tools/` | Generators for the detector tables and face assets, the watch command tool, and the session check. |
 | `tests/` | The C unit tests, the Python checks, and the logs and reports from the watch. |
 | `specs/`, `context/` | The mission, tech stack, roadmap, build spec, and face design. |
@@ -106,7 +107,7 @@ The full ESP-IDF settings files (`sdkconfig`) are committed next to `sdkconfig.d
 
 ## Build and check
 
-`make check` builds `core/` and runs the C unit tests, checks the model file's hash, and builds the firmware. The firmware needs ESP-IDF v6.1. `make python` runs the Python tests, which need the toolbox venv that `reference/README.md` sets up, and `make full` runs both. None of them needs the watch or the PADS download.
+`make check` builds `core/` and runs the C unit tests, checks the model file's hash, runs the recording viewer's unit tests, and builds the firmware. The firmware needs ESP-IDF v6.1. `make python` runs the Python tests, which need the toolbox venv that `reference/README.md` sets up, and `make full` runs both. None of them needs the watch or the PADS download.
 
 To flash the watch, with the port it shows up on:
 
@@ -120,6 +121,17 @@ To record a session from the watch and check it against the toolbox, after the C
 ~/.espressif/tools/python/v6.1/venv/bin/python tools/watch_cli.py record --out session.txt.gz --minutes 60
 reference/.venv/bin/python tools/compare_session.py session.txt.gz --report report.md
 ```
+
+## View a recording
+
+`viewer/` holds a small Electron app that plots a saved recording's gyroscope readings against time, shades the windows the watch answered with tremor, and shows each window's answer in a lane under the plot. It reads saved files only and never opens the watch's port. It needs Node 22, and the install needs the network once.
+
+```
+npm --prefix viewer ci
+npm --prefix viewer start -- session.txt.gz
+```
+
+File > Open (Cmd+O) opens another recording. Drag across the plot to zoom in, double click to show the whole boot, and use the left and right arrow keys to move the view. `make viewer` runs the viewer's unit tests, which need no install.
 
 ## Status
 
@@ -138,5 +150,6 @@ The project's own code is under the MIT licence in `LICENSE`. `THIRD_PARTY.md` l
 - XPowersLib, MIT.
 - LVGL, MIT.
 - ESP-IDF and the Waveshare board support package, Apache 2.0.
+- Electron and uPlot, MIT, for the recording viewer.
 - Lucide icons, ISC.
 - Red Hat Display, SIL Open Font Licence.
