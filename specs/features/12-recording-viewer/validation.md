@@ -105,3 +105,56 @@ viewer/test/helpers/synthetic.js builds this recording, and viewer/test/fixtures
 - Requirement 25 is covered by check 1 cases 19 to 22.
 - Requirement 26 is covered by check 3.
 - Requirement 27 is covered by reading specs/tech-stack.md, README.md, and .gitignore in the validate stage.
+
+## Results, 2026-10-27
+
+The validate stage ran on branch feature/12-recording-viewer at commit 2bb5556 with a clean tree, Node v22.22.1, and npm 11.20.0. SCRATCH was a new folder in the session's scratch folder.
+
+Checks 1, 2, 3, and 4 passed. Check 5 did not run, because the watch holds another project's firmware and this stage was told not to flash it. Checks 6 and 7 wait for the user. The stage drove the real window for most of check 6, as the section on check 6 says, but it could not press Cmd+O or use the system's open dialog, and it did not mark check 6 as passed. So the feature is not ready for review until the user runs check 5 on the Tremor log firmware and checks 6 and 7 by hand.
+
+### Automated checks
+
+1. Check 1 passed. `make viewer` exited with code 0, and node reported 26 tests, 26 passed, and 0 failed, one test for each of cases 1 to 26.
+2. Check 2 passed. The smoke script printed a pass for all 7 cases and "7 of 7 cases passed", and it exited with code 0.
+   - Case 27 gave boot 305419896, 18260 readings, windows 39, 92, 18, and 2 for codes 0 to 3, 39 tremor cells, and the pixel check 39 checked and 39 matched. The web preferences gave contextIsolation true, nodeIntegration false, sandbox true, and webSecurity true, and the page had no `require` and no `process`.
+   - Case 28 gave 913 readings and one stretch, estimated at 114330201, which lies within 115 of 114330200, and no tremor cell.
+   - Case 29 gave 206041 readings, windows 1797 with code 1 and 1 with code 3, and no tremor cell. Case 30 gave 144078 readings and two stretches.
+   - In case 31 `bad.gz` exited with code 1 with the message "... bad.gz is not a gzip file." and a PNG that shows the message. The missing file exited with code 1 with the message "Could not read ..., because it does not exist." Case 32 exited with code 2.
+   - Case 33 gave one boot with one stretch at 114330200, 823185 readings, and windows 204 with code 0, 6991 with code 1, and 1 with code 3. That is window 0 with code 3 and windows 1 to 7195 otherwise, and 204 is 12 shakes of 17 windows each. The load took 334 ms and the draw 28 ms, so the sum is 362 ms, well under 10000 ms.
+   - The hidden window gave a full image every time, so shownWindow was false in each JSON.
+   - The stage looked at SCRATCH/smoke/synthetic.png. Three coloured lines run across the plot. A navy shade covers the x axis shake from 30 to 60 seconds and the shake from about 130 to 145 seconds, and it starts where the shaking starts. The lane holds navy cells under both shakes, from about 33 and 133 seconds, which is the last second of the first tremor window, and pale green cells from about 80 to 98 seconds under the sway. The lines break at 100 seconds, where a clear gap shows, and near 70 and 120 seconds, where the gaps are a pixel or two wide at this zoom. The summary gives 1 bad line and 1 dropped burst. The PNG shows the boot list closed, with boot 305419896 picked. The driven run of check 6 read the list's options, which name both boots, 305419896 with 18,260 readings and 4294967295 with 913 readings.
+3. Check 3 passed. `make viewer` in a clean worktree of HEAD, which had no viewer/node_modules, gave 26 passed and 0 failed, and the worktree was removed. `make -n check` listed the laptop, hash, viewer, and firmware steps in that order. `make check` exited with code 0, with "100% tests passed out of 16", "model hash matches", 26 viewer tests passed, and "Project build complete". .github/workflows/check.yml has a viewer job on ubuntu-24.04 with actions/setup-node@v4, node-version "22.22.1", and `make viewer`. Nothing was pushed.
+4. Check 4 passed. `npm --prefix viewer ci` exited with code 0 and added 14 packages. `npm --prefix viewer ls --depth=0` listed electron@44.7.1 and uplot@1.6.32 and nothing else. `viewer/node_modules/.bin/electron --version` printed v44.7.1. Electron 44 has no install script, so it fetched its binary on this first run and printed "Downloading Electron binary...". So the first start after `npm ci` also needs the network, which README.md line 127 and specs/tech-stack.md line 85 do not say.
+5. Check 5 did not run. `IDFPY tools/watch_cli.py record --out SCRATCH/table.txt.gz --minutes 3` exited with code 1 and said "No B line came, so the clock was not set." The 89 saved lines are a boot log of the ESP-IDF project "aac_watch", app version e0cc451-dirty, built on 25 Oct 2026, so the watch no longer runs the Tremor log firmware. Neither the code nor the check is at fault. The viewer opened that file and exited with code 1 with the message "table.txt.gz holds no B line in its 89 lines, so it is not a recording from the watch.", which is the plain message requirement 21 asks for.
+
+### Manual checks
+
+6. Check 6 waits for the user. The stage did the steps it could with Playwright's Electron support, which it installed in SCRATCH and not in the repo. Playwright adds `--remote-debugging-port=0` before the app path, which the app's strict argument reader refuses, so a small wrapper in SCRATCH passed on only the arguments after the app path and then loaded viewer/src/main.js unchanged. The stage saw these steps work in the real window.
+   - The window opened on boot 3162426297, and the boot list named both boots. Picking boot 505078862 showed about 21 minutes and changed the summary to that boot.
+   - The break at the start of stretch 1 lies between 946.3246 and 946.3290 seconds, about 4 ms apart, so it cannot show at full view. After three drags to a view of about 20 ms around it, the lines of all three axes stop at the last reading of stretch 0 and start again at the first reading of stretch 1, with no line between.
+   - A drag across about 3 seconds showed single readings, and the y axis fitted the readings in view. The right arrow key moved the view from about 12:52.4 to 12:55.8 to about 12:54.1 to 12:57.4, which is half its width. Double click showed the whole boot again.
+   - With the open dialog replaced in the main process so that it gave record_log.txt.gz, a click on the File menu's Open item changed the plot and the summary to that file. A Cmd+O key press sent by Playwright did not reach the menu. With the dialog giving a text file that is not a recording, the Open button showed one plain message, "notrec.txt holds no B line in its 47 lines, so it is not a recording from the watch.", and no plot. bad.gz gave the gzip message, and the made-up recording then drew again.
+   - A call to window.open() and a change of location.href to a web address left the page where it was and opened no window.
+   - The steps still waiting for the user are these. Run `npm --prefix viewer start -- tests/firmware/command_log.txt.gz` from the repo root, and do each step of check 6 by hand. Press Cmd+O on the keyboard, and check that the system's open dialog appears, shows only .gz and .txt files, and opens tests/firmware/record_log.txt.gz. Then use the dialog again to open a file that is not a recording, and check for one plain message and no plot.
+7. Check 7 waits for the user. It also needs the watch on the Tremor log firmware, which it no longer runs.
+
+### Requirement coverage
+
+- Requirement 11 holds. `git diff --stat main` lists no file in firmware/, core/, reference/, tools/, or tests/.
+- Requirement 27 holds. specs/tech-stack.md has a Recording viewer section with the versions, the folder, the modules, and the commands, adds `make viewer` to `make check` and the smoke command, and gives the MIT licences of Electron and uPlot. README.md has a section on viewing a recording and credits Electron and uPlot. .gitignore holds viewer/node_modules/.
+- Requirement 20, the drag zoom, the double click, and the arrow keys, has no passing check, because only check 6 covers it. The driven run saw each part of it work.
+- Requirement 13 has passing checks for FILE and `--boot`, and the stage ran `npm --prefix viewer start -- tests/firmware/command_log.txt.gz --boot 505078862 --capture SCRATCH/npmstart.png` from the repo root, which exited with code 0 and resolved the file against the repo root. Its File menu item, Cmd+O, and open dialog wait for check 6.
+- Requirements 4, 9, and 18 pass on check 1 cases 13, 14, 19, and 21 and check 2 case 27 with the made-up recording. Their check on a real wrist shake waits for check 7.
+- Every other requirement has at least one passing check from checks 1 to 4.
+
+### Other findings
+
+- The summary of each boot shows the bad lines and dropped bursts of the whole file, in viewer/src/renderer/viewer.js lines 72 and 73. Boot B of the made-up recording shows 1 bad line and 1 dropped burst, which both lie in boot A.
+- viewer/src/main.js line 21 takes the app's arguments from index 2 of process.argv, so an Electron or Chromium switch before the app path makes the app refuse to start. `npm --prefix viewer start` and the smoke script never do this, so no requirement fails.
+- An empty or header-only `.gz` file is read as a gzip file cut short in viewer/src/lib/read_text.js lines 39 to 60, so the page says the file holds no B line in its 0 lines, not that it is not a gzip file. The message is still plain, and the app does not crash.
+- The stage loaded a 375 MB text file of 9,878,220 readings, just under the 400 MB limit. Electron's Node loaded it in 3.9 seconds with 1.5 GB of memory, and the real app drew it in about 4 seconds in capture mode.
+- The electron settings match requirement 22. The CSP is exact, the four web preferences are set, the preload gives three calls, every IPC message is checked against the page's own frame and URL, and new windows, navigation, and permissions are denied.
+
+### Decision for the user
+
+`npm audit` reports advisory GHSA-jr5w-w6x2-84p9 for Electron 44.0.0 to 44.9.0, fixed in 44.10.0. The advisory is about trusting certificates from compromised eMudhra intermediates, so it matters only for TLS connections. The viewer opens no network connection. Its page loads only local files under a CSP of `default-src 'none'`, and it denies navigation and new windows. So the stage's view is that the advisory does not reach this app. Moving to 44.10.0 is still cheap, but it needs requirement 12 and check 1 case 25 changed, and that is the user's call.
