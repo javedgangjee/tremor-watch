@@ -124,7 +124,7 @@ reference/.venv/bin/python tools/compare_session.py session.txt.gz --report repo
 
 ## View a recording
 
-`viewer/` holds a small Electron app that plots a saved recording's gyroscope readings against time, shades the windows the watch answered with tremor, and shows each window's answer in a lane under the plot. It needs Node 22, and the install needs the network once.
+`viewer/` holds a small Electron app that plots a saved recording's gyroscope readings against time and shows each window's answer as a block in the Answer row under the plot, with tremor blocks filled dark. The title gives the recording's start, such as "Oct 28, 2026 at 14:28", over its file name, and a Summary card under the chart gives the boot's facts. It needs Node 22, and the install needs the network once.
 
 ```
 make viewer-start FILE=session.txt.gz
@@ -132,9 +132,11 @@ make viewer-start FILE=session.txt.gz
 
 `make viewer-start` installs the packages with `npm --prefix viewer ci` when they are missing or out of date, and then runs `npm --prefix viewer start`. Add `BOOT=ID` to open one boot of the file. With no FILE the app opens empty. `make viewer-smoke` runs the app in capture mode on the test recordings and checks each drawing.
 
-File > Open (Cmd+O) opens another recording. Drag across the plot to zoom in, double click to show the whole boot, and use the left and right arrow keys to move the view. `make viewer` runs the viewer's unit tests, which need no install.
+File > Open (Cmd+O) opens another recording. The x, y, and z chips show or hide each axis, and the layout control picks Overlaid, one plot of all axes, or Stacked, one plot for each axis. Move the pointer over a plot to read the time, the three values, and the answer at that point. Drag across a plot to zoom in, double click to show the whole boot, and use the left and right arrow keys to move the view. Every plot and the Answer row share the view. Click a block in the Answer row to select its window, and two blue lines mark the window's 4 seconds in every plot, with the window's text at the right of the legend. With the focus on the row, the left and right arrow keys, Home, and End move the selection, and Escape clears it.
 
-The Record button runs `tools/watch_cli.py record`, which resets the watch and saves every line it writes. Press Stop to end the recording, as Ctrl-C does, and the viewer opens the new file. The viewer never opens the watch's port itself. Files go to `recordings/` at the repo root, which git leaves out, with names such as `tremor-2026-10-28-143005.txt.gz`, and a name that is taken gets `-2`. `TREMOR_RECORDINGS` names another folder, and `TREMOR_PYTHON` names the Python to run, which must hold pyserial and is the ESP-IDF Python by default. When the recording cannot start or saves no file, such as when no watch is plugged in, the line under the bar says why, and the plot stays as it was. When watch_cli.py stops with an error after it saved a file, the viewer still opens that file, and the line under the bar gives the error.
+The page follows the Mac's light or dark setting. `--theme light` or `--theme dark` after `npm --prefix viewer start --` fixes the theme, and `--layout stacked` opens the file in the stacked layout. `make viewer` runs the viewer's unit tests, which need no install.
+
+The Record button runs `tools/watch_cli.py record`, which resets the watch and saves every line it writes. Press Stop to end the recording, as Ctrl-C does, and the viewer opens the new file. The viewer never opens the watch's port itself. Files go to `recordings/` at the repo root, which git leaves out, with names such as `tremor-2026-10-28-143005.txt.gz`, and a name that is taken gets `-2`. `TREMOR_RECORDINGS` names another folder, and `TREMOR_PYTHON` names the Python to run, which must hold pyserial and is the ESP-IDF Python by default. When the recording cannot start or saves no file, such as when no watch is plugged in, a red notice under the header says why, and the plot stays as it was. When watch_cli.py stops with an error after it saved a file, the viewer still opens that file, and the notice gives the error.
 
 ## Export a recording as EDF+
 

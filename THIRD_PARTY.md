@@ -11,6 +11,9 @@ The project's own code is under the MIT licence in LICENSE. These parts come fro
 | Unity 2.6.1, by ThrowTheSwitch | tests/unity/ | MIT | tests/unity/LICENSE.txt |
 | XPowersLib, by Lewis He | firmware/components/XPowersLib/ | MIT | firmware/components/XPowersLib/LICENSE |
 | Red Hat Display font, by The Red Hat Project Authors | firmware/main/assets/RedHatDisplay-Bold.ttf, and face_font_*.c made from it | SIL Open Font Licence 1.1 | firmware/main/assets/OFL.txt |
+| Red Hat Display variable font, latin subset from Fontsource 5.3.0, by The Red Hat Project Authors | viewer/src/renderer/fonts/RedHatDisplay-Variable-latin.woff2 | SIL Open Font Licence 1.1 | viewer/src/renderer/fonts/OFL-RedHatDisplay.txt |
+| Libre Franklin variable font, roman and italic, latin subset from Fontsource 5.3.0, by The Libre Franklin Project Authors | viewer/src/renderer/fonts/LibreFranklin-Variable-latin.woff2 and LibreFranklin-Variable-Italic-latin.woff2 | SIL Open Font Licence 1.1 | viewer/src/renderer/fonts/OFL-LibreFranklin.txt |
+| IBM Plex Mono 400, 500, and 600, latin subset from Fontsource 5.3.0, by IBM Corp. | viewer/src/renderer/fonts/IBMPlexMono-Regular-latin.woff2, IBMPlexMono-Medium-latin.woff2, and IBMPlexMono-SemiBold-latin.woff2 | SIL Open Font Licence 1.1 | viewer/src/renderer/fonts/OFL-IBMPlexMono.txt |
 | Lucide 0.469.0 icons, by Lucide Contributors | the path data in tools/gen_face_assets.py, and face_icons.c made from it | ISC | firmware/main/assets/LUCIDE_LICENSE.txt |
 | Results made from PADS 1.0.0, by Varghese and colleagues | reference/results/, tests/pads/pads_match.md | CC BY-NC-SA 4.0 | reference/results/LICENSE.md |
 

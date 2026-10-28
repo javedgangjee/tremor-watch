@@ -63,3 +63,19 @@ No step changes a file in firmware/, core/, reference/, tools/, tests/, or conte
     - THIRD_PARTY.md, Kept in this repo: one row for each font with its folder and licence text.
 
 17. Run `make viewer`, `npm --prefix viewer run smoke -- --out SCRATCH/smoke`, and `make check`, fix the failures, and look at the PNG files of check 2. If Chromium refuses the fonts from file URLs under `font-src 'self'`, stop and report it, because any other way to load them changes requirement 27.
+
+## Changes during implement
+
+1. The window of 1400 by 860 pixels cuts the page off above the Summary card, which check 2 says the PNG files show. capture.js now makes the window as tall as the page before it saves the PNG, and then waits two frames in the page. Only the height changes, so the report's cells keep their places. This is a change to capture.js that step 6 did not name.
+2. uPlot drew the vertical grid with an x axis of size 0, so no draw hook draws it.
+3. The zero line is drawn in uPlot's drawAxes hook, so it lies over the grid and under the readings, as in the design. The selection lines are drawn in the draw hook, over the readings.
+4. uPlot's own y steps include 2.5, 25, and 250, which decimalsFor() cannot label so that each tick reads its own value. plot.js gives the y axis steps of 1, 2, and 5 times a power of ten, still at least 48 px apart.
+5. Each chart has 8 px above and below its plotting area, and the Answer row has 4 px above and below its blocks for the ring. So the chart body's top padding is 12 px, the Answer row moves up 12 px, the time labels move up 4 px, and each stacked chart after the first moves up 4 px. The gaps the eye sees are then the design's 20 px and 12 px.
+6. The boot list uses `appearance: none` and the chevron icon from the bundle's ICONS, because the Mac's own select ignores the `.md-input` look. This is one more icon than requirement 25 lists.
+7. uPlot's rule for the hover line is `.u-hz .u-cursor-x`, so viewer.css names the same classes to make the line solid in `--ink-secondary`.
+8. The report's selection is `{ stretch, window, code }` of the selected window, or null. Its rowAlignPx is null for a boot with no readings, and the report for a file that cannot be shown also gives theme.
+9. With no selection and no window that meets requirement 20's rule, the right arrow selects the last window and the left arrow the first. answerName() gives null for a code other than 0 to 3, and answerText() then gives "No answer yet". chart.js also exports MINUS, TIME_STEPS, JOIN_BELOW_PX, GAP_PX, and AXES.
+10. timeTicks() adds 0 to each tick value, because Math.ceil() of a small negative number gives -0, which case 3's deepEqual tells apart from 0.
+11. Case 11 writes its B line with DET_MODEL_SHA256 for H, as case 18 does. startText() needs only a line that starts with `B,`.
+12. TremorPlot.create() also gives bounds(), and TremorAnswers.create() gives draw(), setPalette(), selection(), and edges() beside tremorBlocks(). Cases 33 and 17 make the two hour file through one helper, and case 33 still makes it new on each run.
+13. Feature 12's case 27 sometimes saved the page before the plot was drawn. The resize and the two frames of change 1 give the page a new frame before the capture, and the smoke suite then passed 13 of 13 cases in eleven runs in a row. Before, about one run in five failed, so this is strong but not certain evidence that the race is gone. specs/tech-stack.md says so.
