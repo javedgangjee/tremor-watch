@@ -1,0 +1,84 @@
+/* My Default components. Every value comes from tokens.css. */
+body { margin: 0; font-family: var(--font-sans); background: var(--surface-page); color: var(--ink); -webkit-font-smoothing: antialiased; }
+a { color: var(--link); text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
+a:hover { color: var(--brand-strong); text-decoration-thickness: 2px; }
+a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 2px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; } }
+.md-icon { display: block; flex: none; }
+.md-btn:focus-visible, .md-input:focus-visible, .md-seg-opt:focus-visible { outline: 2px solid transparent; outline-offset: 2px; box-shadow: var(--shadow-focus); }
+
+/* Button */
+.md-btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 500; border-radius: var(--radius-sm); border: 1px solid transparent; cursor: pointer; white-space: nowrap; transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease; }
+.md-btn-md { min-height: 32px; padding: 0 var(--space-3); }
+.md-btn-sm { min-height: 28px; padding: 0 var(--space-2); }
+.md-btn-icononly.md-btn-md { width: 32px; padding: 0; }
+.md-btn-icononly.md-btn-sm { width: 28px; padding: 0; }
+.md-btn-primary { background: var(--brand); color: var(--on-brand); }
+.md-btn-primary:hover { background: var(--brand-strong); }
+.md-btn-secondary { background: var(--surface-card); color: var(--ink); border-color: var(--border-strong); box-shadow: 0 1px 1px rgba(16,18,24,0.04); }
+.md-btn-secondary:hover { background: var(--surface-sunken); }
+.md-btn-ghost { background: transparent; color: var(--ink-secondary); }
+.md-btn-ghost:hover { background: var(--surface-sunken); color: var(--ink); }
+.md-btn-danger { background: var(--danger-solid); color: var(--on-danger-solid); border-color: var(--danger-solid); }
+.md-btn-danger:hover { background: color-mix(in srgb, var(--danger-solid) 88%, #000); border-color: transparent; }
+.md-btn:disabled { background: var(--surface-sunken); color: var(--ink-disabled); border-color: var(--border); cursor: not-allowed; }
+
+/* Notice */
+.md-notice { display: flex; align-items: flex-start; gap: var(--space-2); padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); border: 1px solid; font-size: 13px; line-height: 20px; }
+.md-notice .md-icon { flex: none; margin-top: 2px; }
+.md-notice-success { background: var(--success-container); color: var(--on-success-container); border-color: var(--success); }
+.md-notice-info { background: var(--info-container); color: var(--on-info-container); border-color: var(--info); }
+.md-notice-warning { background: var(--warning-container); color: var(--on-warning-container); border-color: var(--warning); }
+.md-notice-danger { background: var(--danger-container); color: var(--on-danger-container); border-color: var(--danger); }
+.md-notice-main { flex: 1; min-width: 0; }
+.md-notice-title { font-weight: 600; }
+
+/* Badge. Small neutral tag. Status lives in the icon (the tone role color); the chip itself stays neutral. */
+.md-badge { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-1); min-height: 22px; padding: 0 var(--space-2); border-radius: 4px; border: 1px solid transparent; font-size: 12px; line-height: 16px; font-weight: 500; white-space: nowrap; box-sizing: border-box; }
+.md-badge .md-icon { width: 14px; height: 14px; }
+.md-badge-neutral { background: var(--surface-card); border-color: var(--border-strong); color: var(--ink-secondary); }
+.md-badge-success, .md-badge-info, .md-badge-warning, .md-badge-danger { background: var(--surface-card); border-color: var(--border); color: var(--ink-secondary); }
+.md-badge-success .md-icon { color: var(--success); }
+.md-badge-info .md-icon { color: var(--info); }
+.md-badge-warning .md-icon { color: var(--warning); }
+.md-badge-danger .md-icon { color: var(--danger); }
+
+/* Card */
+.md-card { background: var(--surface-card); border-radius: var(--radius-lg); box-shadow: var(--shadow-rest); padding: var(--space-5); }
+.md-card-raised { box-shadow: var(--shadow-card); }
+.md-card-flush { padding: 0; overflow: hidden; }
+.md-card-head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); margin-bottom: var(--space-4); }
+.md-card-flush .md-card-head { margin: 0; padding: var(--space-4) var(--space-5); border-bottom: 1px solid var(--border); }
+.md-card-title { margin: 0; font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: -0.005em; color: var(--ink); }
+
+/* Text field (used here only for the label style of a select) */
+.md-field { display: flex; flex-direction: column; gap: var(--space-2); min-width: 200px; }
+.md-field-label { font-size: 12px; line-height: 16px; font-weight: 500; color: var(--ink-secondary); }
+.md-input { width: 100%; height: 32px; padding: 0 var(--space-3); font-family: var(--font-sans); font-size: 13px; color: var(--ink); background: var(--surface-card); border: 1px solid var(--border-control); border-radius: var(--radius-sm); }
+.md-sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+/* Segmented control */
+.md-seg { display: inline-flex; padding: 2px; gap: 2px; background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.md-seg-opt { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 500; min-height: 24px; min-width: 24px; padding: 0 var(--space-3); border: 0; border-radius: 4px; background: transparent; color: var(--ink-secondary); cursor: pointer; }
+.md-seg-opt:hover { color: var(--ink); }
+.md-seg-on { background: var(--surface-card); color: var(--ink); box-shadow: 0 0 0 1px var(--border-control), 0 1px 2px rgba(16,18,24,0.06); }
+
+/* Readout */
+.md-readout { display: flex; flex-direction: column; gap: 2px; }
+.md-readout-value { font-size: 15px; line-height: 20px; font-weight: 600; letter-spacing: -0.01em; color: var(--ink); font-variant-numeric: tabular-nums; }
+.md-readout-unit { font-weight: 400; color: var(--ink-muted); margin-left: 2px; }
+.md-readout-label { font-size: 12px; line-height: 16px; font-weight: 400; color: var(--ink-muted); }
+
+/* Chip */
+.md-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--radius-md); background: var(--surface-card); color: var(--ink); font-family: var(--font-sans); font-size: 13px; line-height: 16px; font-weight: 500; cursor: pointer; transition: background-color 120ms ease, border-color 120ms ease; }
+.md-chip:hover { background: var(--surface-sunken); }
+.md-chip-on, .md-chip-on:hover { background: var(--surface-tint); border-color: var(--link); }
+.md-chip .md-icon { color: var(--ink-secondary); }
+.md-chip-on .md-icon { color: var(--link); }
+.md-chip-count { color: var(--ink-muted); font-variant-numeric: tabular-nums; }
+.md-chip:focus-visible { outline: 2px solid transparent; box-shadow: var(--shadow-focus); }
+.md-chip:disabled { background: var(--surface-sunken); color: var(--ink-disabled); border-color: var(--border); cursor: not-allowed; }
+
+/* The design system also defines list rows, progress, chart, swatch,
+   checkbox, switch, tabs, dialog and snackbar classes. The viewer does not use
+   them, so they are left out of this copy. */

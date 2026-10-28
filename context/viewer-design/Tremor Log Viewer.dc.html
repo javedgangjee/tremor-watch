@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/my-default-design-system-f28e8cbf-0a46-451b-944e-a308bcb9138e/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/my-default-design-system-f28e8cbf-0a46-451b-944e-a308bcb9138e/tokens/colors.css">
+<link rel="stylesheet" href="_ds/my-default-design-system-f28e8cbf-0a46-451b-944e-a308bcb9138e/tokens/typography.css">
+<link rel="stylesheet" href="_ds/my-default-design-system-f28e8cbf-0a46-451b-944e-a308bcb9138e/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/my-default-design-system-f28e8cbf-0a46-451b-944e-a308bcb9138e/tokens/components.css">
+<link rel="stylesheet" href="_ds/my-default-design-system-f28e8cbf-0a46-451b-944e-a308bcb9138e/styles.css">
+<script src="_ds/my-default-design-system-f28e8cbf-0a46-451b-944e-a308bcb9138e/_ds_bundle.js"></script>
+<style>
+body { margin: 0; background: var(--surface-page); }
+a { color: var(--link); }
+a:hover { color: var(--brand-strong); }
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" style="min-height:100vh;background:var(--surface-page);color:var(--ink);font-family:var(--font-sans)">
+
+<div data-screen-label="Header" style="position:sticky;top:0;z-index:5;background:var(--surface-card);box-shadow:var(--shadow-header)">
+<div style="display:flex;align-items:center;gap:var(--space-4);padding:var(--space-3) var(--space-6);flex-wrap:wrap">
+<div style="font-family:var(--font-display);font-size:20px;line-height:28px;font-weight:700;letter-spacing:-0.015em;color:var(--ink)">Tremor log</div>
+<div style="display:flex;gap:var(--space-2);margin-left:auto">
+<x-import component-from-global-scope="MyDefaultDesignSystem_f28e8c.Button" icon="folder" hint-size="140px,32px">Open recording</x-import>
+<x-import component-from-global-scope="MyDefaultDesignSystem_f28e8c.Button" variant="primary" icon="play" hint-size="90px,32px">Record</x-import>
+</div>
+</div>
+</div>
+
+<div style="padding:var(--space-8) var(--space-6);display:flex;flex-direction:column;gap:var(--space-5)">
+
+<div style="display:flex;flex-direction:column;gap:var(--space-1)">
+<div style="font-size:24px;line-height:30px;font-weight:600;letter-spacing:-0.02em;color:var(--ink)">Oct 28, 2026 at 14:28</div>
+<div style="font-family:var(--font-mono);font-size:13px;line-height:20px;color:var(--ink-muted);overflow-wrap:anywhere">tremor-2026-10-28-142813.txt.gz</div>
+</div>
+
+<div data-screen-label="Gyroscope chart" style="background:var(--surface-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-rest);overflow:hidden">
+
+<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap;padding:var(--space-4) var(--space-5);border-bottom:1px solid var(--border)">
+<div style="display:flex;align-items:baseline;gap:var(--space-2)">
+<div style="font-size:14px;line-height:20px;font-weight:600;letter-spacing:-0.005em">Gyroscope</div>
+<div style="font-size:13px;line-height:20px;color:var(--ink-muted)">°/s</div>
+</div>
+<div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap">
+<div style="display:flex;gap:var(--space-2)">
+<x-import component-from-global-scope="MyDefaultDesignSystem_f28e8c.Chip" selected="{{ axisX }}" onClick="{{ toggleX }}" hint-size="64px,32px"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:12px;height:2px;background:var(--warning)"></span>x</span></x-import>
+<x-import component-from-global-scope="MyDefaultDesignSystem_f28e8c.Chip" selected="{{ axisY }}" onClick="{{ toggleY }}" hint-size="64px,32px"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:12px;height:2px;background:var(--link)"></span>y</span></x-import>
+<x-import component-from-global-scope="MyDefaultDesignSystem_f28e8c.Chip" selected="{{ axisZ }}" onClick="{{ toggleZ }}" hint-size="64px,32px"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:12px;height:2px;background:var(--success)"></span>z</span></x-import>
+</div>
+<x-import component-from-global-scope="MyDefaultDesignSystem_f28e8c.SegmentedControl" options="{{ layoutOptions }}" value="{{ layout }}" onChange="{{ setLayout }}" label="Chart layout" hint-size="160px,32px"></x-import>
+</div>
+</div>
+
+<div style="position:relative;padding:var(--space-5) var(--space-6) var(--space-4) var(--space-4);display:flex;flex-direction:column;gap:var(--space-3)">
+
+<sc-for list="{{ plots }}" as="plot" hint-placeholder-count="1">
+<div style="display:grid;grid-template-columns:64px minmax(0,1fr)">
+<div style="position:relative;height:{{ plot.h }}px">
+<sc-for list="{{ yTicks }}" as="tk">
+<div style="position:absolute;right:var(--space-3);top:{{ tk.top }}%;transform:translateY(-50%);font-size:12px;line-height:16px;color:var(--ink-muted);font-variant-numeric:tabular-nums;white-space:nowrap">{{ tk.label }}</div>
+</sc-for>
+<sc-if value="{{ plot.showName }}">
+<div style="position:absolute;left:0;top:50%;transform:translateY(-50%);font-size:12px;line-height:16px;font-weight:500;color:var(--ink-secondary)">{{ plot.name }}</div>
+</sc-if>
+</div>
+<div onMouseMove="{{ onMove }}" onMouseLeave="{{ onLeave }}" style="position:relative;height:{{ plot.h }}px;cursor:crosshair">
+<sc-if value="{{ showSpan }}">
+<div style="position:absolute;top:0;bottom:0;left:{{ span.left }}%;width:{{ span.width }}%;background:var(--surface-tint)"></div>
+</sc-if>
+<sc-for list="{{ vTicks }}" as="vt">
+<div style="position:absolute;top:0;bottom:0;left:{{ vt.left }}%;width:1px;background:var(--border)"></div>
+</sc-for>
+<sc-for list="{{ yTicks }}" as="tk">
+<div style="position:absolute;left:0;right:0;top:{{ tk.top }}%;height:1px;background:{{ tk.color }}"></div>
+</sc-for>
+<svg viewBox="0 0 1000 1000" preserveAspectRatio="none" role="img" aria-label="{{ plot.aria }}" style="position:absolute;inset:0;width:100%;height:100%;overflow:visible">
+<sc-for list="{{ plot.series }}" as="s">
+<path d="{{ s.d }}" fill="none" stroke-width="1" vector-effect="non-scaling-stroke" stroke-linejoin="round" style="stroke:{{ s.color }}"></path>
+</sc-for>
+</svg>
+<sc-if value="{{ hovering }}">
+<div style="position:absolute;top:0;bottom:0;left:{{ hoverLeft }}%;width:1px;background:var(--ink-secondary);pointer-events:none"></div>
+</sc-if>
+</div>
+</div>
+</sc-for>
+
+<div style="display:grid;grid-template-columns:64px minmax(0,1fr);align-items:center">
+<div style="font-size:12px;line-height:16px;font-weight:500;color:var(--ink-secondary)">Answer</div>
+<div style="position:relative;height:28px">
+<sc-for list="{{ windows }}" as="w" hint-placeholder-count="27">
+<button type="button" onClick="{{ w.select }}" aria-label="{{ w.aria }}" aria-pressed="{{ w.pressed }}" style="position:absolute;top:0;bottom:0;left:{{ w.left }}%;width:calc({{ w.width }}% - 2px);margin:0;padding:0;box-sizing:border-box;border-radius:2px;cursor:pointer;background:{{ w.bg }};border:{{ w.border }};box-shadow:{{ w.ring }};outline:2px solid transparent"></button>
+</sc-for>
+</div>
+</div>
+
+<div style="display:grid;grid-template-columns:64px minmax(0,1fr)">
+<div></div>
+<div style="position:relative;height:16px">
+<sc-for list="{{ vTicks }}" as="vt">
+<div style="position:absolute;top:0;left:{{ vt.left }}%;transform:translateX(-50%);font-size:12px;line-height:16px;color:var(--ink-muted);font-variant-numeric:tabular-nums;white-space:nowrap">{{ vt.label }}</div>
+</sc-for>
+</div>
+</div>
+
+<sc-if value="{{ hovering }}">
+<div style="position:absolute;top:var(--space-5);left:{{ tipLeft }};transform:{{ tipTransform }};pointer-events:none;z-index:2;min-width:160px;background:var(--surface-card);border-radius:var(--radius-md);box-shadow:var(--shadow-card);padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2)">
+<div style="font-family:var(--font-mono);font-size:13px;line-height:20px;color:var(--ink)">{{ tip.time }}</div>
+<div style="display:grid;grid-template-columns:auto 1fr;gap:2px var(--space-4);font-size:13px;line-height:20px;font-variant-numeric:tabular-nums">
+<div style="display:flex;align-items:center;gap:6px;color:var(--ink-muted)"><span style="width:12px;height:2px;background:var(--warning)"></span>x</div><div style="text-align:right">{{ tip.x }}</div>
+<div style="display:flex;align-items:center;gap:6px;color:var(--ink-muted)"><span style="width:12px;height:2px;background:var(--link)"></span>y</div><div style="text-align:right">{{ tip.y }}</div>
+<div style="display:flex;align-items:center;gap:6px;color:var(--ink-muted)"><span style="width:12px;height:2px;background:var(--success)"></span>z</div><div style="text-align:right">{{ tip.z }}</div>
+</div>
+<div style="border-top:1px solid var(--border);padding-top:var(--space-2);font-size:13px;line-height:20px;color:var(--ink-secondary)">{{ tip.answer }}</div>
+</div>
+</sc-if>
+
+</div>
+
+<div style="border-top:1px solid var(--border);padding:var(--space-4) var(--space-5);display:flex;align-items:center;justify-content:space-between;gap:var(--space-3) var(--space-8);flex-wrap:wrap">
+<div style="display:flex;gap:var(--space-2) var(--space-5);flex-wrap:wrap;align-items:center;font-size:13px;line-height:20px;color:var(--ink-secondary)">
+<sc-for list="{{ legend }}" as="lg" hint-placeholder-count="5">
+<div style="display:flex;align-items:center;gap:var(--space-2)">
+<span style="width:14px;height:14px;border-radius:2px;box-sizing:border-box;background:{{ lg.bg }};border:{{ lg.border }}"></span>
+<span>{{ lg.label }}</span>
+<span style="color:var(--ink-muted);font-variant-numeric:tabular-nums">{{ lg.count }}</span>
+</div>
+</sc-for>
+</div>
+
+</div>
+
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;},&quot;showSpan&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { x: true, y: true, z: true, layout: 'Overlaid', hoverF: null, sel: 24 };
+
+  data() {
+    if (this._d) return this._d;
+    const RATE = 114.345549, N = 3454, TMAX = (N - 1) / RATE;
+    let seed = 7;
+    const rnd = () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+    const env = [[0,40],[0.25,850],[1.6,850],[1.8,450],[3.2,450],[3.4,150],[4.1,150],[4.3,430],[14.4,430],[14.6,1080],[15.6,1080],[15.8,380],[21.1,380],[21.3,720],[22.6,720],[23,540],[27.6,540],[27.9,50],[31,50]];
+    const envAt = t => { for (let i = 1; i < env.length; i++) if (t <= env[i][0]) { const [t0,a0] = env[i-1], [t1,a1] = env[i]; return a0 + (a1 - a0) * (t - t0) / (t1 - t0); } return 50; };
+    const cyc = Array.from({ length: 400 }, () => 0.7 + rnd() * 0.45);
+    const x = [], y = [], z = [];
+    let ph = 0, nx = 0, nz = 0;
+    for (let i = 0; i < N; i++) {
+      const t = i / RATE;
+      ph += 2 * Math.PI * (5.2 + 0.4 * Math.sin(t * 0.7)) / RATE;
+      const e = envAt(t), a = e * cyc[Math.floor(ph / (2 * Math.PI)) % 400], b = Math.max(e, 320);
+      nx = nx * 0.85 + (rnd() - 0.5) * 34; nz = nz * 0.85 + (rnd() - 0.5) * 26;
+      y.push(Math.max(-1030, Math.min(1030, a * Math.sin(ph) + (rnd() - 0.5) * 20)));
+      x.push(0.16 * b * Math.sin(ph * 1.5 + 1) + nx + 30 * Math.sin(t * 11));
+      z.push(0.1 * b * Math.sin(ph * 0.8 + 2) + nz + 24 * Math.sin(t * 13 + 1));
+    }
+    const path = arr => { let s = ''; for (let i = 0; i < N; i++) s += (i ? 'L' : 'M') + (i / RATE / TMAX * 1000).toFixed(1) + ' ' + ((1100 - arr[i]) / 2200 * 1000).toFixed(1); return s; };
+    const kinds = ['Warming up', ...Array(13).fill('Arm moving'), 'No tremor', 'No tremor', ...Array(5).fill('Arm moving'), ...Array(4).fill('Tremor'), 'Arm moving', 'Arm moving'];
+    const windows = kinds.map((answer, i) => ({ answer, end: 4.2 + i, start: 3.2 + i }));
+    this._d = { RATE, N, TMAX, x, y, z, windows, paths: { x: path(x), y: path(y), z: path(z) } };
+    return this._d;
+  }
+
+  fmt(t, dec) {
+    const m = Math.floor(t / 60), s = t - m * 60;
+    const ss = dec ? s.toFixed(1).padStart(4, '0') : String(Math.round(s)).padStart(2, '0');
+    return `0:${String(m).padStart(2, '0')}:${ss}`;
+  }
+
+  renderVals() {
+    const d = this.data(), { TMAX } = d;
+    const pct = t => t / TMAX * 100;
+    const num = v => (v < 0 ? '−' : '') + Math.abs(Math.round(v)).toLocaleString('en-US');
+    const style = {
+      'Tremor': { bg: 'var(--ink)', border: 'none' },
+      'Arm moving': { bg: 'var(--border-strong)', border: 'none' },
+      'No tremor': { bg: 'var(--surface-card)', border: '1px solid var(--border-control)' },
+      'Warming up': { bg: 'var(--surface-sunken)', border: '1px dashed var(--border-control)' }
+    };
+    const axes = [
+      { key: 'y', color: 'var(--link)' },
+      { key: 'x', color: 'var(--warning)' },
+      { key: 'z', color: 'var(--success)' }
+    ].filter(a => this.state[a.key]);
+    const stacked = this.state.layout === 'Stacked';
+    const aria = keys => `Gyroscope ${keys} in degrees per second over 30 seconds`;
+    const plots = stacked
+      ? ['x', 'y', 'z'].filter(k => this.state[k]).map(k => ({ h: 150, showName: true, name: k, aria: aria(k), series: [{ d: d.paths[k], color: axes.find(a => a.key === k).color }] }))
+      : [{ h: 420, showName: false, name: '', aria: aria(axes.map(a => a.key).join(', ')), series: axes.map(a => ({ d: d.paths[a.key], color: a.color })) }];
+
+    const yTicks = [1000, 500, 0, -500, -1000].map(v => ({ top: (1100 - v) / 2200 * 100, label: num(v), color: v === 0 ? 'var(--border-strong)' : 'var(--border)' }));
+    const vTicks = [0, 5, 10, 15, 20, 25, 30].map(s => ({ left: pct(s), label: this.fmt(s) }));
+
+    const sel = d.windows[this.state.sel];
+    const spanStart = Math.max(0, sel.end - 7);
+    const windows = d.windows.map((w, i) => ({
+      left: pct(w.start), width: pct(1), bg: style[w.answer].bg, border: style[w.answer].border,
+      ring: i === this.state.sel ? '0 0 0 2px var(--surface-card), 0 0 0 4px var(--link)' : 'none',
+      pressed: i === this.state.sel ? 'true' : 'false',
+      aria: `Window ${i + 1}, ${w.answer.toLowerCase()}, ends ${this.fmt(w.end, true)}`,
+      select: () => this.setState({ sel: i })
+    }));
+    const count = a => d.windows.filter(w => w.answer === a).length;
+    const legend = ['Tremor', 'No tremor', 'Arm moving', 'Warming up'].map(a => ({ label: a, count: count(a), ...style[a] }));
+    if (this.props.showSpan ?? true) legend.push({ label: 'Window span', count: '', bg: 'var(--surface-tint)', border: 'none' });
+
+    const f = this.state.hoverF, hovering = f !== null;
+    let tip = { time: '', x: '', y: '', z: '', answer: '' };
+    if (hovering) {
+      const i = Math.round(f * (d.N - 1)), t = i / d.RATE;
+      const w = d.windows.find(w => t >= w.start && t < w.end);
+      tip = { time: this.fmt(t, true), x: num(d.x[i]), y: num(d.y[i]), z: num(d.z[i]), answer: w ? w.answer : 'No answer yet' };
+    }
+
+    return {
+      theme: this.props.theme ?? 'light',
+      axisX: this.state.x, axisY: this.state.y, axisZ: this.state.z,
+      toggleX: () => this.setState(s => ({ x: !s.x })),
+      toggleY: () => this.setState(s => ({ y: !s.y })),
+      toggleZ: () => this.setState(s => ({ z: !s.z })),
+      layoutOptions: ['Overlaid', 'Stacked'],
+      layout: this.state.layout,
+      setLayout: v => this.setState({ layout: v }),
+      plots, yTicks, vTicks, windows, legend,
+      showSpan: this.props.showSpan ?? true,
+      span: { left: pct(spanStart), width: pct(sel.end - spanStart) },
+      selText: `Window ${this.state.sel + 1}: ${sel.answer.toLowerCase()}, from ${this.fmt(spanStart, true)} to ${this.fmt(sel.end, true)}`,
+      hovering, tip,
+      hoverLeft: hovering ? f * 100 : 0,
+      tipLeft: hovering ? `calc(80px + (100% - 104px) * ${f})` : '0',
+      tipTransform: hovering && f > 0.6 ? 'translateX(calc(-100% - 12px))' : 'translateX(12px)',
+      onMove: e => { const r = e.currentTarget.getBoundingClientRect(); this.setState({ hoverF: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) }); },
+      onLeave: () => this.setState({ hoverF: null })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+/* typography.css. My Default type. One class per type style. Red Hat Display for the wordmark and major titles, Libre Franklin for all other text, IBM Plex Mono for identifiers. */
+:root {
+  --font-display: "Red Hat Display", "Libre Franklin", system-ui, sans-serif;
+  --font-sans: "Libre Franklin", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+.display { font-family: var(--font-display); font-size: 40px; line-height: 44px; font-weight: 600; letter-spacing: -0.025em; text-wrap: balance; }
+.page-title { font-family: var(--font-display); font-size: 32px; line-height: 38px; font-weight: 600; letter-spacing: -0.02em; text-wrap: balance; }
+.screen-title { font-family: var(--font-sans); font-size: 24px; line-height: 30px; font-weight: 600; letter-spacing: -0.02em; }
+.section-heading { font-family: var(--font-sans); font-size: 14px; line-height: 20px; font-weight: 600; letter-spacing: -0.005em; }
+.overline { font-family: var(--font-sans); font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.015em; }
+.eyebrow { font-family: var(--font-sans); font-size: 13px; line-height: 20px; font-weight: 500; }
+.body { font-family: var(--font-sans); font-size: 14px; line-height: 22px; font-weight: 400; text-wrap: pretty; }
+.body-sm { font-family: var(--font-sans); font-size: 13px; line-height: 20px; font-weight: 400; text-wrap: pretty; }
+.control-label, .field-label { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 500; }
+.value { font-family: var(--font-mono); font-size: 13px; line-height: 20px; font-weight: 400; }
+.value-sm { font-family: var(--font-mono); font-size: 11px; line-height: 16px; font-weight: 400; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* spacing.css. My Default space + radius. 4px base. */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-14: 56px;
+  --space-16: 64px;
+  --space-24: 96px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-full: 9999px;
+}
+
+/* fonts.css. My Default webfonts. Paths are relative to this file. The design
+   project holds these six latin-subset woff2 files. They are not copied into
+   context/; the same faces come from Google Fonts or Fontsource. */
+@font-face { font-family: 'Red Hat Display'; src: url('../fonts/RedHatDisplay-Variable-latin.woff2') format('woff2'); font-weight: 300 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Libre Franklin'; src: url('../fonts/LibreFranklin-Variable-latin.woff2') format('woff2'); font-weight: 100 900; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Libre Franklin'; src: url('../fonts/LibreFranklin-Variable-Italic-latin.woff2') format('woff2'); font-weight: 100 900; font-style: italic; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('../fonts/IBMPlexMono-Regular-latin.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('../fonts/IBMPlexMono-Medium-latin.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: 'IBM Plex Mono'; src: url('../fonts/IBMPlexMono-SemiBold-latin.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
