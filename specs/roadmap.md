@@ -170,7 +170,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
     - It covers the Record button sentences of the viewer paragraph in the USB recording section of the build spec. The user asked for the button on 2026-10-28, and the build spec changed on the same day to allow it. Before that change the viewer read saved files only.
     - A Record button starts `tools/watch_cli.py record` as a child process. A second press stops it as Ctrl-C does, and the viewer opens the saved file when watch_cli.py has finished writing it.
     - The viewer never opens the watch's port itself, so `tools/watch_cli.py` stays the only program that talks to the watch, and its reset, clock, and no-overwrite rules still hold.
-    - The status is planned.
+    - The status is in progress.
 
 15. Wrist tests, demo, and deliverables
     - Files written before 2026-10-27 call this feature feature 12, files written on 27 October 2026 call it feature 13, and files written on 28 October 2026 before the record button was added call it feature 14. The recording viewer took number 12 on 27 October, the EDF export took number 13 on 28 October, and the record button took number 14 on 28 October.
