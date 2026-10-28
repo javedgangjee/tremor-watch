@@ -82,7 +82,7 @@
 - Node v22.22.1 and npm 11.20.0 from nvm run npm and the unit tests.
 - The modules in viewer/src/lib/ read the file (read_text.js), read the line patterns from core/recording_format.md (format.js), parse the lines (parse.js), give each reading its time (timeline.js), place the windows (windows.js), and join these steps (load.js). args.js reads the command line and pixels.js checks captured colours. They use only Node's built-in modules, so their tests need no installed packages.
 - viewer/src/main.js owns the window, the menu, the open dialog, and the file reading, and viewer/src/capture.js runs the capture mode. viewer/src/preload.js gives the page three calls, and the page in viewer/src/renderer/ only draws.
-- The command `npm --prefix viewer ci` installs the packages, which needs the network. The command `npm --prefix viewer start -- [FILE] [--boot ID] [--capture OUT.png]` starts the app. With `--capture` it draws FILE with no person, saves OUT.png and OUT.json, and exits.
+- The command `npm --prefix viewer ci` installs the packages, which needs the network. The command `npm --prefix viewer start -- [FILE] [--boot ID] [--capture OUT.png]` starts the app. With `--capture` it draws FILE with no person, saves OUT.png and OUT.json, and exits. `make viewer-start [FILE=FILE] [BOOT=ID]` runs `npm --prefix viewer start` and first runs `npm --prefix viewer ci` when viewer/node_modules is missing or older than viewer/package-lock.json.
 - The command `node viewer/scripts/make_synthetic.js` writes the made-up recording viewer/test/fixtures/synthetic.txt.gz again, and `--long OUT --minutes M` writes a long one.
 
 ## Tests and checks
@@ -109,7 +109,7 @@
 - The command `~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/drop_run.py` closes the port for 60 seconds and opens it again without a reset, which takes about 5 minutes.
 - The command `caffeinate -i ~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/face_run.py` runs the face's scripted check with two doses and nobody touching the watch, which takes about 22 minutes.
 - The command `~/.espressif/tools/python/v6.1/venv/bin/python tests/firmware/tap_run.py` guides a person through the taps, the dose flow, and the BOOT presses and judges the log, which takes about 12 minutes.
-- The command `npm --prefix viewer run smoke -- --out DIR` runs the real viewer in capture mode on the made-up recording, the committed logs, a bad file, and a two hour recording, and checks each report. It needs the installed packages and a logged-in screen, so it stays out of `make check` and CI.
+- The command `npm --prefix viewer run smoke -- --out DIR` runs the real viewer in capture mode on the made-up recording, the committed logs, a bad file, and a two hour recording, and checks each report. It needs the installed packages and a logged-in screen, so it stays out of `make check` and CI. `make viewer-smoke [OUT=DIR]` runs it.
 - The full PADS match test needs the toolbox, so it runs before each release and not on every commit.
 - The test data is PADS from PhysioNet, which holds 100 Hz gyroscope recordings in radians per second.
 

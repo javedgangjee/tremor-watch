@@ -127,9 +127,10 @@ reference/.venv/bin/python tools/compare_session.py session.txt.gz --report repo
 `viewer/` holds a small Electron app that plots a saved recording's gyroscope readings against time, shades the windows the watch answered with tremor, and shows each window's answer in a lane under the plot. It reads saved files only and never opens the watch's port. It needs Node 22, and the install needs the network once.
 
 ```
-npm --prefix viewer ci
-npm --prefix viewer start -- session.txt.gz
+make viewer-start FILE=session.txt.gz
 ```
+
+`make viewer-start` installs the packages with `npm --prefix viewer ci` when they are missing or out of date, and then runs `npm --prefix viewer start`. Add `BOOT=ID` to open one boot of the file. With no FILE the app opens empty. `make viewer-smoke` runs the app in capture mode on the test recordings and checks each drawing.
 
 File > Open (Cmd+O) opens another recording. Drag across the plot to zoom in, double click to show the whole boot, and use the left and right arrow keys to move the view. `make viewer` runs the viewer's unit tests, which need no install.
 

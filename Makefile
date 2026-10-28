@@ -10,7 +10,17 @@
 #
 # The viewer's capture checks run the real Electron app, so they need
 # `npm --prefix viewer ci` and a screen. They stay out of `make check`, and
-# `npm --prefix viewer run smoke` runs them.
+# `make viewer-smoke` runs them. OUT names the folder for their PNG and JSON
+# files, and with no OUT the smoke script makes a temporary folder.
+#
+# `make viewer-start` opens the recording viewer. FILE names a saved
+# recording, and BOOT picks one boot in it, as in
+# `make viewer-start FILE=session.txt.gz BOOT=2565193163`. With no FILE the
+# app opens empty, and File > Open picks a recording.
+#
+# Both viewer targets run `npm --prefix viewer ci` first when
+# viewer/node_modules is missing or older than viewer/package-lock.json.
+# The install and the first start need the network.
 #
 # `make python` runs the pytest tests in tests/ with the reference venv, which
 # holds the toolbox. They include the full PADS match, the check that the
@@ -25,7 +35,7 @@ TABLES ?= core/detector_tables.h
 IDF_ACTIVATE ?= $(HOME)/.espressif/tools/activate_idf_v6.1.sh
 PYTHON ?= reference/.venv/bin/python
 
-.PHONY: check laptop hash viewer firmware python full
+.PHONY: check laptop hash viewer viewer-start viewer-smoke firmware python full
 
 check: laptop hash viewer firmware
 
@@ -50,6 +60,18 @@ hash:
 
 viewer:
 	node --test viewer/test/*.test.js
+
+# npm ci writes this file last, so it marks a finished install.
+VIEWER_INSTALLED := viewer/node_modules/.package-lock.json
+
+$(VIEWER_INSTALLED): viewer/package-lock.json
+	npm --prefix viewer ci
+
+viewer-start: $(VIEWER_INSTALLED)
+	npm --prefix viewer start --$(if $(FILE), "$(FILE)")$(if $(BOOT), --boot "$(BOOT)")
+
+viewer-smoke: $(VIEWER_INSTALLED)
+	npm --prefix viewer run smoke --$(if $(OUT), --out "$(OUT)")
 
 # The activate script sets IDF_TOOLS_PATH, which export.sh needs here. It also
 # makes idf.py a shell function that make cannot call, so this runs
