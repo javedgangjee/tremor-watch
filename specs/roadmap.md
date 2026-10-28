@@ -163,7 +163,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
     - tools/export_edf.py reads a recording that `tools/watch_cli.py record` saved and writes an EDF+ file. The signals are the 100 Hz gyroscope samples that `build/core/replay --recording FILE --samples OUT` makes, which are the samples the detector used. The watch's own rate of about 114.35 readings a second changes from stretch to stretch, so it does not fit EDF's fixed number of samples in each data record.
     - Each window's answer, each face change, and each dose become EDF+ annotations. A gap between stretches or after lost lines stays a gap, with the discontinuous EDF+ form, and no samples are made up to fill it.
     - It reads saved files only and never opens the watch's port.
-    - The status is planned.
+    - The status is in progress.
 
 14. Wrist tests, demo, and deliverables
     - Files written before 2026-10-27 call this feature feature 12, and files written on 27 October 2026 call it feature 13. The recording viewer took number 12 on 27 October, and the EDF export took number 13 on 28 October.
