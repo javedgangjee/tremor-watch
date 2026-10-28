@@ -118,6 +118,11 @@ const look_box_t *look_box(look_screen_t screen, look_item_t item)
     return b->w > 0 ? b : NULL;
 }
 
+uint32_t look_bg(look_screen_t screen)
+{
+    return screen == LOOK_SESSION || screen == LOOK_STATUS ? LOOK_WHITE : LOOK_BG;
+}
+
 const look_box_t *look_tap_box(look_screen_t screen)
 {
     switch (screen) {

@@ -161,6 +161,10 @@ const look_state_t *look_logged(void);
  * lacks the item. */
 const look_box_t *look_box(look_screen_t screen, look_item_t item);
 
+/* look_bg() gives the background colour of a screen. Session and Status are
+ * white, and the other screens use LOOK_BG. */
+uint32_t look_bg(look_screen_t screen);
+
 /* look_tap_box() gives the tap target of a screen, which is the whole screen
  * for Home and the lower half for Medication, or NULL for the others. */
 const look_box_t *look_tap_box(look_screen_t screen);
