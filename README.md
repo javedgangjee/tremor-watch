@@ -136,7 +136,7 @@ File > Open (Cmd+O) opens another recording. Drag across the plot to zoom in, do
 
 ## Status
 
-Features 1 to 11 in `specs/roadmap.md` are built, and their laptop tests pass. On the watch, the detector, the time rule, the recording, and the face states have run with the watch on a table. The tap, the BOOT button, the tones, and the battery have not been checked on the watch yet, and firmware version 12, which holds the fixes of a code review, has not run on it. Feature 12, a recording viewer, and feature 13, the wrist tests, are still to come.
+Features 1 to 11 in `specs/roadmap.md` are built, and their laptop tests pass. On the watch, the detector, the time rule, the recording, and the face states have run with the watch on a table. The tap, the BOOT button, the tones, and the battery have not been checked on the watch yet, and firmware version 12, which holds the fixes of a code review, has not run on it. Feature 12, a recording viewer, feature 13, an EDF export, and feature 14, the wrist tests, are still to come.
 
 ## Licence
 
