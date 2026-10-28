@@ -25,6 +25,7 @@
     bootPicker: $('boot-picker'),
     boot: $('boot'),
     cutShort: $('cut-short'),
+    bootView: $('boot-view'),
     chartCard: $('chart-card'),
     chips: [...document.querySelectorAll('#chips .md-chip')],
     layout: $('layout'),
@@ -94,7 +95,7 @@
     boot = null;
     showCount++;
     clearCharts();
-    for (const el of [els.titleBlock, els.cutShort, els.chartCard, els.summary, els.empty]) {
+    for (const el of [els.titleBlock, els.cutShort, els.bootView, els.chartCard, els.summary, els.empty]) {
       show(el, false);
     }
     els.messageText.textContent = text;
@@ -295,6 +296,7 @@
     boot = b;
     show(els.message, false);
     show(els.empty, false);
+    show(els.bootView, true);
     show(els.chartCard, true);
     showSummary(b);
     showLegend(b);

@@ -41,8 +41,8 @@ const TWO_FRAMES = 'new Promise((resolve) => requestAnimationFrame(() => request
 
 /**
  * Make the window as tall as the page, so the capture shows the whole page
- * down to the summary. Only the height changes, so nothing moves sideways
- * and the cells of the report keep their places.
+ * down to the bottom of the cards. Only the height changes, so nothing moves
+ * sideways and the cells of the report keep their places.
  */
 async function fitPage(win) {
   const pageHeight = await win.webContents.executeJavaScript('Math.ceil(document.documentElement.scrollHeight)');

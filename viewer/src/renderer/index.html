@@ -67,77 +67,79 @@
       <div class="md-notice-main">This file was cut short, so the viewer shows it up to the cut.</div>
     </div>
 
-    <section id="chart-card" class="md-card md-card-flush chart-card" aria-label="Gyroscope chart" hidden>
-      <header class="md-card-head chart-head">
-        <div class="chart-title">
-          <h2 class="md-card-title">Gyroscope</h2>
-          <span class="chart-unit">°/s</span>
-        </div>
-        <div class="chart-controls">
-          <div id="chips" class="chips" role="group" aria-label="Axes">
-            <button type="button" class="md-chip md-chip-on" aria-pressed="true" data-axis="x">
-              <svg class="md-icon chip-check" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5 L10 17.5 L19 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span class="chip-text"><span class="axis-line axis-line-x"></span>x</span>
-            </button>
-            <button type="button" class="md-chip md-chip-on" aria-pressed="true" data-axis="y">
-              <svg class="md-icon chip-check" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5 L10 17.5 L19 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span class="chip-text"><span class="axis-line axis-line-y"></span>y</span>
-            </button>
-            <button type="button" class="md-chip md-chip-on" aria-pressed="true" data-axis="z">
-              <svg class="md-icon chip-check" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5 L10 17.5 L19 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              <span class="chip-text"><span class="axis-line axis-line-z"></span>z</span>
-            </button>
+    <div id="boot-view" class="boot-view" hidden>
+      <section id="chart-card" class="md-card md-card-flush chart-card" aria-label="Gyroscope chart" hidden>
+        <header class="md-card-head chart-head">
+          <div class="chart-title">
+            <h2 class="md-card-title">Gyroscope</h2>
+            <span class="chart-unit">°/s</span>
           </div>
-          <div id="layout" class="md-seg" role="radiogroup" aria-label="Chart layout">
-            <button type="button" class="md-seg-opt md-seg-on" role="radio" aria-checked="true" tabindex="0" data-layout="overlaid">Overlaid</button>
-            <button type="button" class="md-seg-opt" role="radio" aria-checked="false" tabindex="-1" data-layout="stacked">Stacked</button>
+          <div class="chart-controls">
+            <div id="chips" class="chips" role="group" aria-label="Axes">
+              <button type="button" class="md-chip md-chip-on" aria-pressed="true" data-axis="x">
+                <svg class="md-icon chip-check" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5 L10 17.5 L19 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span class="chip-text"><span class="axis-line axis-line-x"></span>x</span>
+              </button>
+              <button type="button" class="md-chip md-chip-on" aria-pressed="true" data-axis="y">
+                <svg class="md-icon chip-check" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5 L10 17.5 L19 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span class="chip-text"><span class="axis-line axis-line-y"></span>y</span>
+              </button>
+              <button type="button" class="md-chip md-chip-on" aria-pressed="true" data-axis="z">
+                <svg class="md-icon chip-check" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 12.5 L10 17.5 L19 7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span class="chip-text"><span class="axis-line axis-line-z"></span>z</span>
+              </button>
+            </div>
+            <div id="layout" class="md-seg" role="radiogroup" aria-label="Chart layout">
+              <button type="button" class="md-seg-opt md-seg-on" role="radio" aria-checked="true" tabindex="0" data-layout="overlaid">Overlaid</button>
+              <button type="button" class="md-seg-opt" role="radio" aria-checked="false" tabindex="-1" data-layout="stacked">Stacked</button>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      <div id="chart-body" class="chart-body">
-        <div id="plots" class="plots"></div>
-        <div id="answer-line" class="answer-line">
-          <span class="answer-label">Answer</span>
-          <div id="answer-row" class="answer-row" tabindex="0" role="group" aria-label="Window answers">
-            <canvas id="answer-canvas" class="answer-canvas"></canvas>
+        <div id="chart-body" class="chart-body">
+          <div id="plots" class="plots"></div>
+          <div id="answer-line" class="answer-line">
+            <span class="answer-label">Answer</span>
+            <div id="answer-row" class="answer-row" tabindex="0" role="group" aria-label="Window answers">
+              <canvas id="answer-canvas" class="answer-canvas"></canvas>
+            </div>
+          </div>
+          <div id="time-line" class="time-line">
+            <span></span>
+            <div id="time-labels" class="time-labels"></div>
+          </div>
+          <p id="no-readings" class="no-readings" hidden>This boot holds no readings.</p>
+          <div id="readout" class="readout" aria-hidden="true" hidden>
+            <div id="readout-time" class="readout-time"></div>
+            <div class="readout-values">
+              <span class="readout-axis"><span class="axis-line axis-line-x"></span>x</span><span id="readout-x" class="readout-value"></span>
+              <span class="readout-axis"><span class="axis-line axis-line-y"></span>y</span><span id="readout-y" class="readout-value"></span>
+              <span class="readout-axis"><span class="axis-line axis-line-z"></span>z</span><span id="readout-z" class="readout-value"></span>
+            </div>
+            <div id="readout-answer" class="readout-answer"></div>
           </div>
         </div>
-        <div id="time-line" class="time-line">
-          <span></span>
-          <div id="time-labels" class="time-labels"></div>
-        </div>
-        <p id="no-readings" class="no-readings" hidden>This boot holds no readings.</p>
-        <div id="readout" class="readout" aria-hidden="true" hidden>
-          <div id="readout-time" class="readout-time"></div>
-          <div class="readout-values">
-            <span class="readout-axis"><span class="axis-line axis-line-x"></span>x</span><span id="readout-x" class="readout-value"></span>
-            <span class="readout-axis"><span class="axis-line axis-line-y"></span>y</span><span id="readout-y" class="readout-value"></span>
-            <span class="readout-axis"><span class="axis-line axis-line-z"></span>z</span><span id="readout-z" class="readout-value"></span>
-          </div>
-          <div id="readout-answer" class="readout-answer"></div>
-        </div>
-      </div>
 
-      <footer class="legend-row">
-        <ul class="legend">
-          <li><span class="swatch swatch-tremor"></span><span>Tremor</span><span id="count-0" class="legend-count"></span></li>
-          <li><span class="swatch swatch-no-tremor"></span><span>No tremor</span><span id="count-1" class="legend-count"></span></li>
-          <li><span class="swatch swatch-arm-moving"></span><span>Arm moving</span><span id="count-2" class="legend-count"></span></li>
-          <li><span class="swatch swatch-warming-up"></span><span>Warming up</span><span id="count-3" class="legend-count"></span></li>
-          <li><span class="swatch swatch-edge"></span><span>Tremor start and end</span></li>
-          <li><span class="swatch swatch-span"></span><span>Window span</span></li>
-        </ul>
-        <p id="selection-text" class="selection-text" role="status"></p>
-      </footer>
-    </section>
+        <footer class="legend-row">
+          <ul class="legend">
+            <li><span class="swatch swatch-tremor"></span><span>Tremor</span><span id="count-0" class="legend-count"></span></li>
+            <li><span class="swatch swatch-no-tremor"></span><span>No tremor</span><span id="count-1" class="legend-count"></span></li>
+            <li><span class="swatch swatch-arm-moving"></span><span>Arm moving</span><span id="count-2" class="legend-count"></span></li>
+            <li><span class="swatch swatch-warming-up"></span><span>Warming up</span><span id="count-3" class="legend-count"></span></li>
+            <li><span class="swatch swatch-edge"></span><span>Tremor start and end</span></li>
+            <li><span class="swatch swatch-span"></span><span>Window span</span></li>
+          </ul>
+          <p id="selection-text" class="selection-text" role="status"></p>
+        </footer>
+      </section>
 
-    <section id="summary" class="md-card summary" hidden>
-      <header class="md-card-head">
-        <h2 class="md-card-title">Summary</h2>
-      </header>
-      <dl id="facts" class="facts"></dl>
-    </section>
+      <section id="summary" class="md-card md-card-flush summary" hidden>
+        <header class="md-card-head summary-head">
+          <h2 class="md-card-title">Summary</h2>
+        </header>
+        <dl id="facts" class="facts"></dl>
+      </section>
+    </div>
   </main>
 
   <script src="../../node_modules/uplot/dist/uPlot.iife.min.js"></script>

@@ -124,7 +124,7 @@ reference/.venv/bin/python tools/compare_session.py session.txt.gz --report repo
 
 ## View a recording
 
-`viewer/` holds a small Electron app that plots a saved recording's gyroscope readings against time and shows each window's answer as a block in the Answer row under the plot, with tremor blocks filled dark. The title gives the recording's start, such as "Oct 28, 2026 at 14:28", over its file name, and a Summary card under the chart gives the boot's facts. It needs Node 22, and the install needs the network once.
+`viewer/` holds a small Electron app that plots a saved recording's gyroscope readings against time and shows each window's answer as a block in the Answer row under the plot, with tremor blocks filled dark. The title gives the recording's start, such as "Oct 28, 2026 at 14:28", over its file name, and a Summary card in a column at the right of the chart gives the boot's facts, one to a row. In a window narrower than 1100 px the Summary card sits under the chart. It needs Node 22, and the install needs the network once.
 
 ```
 make viewer-start FILE=session.txt.gz
