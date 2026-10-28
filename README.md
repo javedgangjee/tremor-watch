@@ -43,7 +43,7 @@ A tap anywhere on Home opens Medication. The lower half is one large "Took it" b
 
 ### Session and Status
 
-Session shows the share of still time with tremor in this session. Each block below it covers 10 minutes, and a hollow block had under two minutes of still time. Status lists build details such as the sensor rate, the detector's run time, the firmware version, and the hash of the detector tables.
+Session shows the share of still time with tremor in this session. Each block below it covers 10 minutes, and a hollow block had under two minutes of still time. Status lists build details such as the sensor rate, the detector's run time, the firmware version, and the hash of the detector tables. Both screens use a plain white background.
 
 <table>
   <tr>
@@ -99,7 +99,7 @@ In PADS the toolbox fires on about 4 percent of the Relaxed task's windows for h
 | `firmware/` | The ESP-IDF project for the watch. `firmware/main/` holds the five tasks and the face. `firmware/detector_check/` runs the saved windows on the chip, `firmware/bringup/` measured the sensor rate, and `firmware/components/` holds XPowersLib for the power chip. |
 | `reference/` | The Python toolbox that the C port must match, and the PADS results. |
 | `viewer/` | The recording viewer, a small Electron app that shows a saved recording. It can also record from the watch through `tools/watch_cli.py`. |
-| `tools/` | Generators for the detector tables and face assets, the watch command tool, and the session check. |
+| `tools/` | Generators for the detector tables and face assets, the watch command tool, the session check, and the EDF+ export. |
 | `tests/` | The C unit tests, the Python checks, and the logs and reports from the watch. |
 | `specs/`, `context/` | The mission, tech stack, roadmap, build spec, and face design. |
 
@@ -134,7 +134,7 @@ make viewer-start FILE=session.txt.gz
 
 File > Open (Cmd+O) opens another recording. Drag across the plot to zoom in, double click to show the whole boot, and use the left and right arrow keys to move the view. `make viewer` runs the viewer's unit tests, which need no install.
 
-The Record button runs `tools/watch_cli.py record`, which resets the watch and saves every line it writes. Press Stop to end the recording, as Ctrl-C does, and the viewer opens the new file. The viewer never opens the watch's port itself. Files go to `recordings/` at the repo root, which git leaves out, with names such as `tremor-2026-10-28-143005.txt.gz`, and a name that is taken gets `-2`. `TREMOR_RECORDINGS` names another folder, and `TREMOR_PYTHON` names the Python to run, which must hold pyserial and is the ESP-IDF Python by default. When the recording cannot start or watch_cli.py stops with an error, such as when no watch is plugged in, the line under the bar says why, and the plot stays as it was.
+The Record button runs `tools/watch_cli.py record`, which resets the watch and saves every line it writes. Press Stop to end the recording, as Ctrl-C does, and the viewer opens the new file. The viewer never opens the watch's port itself. Files go to `recordings/` at the repo root, which git leaves out, with names such as `tremor-2026-10-28-143005.txt.gz`, and a name that is taken gets `-2`. `TREMOR_RECORDINGS` names another folder, and `TREMOR_PYTHON` names the Python to run, which must hold pyserial and is the ESP-IDF Python by default. When the recording cannot start or saves no file, such as when no watch is plugged in, the line under the bar says why, and the plot stays as it was. When watch_cli.py stops with an error after it saved a file, the viewer still opens that file, and the line under the bar gives the error.
 
 ## Export a recording as EDF+
 
@@ -151,7 +151,7 @@ EDFbrowser and edfio keep the gaps. MNE-Python 1.13.2 places the data records of
 
 ## Status
 
-Features 1 to 11 in `specs/roadmap.md` are built, and their laptop tests pass. On the watch, the detector, the time rule, the recording, and the face states have run with the watch on a table. The tap, the BOOT button, the tones, and the battery have not been checked on the watch yet, and firmware version 12, which holds the fixes of a code review, has not run on it. Feature 12, a recording viewer, feature 13, an EDF export, feature 14, a record button in the viewer, and feature 15, the wrist tests, are still to come.
+Features 1 to 14 in `specs/roadmap.md` are built and merged, and their laptop tests pass. On the watch, the detector, the time rule, the recording, and the face states have run with the watch on a table, and firmware version 12 ran on it on 28 October 2026. The tap, the BOOT button, the tones, and the battery have not been checked on the watch yet, and the white Session and Status backgrounds have not been flashed to it. The recording viewer, the EDF export, and the record button each have a check by hand still to do, as the validation files under `specs/features/` say. Feature 15, the wrist tests, is still to come.
 
 ## Licence
 
