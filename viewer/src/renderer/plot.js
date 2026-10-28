@@ -2,8 +2,11 @@
 
 // Draws the gyroscope readings of one boot with uPlot. Overlaid is one chart
 // with the three axes, and Stacked is one chart for each shown axis. All
-// charts share one view, the time range on the x axis, and one cursor. The
-// page loads this as a classic script, so it adds one global, TremorPlot.
+// charts share one view, the time range on the x axis, and one cursor. In
+// Stacked they also share one y range. Every chart marks the start and the
+// end of each tremor episode and the span of the selected window with
+// vertical lines. The page loads this as a classic script, so it adds one
+// global, TremorPlot.
 
 (function () {
   const C = window.TremorChart;
@@ -14,7 +17,8 @@
   const PADDING = [8, 0, 8, 0];
   const Y_AXIS_PX = 64;
   const Y_LABEL_GAP_PX = 12;
-  const Y_TICK_SPACE_PX = 48;
+  // The least room between two y ticks, so each 150 px stacked plot shows at least two.
+  const Y_TICK_SPACE_PX = { overlaid: 48, stacked: 24 };
   const TIME_TICK_SPACE_PX = 90;
   const SYNC_KEY = 'tremor-x';
   // The readout moves to the left of the pointer past this share of the width.
@@ -63,17 +67,26 @@
     let syncing = false;
     let reported = false;
     let width = plotsEl.clientWidth;
+    // The last shared range of the stacked plots, kept for its first and last
+    // reading and its axes, so the plots scan the readings once for each view.
+    let shared = { key: null, range: null };
 
     const plotWidth = (u) => u.bbox.width / uPlot.pxRatio;
     const canvasX = (u, seconds) => Math.round(u.valToPos(seconds, 'x', true));
 
-    // A flat signal still gets a range of 2 degrees per second.
-    function yRange(_u, min, max) {
-      if (min === null || max === null) {
-        return [-1, 1];
+    // Overlaid fits the shown readings in view. Stacked gives every plot the
+    // range of the readings of every shown axis in view. uPlot sets the
+    // indexes of the readings in view before it ranges y.
+    function yRange(u, min, max) {
+      if (state.layout !== 'stacked') {
+        return C.paddedRange(min, max);
       }
-      const pad = (max - min) * 0.05 || 1;
-      return [min - pad, max + pad];
+      const [i0, i1] = u.series[0].idxs;
+      const key = `${i0},${i1},${state.shown.join('')}`;
+      if (shared.key !== key) {
+        shared = { key, range: C.sharedRange(state.shown.map((a) => boot[READINGS[a]]), i0, i1) };
+      }
+      return [...shared.range];
     }
 
     // Break the lines at each break in view, so no line joins two stretches
@@ -111,23 +124,69 @@
       ctx.restore();
     }
 
-    // The two lines of the selected window lie over the readings.
-    function drawSelection(u) {
-      const w = state.selection;
-      if (w === null) {
-        return;
-      }
+    // Draw one vertical line at each time in view, the full height of the
+    // plotting area, with a style of C.LINES. Each line and each dash covers
+    // whole device pixels, so its colour is exact. Gives the lines drawn, in
+    // canvas pixels.
+    function drawLines(u, times, style) {
       const { ctx, bbox } = u;
       const { min, max } = u.scales.x;
-      const lw = lineWidth();
+      const ratio = uPlot.pxRatio;
+      const lw = Math.max(1, Math.round(style.widthPx * ratio));
+      const dash = style.dashPx.map((d) => Math.max(1, Math.round(d * ratio)));
+      const drawn = [];
       ctx.save();
-      ctx.fillStyle = state.palette.link;
-      for (const t of [w.startS, w.endS]) {
-        if (t >= min && t <= max) {
-          ctx.fillRect(canvasX(u, t) - Math.floor(lw / 2), bbox.top, lw, bbox.height);
+      ctx.beginPath();
+      ctx.rect(bbox.left, bbox.top, bbox.width, bbox.height);
+      ctx.clip();
+      ctx.fillStyle = state.palette[style.token];
+      for (const t of times) {
+        if (!(t >= min && t <= max)) {
+          continue;
         }
+        const left = canvasX(u, t) - Math.floor(lw / 2);
+        if (dash.length === 0) {
+          ctx.fillRect(left, bbox.top, lw, bbox.height);
+        } else {
+          for (let y = bbox.top; y < bbox.top + bbox.height; y += dash[0] + dash[1]) {
+            ctx.fillRect(left, y, lw, Math.min(dash[0], bbox.top + bbox.height - y));
+          }
+        }
+        const from = Math.max(left, bbox.left);
+        const to = Math.min(left + lw, bbox.left + bbox.width);
+        drawn.push({ t, left: from, width: to - from, top: bbox.top, height: bbox.height });
       }
       ctx.restore();
+      return drawn;
+    }
+
+    // The tremor lines and then the selection lines lie over the readings.
+    function drawMarks(u) {
+      const { min, max } = u.scales.x;
+      const w = state.selection;
+      u.tremorLines = drawLines(u, C.edgesInView(boot.tremorSpans, { min, max }), C.LINES.tremor);
+      u.selectionLines = w === null ? [] : drawLines(u, [w.startS, w.endS], C.LINES.selection);
+    }
+
+    // The lines a chart drew last, in page pixels.
+    function pageLines(u, lines) {
+      const rect = u.ctx.canvas.getBoundingClientRect();
+      const ratio = uPlot.pxRatio;
+      return (lines || []).map((l) => ({
+        t: l.t,
+        x: rect.left + l.left / ratio,
+        width: l.width / ratio,
+        top: rect.top + l.top / ratio,
+        height: l.height / ratio,
+      }));
+    }
+
+    function plotEdges(u) {
+      const box = u.over.getBoundingClientRect();
+      return {
+        left: box.left + u.valToPos(state.view.min, 'x'),
+        right: box.left + u.valToPos(state.view.max, 'x'),
+      };
     }
 
     function sameView(a, b) {
@@ -204,6 +263,7 @@
 
     function options(axes, height) {
       const p = state.palette;
+      const space = Y_TICK_SPACE_PX[state.layout === 'stacked' ? 'stacked' : 'overlaid'];
       const font = `12px ${p.fontSans}`;
       return {
         width,
@@ -231,11 +291,14 @@
           {
             size: Y_AXIS_PX,
             gap: Y_LABEL_GAP_PX,
-            space: Y_TICK_SPACE_PX,
+            space,
             incrs: Y_STEPS,
             font,
             stroke: p.inkMuted,
-            values: (_u, splits, _i, _space, step) => splits.map((v) => C.formatValue(v, C.decimalsFor(step))),
+            values: (u, splits, _i, _space, step) => {
+              u.tremorTicks = splits.map((v) => C.formatValue(v, C.decimalsFor(step)));
+              return u.tremorTicks;
+            },
             ticks: { show: false },
             grid: { stroke: p.border, width: 1 },
             border: { show: false },
@@ -254,7 +317,7 @@
         ],
         hooks: {
           drawAxes: [drawZero],
-          draw: [drawSelection, onDrawn],
+          draw: [drawMarks, onDrawn],
           setScale: [onScale],
           setCursor: [onCursor],
         },
@@ -273,6 +336,7 @@
 
     function build() {
       destroyCharts();
+      shared = { key: null, range: null };
       const stacked = state.layout === 'stacked';
       const groups = stacked ? state.shown.map((a) => [a]) : [C.AXES];
       const made = [];
@@ -372,14 +436,14 @@
       },
       plotHeights: () => charts.map((u) => u.height),
       /** Where the first chart puts the view's start and end, in page pixels. */
-      firstPlotEdges() {
-        const u = charts[0];
-        const box = u.over.getBoundingClientRect();
-        return {
-          left: box.left + u.valToPos(state.view.min, 'x'),
-          right: box.left + u.valToPos(state.view.max, 'x'),
-        };
-      },
+      firstPlotEdges: () => plotEdges(charts[0]),
+      /** Where each chart puts the view's start and end, in page pixels. */
+      plotEdges: () => charts.map(plotEdges),
+      /** The tremor and selection lines each chart drew last, in page pixels. */
+      lines: () =>
+        charts.map((u) => ({ tremor: pageLines(u, u.tremorLines), selection: pageLines(u, u.selectionLines) })),
+      yRanges: () => charts.map((u) => [u.scales.y.min, u.scales.y.max]),
+      yTicks: () => charts.map((u) => [...(u.tremorTicks || [])]),
       destroy() {
         window.removeEventListener('keydown', onKey);
         observer.disconnect();

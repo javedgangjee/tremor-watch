@@ -116,3 +116,11 @@ The user found on 2026-10-28 that the first plan read one decision wrong and dro
 10. Change the docs as in requirement 36. In README.md, View a recording says that black vertical lines mark where each tremor episode starts and ends in every plot, that the selected window's 4 seconds are marked by two dashed grey lines, and that the stacked plots share one scale. specs/tech-stack.md names TREMOR_CAPTURE_SELECT as a capture test hook and adds the selection lines to the smoke cases.
 
 11. Run `make viewer`, `npm --prefix viewer run smoke -- --out SCRATCH/smoke`, and `make check`, fix the failures, and look at the PNG files of check 2.
+
+## Changes during the second implement round
+
+1. uPlot calls onFirstDraw from inside its own draw, where a redraw() is dropped, so a selection made there drew no lines. viewer.js now makes the capture's selection in a microtask after that draw, and the report still waits two frames after it.
+2. A line's left edge is the rounded canvas x less half its width rounded down, so a line of an odd number of device pixels still covers whole device pixels. For the even widths of a 2x screen this is the same as step 4 says.
+3. Each line is clipped to the plotting area, so a line at the edge of the view does not spill into the y axis gutter. The report gives the part that was drawn.
+4. Each chart keeps its lines in canvas pixels when it draws, and lines() turns them into page pixels when the report asks.
+5. countColumn() does not count a row that lies outside the image as sampled. sharedRange() gives [-1, 1] when the indexes hold no value.

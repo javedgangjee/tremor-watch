@@ -88,4 +88,27 @@ function parseArgs(argv, cwd) {
   return args;
 }
 
-module.exports = { parseArgs, USAGE };
+/**
+ * Read the window that capture mode selects before it reports, from the
+ * environment variable TREMOR_CAPTURE_SELECT, which holds STRETCH,WINDOW as
+ * two whole numbers. It lets the smoke suite check the selection lines with
+ * no person.
+ *
+ * @param {Record<string, string | undefined>} env
+ * @returns {{stretch: number, window: number} | null}
+ */
+function captureSelect(env) {
+  const text = env.TREMOR_CAPTURE_SELECT;
+  if (text === undefined) {
+    return null;
+  }
+  const found = /^(\d+),(\d+)$/.exec(text);
+  const stretch = found === null ? NaN : Number(found[1]);
+  const window = found === null ? NaN : Number(found[2]);
+  if (!Number.isSafeInteger(stretch) || !Number.isSafeInteger(window)) {
+    throw new ArgsError(`TREMOR_CAPTURE_SELECT takes STRETCH,WINDOW as two whole numbers, not ${JSON.stringify(text)}.`);
+  }
+  return { stretch, window };
+}
+
+module.exports = { parseArgs, captureSelect, USAGE };

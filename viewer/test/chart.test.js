@@ -7,7 +7,7 @@ const { loadRecording } = require('../src/lib/load');
 const { parseLines } = require('../src/lib/parse');
 const { readRecordPatterns } = require('../src/lib/format');
 const { stretchTable } = require('../src/lib/timeline');
-const { placeWindows } = require('../src/lib/windows');
+const { placeWindows, tremorSpans } = require('../src/lib/windows');
 const { HASH: H, BOOT_A } = require('./helpers/synthetic');
 const { SYNTHETIC } = require('./helpers/paths');
 
@@ -162,4 +162,57 @@ test('case 9 of feature 15: toggleAxis()', () => {
   assert.deepEqual(C.toggleAxis(['x', 'y', 'z'], 'y'), ['x', 'z']);
   assert.deepEqual(C.toggleAxis(['x', 'z'], 'y'), ['x', 'y', 'z']);
   assert.deepEqual(C.toggleAxis(['x'], 'x'), ['x']);
+});
+
+/** True when two arrays of numbers have the same length and each pair is within 1e-9. */
+const nearAll = (a, b) => a.length === b.length && a.every((v, i) => near(v, b[i]));
+
+test('case 19 of feature 15: edgesInView()', () => {
+  const spans = bootA().tremorSpans;
+  const cases = [
+    [{ min: 0.25, max: 160.34 }, [30.25, 60.25, 130.329262, 145.329262]],
+    [{ min: 40, max: 140 }, [60.25, 130.329262]],
+    [{ min: 60.25, max: 70 }, [60.25]],
+    [{ min: 61, max: 130 }, []],
+  ];
+  for (const [view, want] of cases) {
+    const got = C.edgesInView(spans, view);
+    assert.ok(nearAll(got, want), `${JSON.stringify(view)} gives ${JSON.stringify(got)}`);
+  }
+  assert.deepEqual(C.edgesInView([], { min: 0, max: 10 }), []);
+  const tremorAt = (n) => ({ ...windowAt(n), code: 0 });
+  const spansOf = tremorSpans([0, 1, 2, 10].map(tremorAt));
+  assert.deepEqual(C.edgesInView(spansOf, { min: 0, max: 20 }), [0, 6, 10, 14]);
+});
+
+test('case 20 of feature 15: paddedRange() and sharedRange()', () => {
+  const RANGE_A = [-165.3109375, 165.3421875];
+  const check = (got, want, what) => assert.ok(nearAll(got, want), `${what} gives ${JSON.stringify(got)}`);
+  check(C.paddedRange(4, 4), [3, 5], 'paddedRange(4, 4)');
+  check(C.paddedRange(null, 3), [-1, 1], 'paddedRange(null, 3)');
+  check(C.paddedRange(-150.28125, 150.3125), RANGE_A, 'paddedRange() of boot A');
+  const columns = [
+    [0, 5, -3],
+    [2, 10, 1],
+  ];
+  check(C.sharedRange(columns, 0, 2), [-3.65, 10.65], 'sharedRange(columns, 0, 2)');
+  check(C.sharedRange(columns, 0, 1), [-0.5, 10.5], 'sharedRange(columns, 0, 1)');
+  check(C.sharedRange(columns, null, null), [-1, 1], 'sharedRange(columns, null, null)');
+  check(C.sharedRange(columns, 2, 1), [-1, 1], 'sharedRange(columns, 2, 1)');
+  check(C.sharedRange([[0, 5, -3]], 0, 2), [-3.4, 5.4], 'sharedRange of one column');
+  check(C.sharedRange([], 0, 2), [-1, 1], 'sharedRange([], 0, 2)');
+  const b = bootA();
+  const last = b.timeS.length - 1;
+  check(C.sharedRange([b.gx, b.gy, b.gz], 0, last), RANGE_A, 'sharedRange() of boot A');
+  check(C.sharedRange([b.gy], 0, last), [-66.3421875, 66.3109375], 'sharedRange() of boot A gy');
+  check(C.sharedRange([b.gz], 0, last), [-0.34375, 0.34375], 'sharedRange() of boot A gz');
+});
+
+test('case 21 of feature 15: LINES', () => {
+  assert.deepEqual(C.LINES.tremor, { token: 'ink', widthPx: 2, dashPx: [] });
+  assert.deepEqual(C.LINES.selection, { token: 'borderControl', widthPx: 1, dashPx: [4, 4] });
+  assert.notEqual(C.LINES.tremor.token, C.LINES.selection.token);
+  for (const style of [C.LINES.tremor, C.LINES.selection]) {
+    assert.ok(!['warning', 'link', 'success', 'inkSecondary'].includes(style.token), style.token);
+  }
 });

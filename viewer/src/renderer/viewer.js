@@ -60,6 +60,9 @@
   let shown = [...C.AXES];
   let palette = TremorTheme.palette();
   let startedAt = 0;
+  // The window that capture mode selects in the first file's shown boot
+  // before it reports, as { stretch, window }, or null.
+  let pendingSelect = null;
   // Counts the boots shown, so a boot that waits for the fonts is dropped
   // when another one came after it.
   let showCount = 0;
@@ -252,11 +255,42 @@
       startText: recording.startText,
       selection: selectionReport(),
       rowAlignPx: rowAlignPx(),
+      ...lineReport(),
     };
+  }
+
+  // Where the charts put the view and the lines they drew, in page pixels.
+  function lineReport() {
+    if (plot === null) {
+      return { view: null, plotEdges: null, tremorLines: [], selectionLines: [], yRanges: null, yTicks: null };
+    }
+    const lines = plot.lines();
+    return {
+      view: plot.view(),
+      plotEdges: plot.plotEdges(),
+      tremorLines: lines.map((l) => l.tremor),
+      selectionLines: lines.map((l) => l.selection),
+      yRanges: plot.yRanges(),
+      yTicks: plot.yTicks(),
+    };
+  }
+
+  // Select the window that capture mode asked for, when this boot holds it.
+  function selectWanted(b, wanted) {
+    if (wanted === null || row === null) {
+      return;
+    }
+    const w = b.windows.find((x) => x.stretch === wanted.stretch && x.window === wanted.window);
+    if (w !== undefined) {
+      row.select(w);
+    }
   }
 
   async function showBoot(b) {
     const mine = ++showCount;
+    // Only the first boot shown of the first file takes the capture's selection.
+    const wanted = pendingSelect;
+    pendingSelect = null;
     clearCharts();
     boot = b;
     show(els.message, false);
@@ -287,6 +321,10 @@
       onView,
       onFirstDraw: () => {
         onView();
+        // uPlot calls this from inside its draw, where a redraw would be
+        // dropped, so the selection waits for the draw to end. The report
+        // waits two frames, so the charts have drawn the selection by then.
+        queueMicrotask(() => selectWanted(b, wanted));
         report(() => bootReport(b));
       },
     });
@@ -318,6 +356,7 @@
       if (message.layout === 'overlaid' || message.layout === 'stacked') {
         layout = message.layout;
       }
+      pendingSelect = message.select ?? null;
       showRecording(message.recording, message.bootId);
     } else {
       showMessage(message.message);

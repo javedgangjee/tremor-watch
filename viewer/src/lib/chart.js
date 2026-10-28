@@ -1,9 +1,10 @@
 'use strict';
 
 // The pure rules of the viewer's page: number and time text, the time ticks,
-// the map from time to x, the answer blocks, the selection, and the shown
-// axes. It requires nothing. Under Node it sets module.exports, and the page,
-// which loads it as a classic script, gets the global TremorChart.
+// the map from time to x, the answer blocks, the selection, the shown axes,
+// the tremor and selection lines, and the y ranges. It requires nothing.
+// Under Node it sets module.exports, and the page, which loads it as a
+// classic script, gets the global TremorChart.
 
 (function (root, factory) {
   const api = factory();
@@ -341,6 +342,81 @@
     return AXES.filter((a) => a === axis || shown.includes(a));
   }
 
+  // How the lines over the plots are drawn. Each token is a key of
+  // TremorTheme.palette(). The tremor lines take the colour of the tremor
+  // blocks, and the selection lines are dashed grey, so neither looks like
+  // an axis trace or the hover line.
+  const LINES = {
+    tremor: { token: 'ink', widthPx: 2, dashPx: [] },
+    selection: { token: 'borderControl', widthPx: 1, dashPx: [4, 4] },
+  };
+
+  /**
+   * Give, in order of time, each start and end of the spans that lies in the
+   * view, edges included.
+   *
+   * @param {[number, number][]} spans Sorted [startS, endS] pairs, as tremorSpans() gives them.
+   * @param {{min: number, max: number}} view
+   * @returns {number[]}
+   */
+  function edgesInView(spans, view) {
+    const edges = [];
+    for (const [start, end] of spans) {
+      for (const t of [start, end]) {
+        if (t >= view.min && t <= view.max) {
+          edges.push(t);
+        }
+      }
+    }
+    return edges.sort((a, b) => a - b);
+  }
+
+  /**
+   * Give a y range from the lowest to the highest value with 5 percent of the
+   * height added above and below. A flat signal gets 1 above and below, and
+   * no values give -1 to 1.
+   *
+   * @param {number | null} min
+   * @param {number | null} max
+   * @returns {[number, number]}
+   */
+  function paddedRange(min, max) {
+    if (min === null || max === null) {
+      return [-1, 1];
+    }
+    const pad = (max - min) * 0.05 || 1;
+    return [min - pad, max + pad];
+  }
+
+  /**
+   * Give paddedRange() of the lowest and highest value from index i0 to i1 of
+   * every array in columns, so several plots share one scale.
+   *
+   * @param {ArrayLike<number>[]} columns
+   * @param {number | null} i0
+   * @param {number | null} i1
+   * @returns {[number, number]}
+   */
+  function sharedRange(columns, i0, i1) {
+    if (columns.length === 0 || i0 === null || i1 === null || i1 < i0) {
+      return [-1, 1];
+    }
+    let min = Infinity;
+    let max = -Infinity;
+    for (const column of columns) {
+      for (let i = i0; i <= i1; i++) {
+        const v = column[i];
+        if (v < min) {
+          min = v;
+        }
+        if (v > max) {
+          max = v;
+        }
+      }
+    }
+    return min === Infinity ? [-1, 1] : paddedRange(min, max);
+  }
+
   return {
     MINUS,
     TIME_STEPS,
@@ -363,5 +439,9 @@
     keepInView,
     panView,
     toggleAxis,
+    edgesInView,
+    paddedRange,
+    sharedRange,
+    LINES,
   };
 });

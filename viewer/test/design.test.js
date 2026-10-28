@@ -7,7 +7,7 @@ const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
 const { REPO, VIEWER } = require('./helpers/paths');
-const { INK } = require('../src/lib/pixels');
+const { INK, BORDER_CONTROL } = require('../src/lib/pixels');
 
 const RENDERER = path.join(VIEWER, 'src', 'renderer');
 const DESIGN = path.join(REPO, 'context', 'viewer-design');
@@ -123,4 +123,10 @@ test('case 14 of feature 15: the page, its policy, its icons, and its colours', 
   const colors = read(path.join(RENDERER, 'design', 'colors.css'));
   assert.equal(INK.light, tokenValue(colors, ':root, [data-theme="light"]', '--ink'));
   assert.equal(INK.dark, tokenValue(colors, '[data-theme="dark"]', '--ink'));
+  assert.equal(BORDER_CONTROL.light, tokenValue(colors, ':root, [data-theme="light"]', '--border-control'));
+  assert.equal(BORDER_CONTROL.dark, tokenValue(colors, '[data-theme="dark"]', '--border-control'));
+
+  const legend = /<ul class="legend">([\s\S]*?)<\/ul>/.exec(html)[1];
+  const items = [...legend.matchAll(/<li>[\s\S]*?<\/li>/g)].map(([li]) => /<span>([^<]+)<\/span>/.exec(li)[1]);
+  assert.deepEqual(items, ['Tremor', 'No tremor', 'Arm moving', 'Warming up', 'Tremor start and end', 'Window span']);
 });

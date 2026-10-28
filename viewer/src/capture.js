@@ -9,7 +9,7 @@
 const fs = require('node:fs');
 const { performance } = require('node:perf_hooks');
 const { ipcMain } = require('electron');
-const { sampleCells, INK } = require('./lib/pixels');
+const { sampleCells, samplePoints, countColumn, INK, BORDER_CONTROL } = require('./lib/pixels');
 
 const DRAW_LIMIT_MS = 60000;
 // The time a window shown for the fallback capture gets to paint.
@@ -75,10 +75,50 @@ function tremorColour(report) {
   return INK[report.theme] ?? INK.light;
 }
 
-function checkTremorCells(win, image, scaleFactor, cells, colour) {
+/** The captured image as a bitmap, its size, and its image pixels per page pixel. */
+function imageData(win, image, scaleFactor) {
   const { width, height } = image.getSize(scaleFactor);
   const scale = width / win.getContentSize()[0];
-  return sampleCells(image.toBitmap({ scaleFactor }), width, height, scale, cells, colour);
+  return { bitmap: image.toBitmap({ scaleFactor }), width, height, scale };
+}
+
+function checkTremorCells(data, cells, colour) {
+  return sampleCells(data.bitmap, data.width, data.height, data.scale, cells, colour);
+}
+
+// The shares of a tremor line's height at which its colour is checked.
+const LINE_POINTS = [0.25, 0.5, 0.75];
+
+/** Check three points down the middle of each tremor line of every chart. */
+function checkTremorLines(data, report, colour) {
+  const points = [];
+  for (const lines of report.tremorLines ?? []) {
+    for (const line of lines) {
+      for (const share of LINE_POINTS) {
+        points.push({ x: line.x + line.width / 2, y: line.top + line.height * share });
+      }
+    }
+  }
+  return samplePoints(data.bitmap, data.width, data.height, data.scale, points, colour);
+}
+
+/**
+ * Count the pixels down each selection line of every chart that match
+ * --border-control and --ink of the theme.
+ */
+function checkSelectionLines(data, report) {
+  const colours = [BORDER_CONTROL[report.theme] ?? BORDER_CONTROL.light, tremorColour(report)];
+  const total = { lines: 0, sampled: 0, lineColour: 0, tremorColour: 0 };
+  for (const lines of report.selectionLines ?? []) {
+    for (const line of lines) {
+      const { sampled, matches } = countColumn(data.bitmap, data.width, data.height, data.scale, line, colours);
+      total.lines++;
+      total.sampled += sampled;
+      total.lineColour += matches[0];
+      total.tremorColour += matches[1];
+    }
+  }
+  return total;
 }
 
 function jsonPath(pngPath) {
@@ -125,6 +165,7 @@ async function runCapture({ win, args, open, isOwnPage }) {
     console.error(failure);
   }
   const colour = tremorColour(report);
+  const data = message.ok ? imageData(win, image, scaleFactor) : null;
   writeJson(args.capture, {
     file,
     exitCode,
@@ -140,7 +181,9 @@ async function runCapture({ win, args, open, isOwnPage }) {
     pageHasProcess,
     theme: report.theme ?? null,
     tremorColour: colour,
-    tremorCellPixels: message.ok ? checkTremorCells(win, image, scaleFactor, report.tremorCells, colour) : null,
+    tremorCellPixels: message.ok ? checkTremorCells(data, report.tremorCells, colour) : null,
+    tremorLinePixels: message.ok ? checkTremorLines(data, report, colour) : null,
+    selectionLinePixels: message.ok ? checkSelectionLines(data, report) : null,
   });
   return exitCode;
 }

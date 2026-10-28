@@ -449,10 +449,18 @@ code {
   border: 1px dashed var(--border-control);
 }
 
+/* The tremor start and end lines of the plots. */
+.swatch-edge {
+  border-radius: 0;
+  border-right: 2px solid var(--ink);
+  border-left: 2px solid var(--ink);
+}
+
+/* The dashed lines of the selected window's span. */
 .swatch-span {
   border-radius: 0;
-  border-right: 1px solid var(--link);
-  border-left: 1px solid var(--link);
+  border-right: 1px dashed var(--border-control);
+  border-left: 1px dashed var(--border-control);
 }
 
 .selection-text {

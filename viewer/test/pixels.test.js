@@ -2,7 +2,7 @@
 
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { sampleCells, INK } = require('../src/lib/pixels');
+const { sampleCells, samplePoints, countColumn, INK, BORDER_CONTROL } = require('../src/lib/pixels');
 
 // Feature 15 checks the tremor blocks against the light theme's --ink.
 const INK_LIGHT = INK.light;
@@ -34,4 +34,32 @@ test('case 24: the colour at the centre of each cell', () => {
   const offBy = (d) => bitmapWithBlock([INK_RGB[0], INK_RGB[1], INK_RGB[2] + d]);
   assert.equal(sampleCells(offBy(9), WIDTH, HEIGHT, 2, [cellAt(2)], INK_LIGHT).matched, 0);
   assert.equal(sampleCells(offBy(8), WIDTH, HEIGHT, 2, [cellAt(2)], INK_LIGHT).matched, 1);
+});
+
+test('case 22 of feature 15: samplePoints() and countColumn()', () => {
+  const ink = bitmapWithBlock(INK_RGB);
+  const points = [
+    { x: 4, y: 2 },
+    { x: 7, y: 2 },
+    { x: 20, y: 2 },
+  ];
+  const sampled = samplePoints(ink, WIDTH, HEIGHT, 2, points, INK_LIGHT);
+  assert.equal(sampled.checked, 3);
+  assert.equal(sampled.matched, 1);
+  assert.deepEqual(
+    sampled.misses.map((m) => m.found),
+    ['#FFFFFF', null],
+  );
+
+  const grey = new Uint8Array(WIDTH * HEIGHT * 4).fill(255);
+  const [r, g, b] = [0x7f, 0x86, 0x93];
+  for (const y of [0, 1, 2, 3, 8, 9]) {
+    for (const x of [4, 5]) {
+      grey.set([b, g, r, 255], (y * WIDTH + x) * 4);
+    }
+  }
+  const colours = [BORDER_CONTROL.light, INK_LIGHT];
+  const line = (x) => ({ x, width: 1, top: 0, height: 5 });
+  assert.deepEqual(countColumn(grey, WIDTH, HEIGHT, 2, line(2), colours), { sampled: 5, matches: [3, 0] });
+  assert.deepEqual(countColumn(grey, WIDTH, HEIGHT, 2, line(6), colours), { sampled: 5, matches: [0, 0] });
 });

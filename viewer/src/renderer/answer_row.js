@@ -179,6 +179,13 @@
         look = looks(next);
         draw();
       },
+      /** Select a placed window of this boot, as a click on its block does. */
+      select(w) {
+        const index = windows.indexOf(w);
+        if (index >= 0) {
+          select(index, true);
+        }
+      },
       /** The selected window, or null. */
       selection: () => (selected === null ? null : windows[selected]),
       /** The tremor blocks drawn in view, in page pixels, without the gap. */
