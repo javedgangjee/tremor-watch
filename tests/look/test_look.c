@@ -401,6 +401,15 @@ static void test_12_longest_texts(void)
     TEST_ASSERT_TRUE(look_text_width("Last tremor none", 28) <= line_w);
 }
 
+static void test_13_backgrounds(void)
+{
+    TEST_ASSERT_EQUAL_HEX32(0xF6F3EE, look_bg(LOOK_HOME));
+    TEST_ASSERT_EQUAL_HEX32(0xF6F3EE, look_bg(LOOK_MEDICATION));
+    TEST_ASSERT_EQUAL_HEX32(0xF6F3EE, look_bg(LOOK_LOGGED));
+    TEST_ASSERT_EQUAL_HEX32(0xFFFFFF, look_bg(LOOK_SESSION));
+    TEST_ASSERT_EQUAL_HEX32(0xFFFFFF, look_bg(LOOK_STATUS));
+}
+
 int main(void)
 {
     UNITY_BEGIN();
@@ -416,5 +425,6 @@ int main(void)
     RUN_TEST(test_10_fit);
     RUN_TEST(test_11_cut);
     RUN_TEST(test_12_longest_texts);
+    RUN_TEST(test_13_backgrounds);
     return UNITY_END();
 }

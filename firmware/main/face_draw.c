@@ -402,7 +402,7 @@ static void style_circle(screen_objs_t *o, const look_state_t *l)
 static void build_root(look_screen_t screen)
 {
     screen_objs_t *o = &s_objs[screen];
-    o->root = filled(lv_screen_active(), 0, 0, LOOK_W, LOOK_H, LOOK_BG, 0);
+    o->root = filled(lv_screen_active(), 0, 0, LOOK_W, LOOK_H, look_bg(screen), 0);
     if (o->root == NULL) {
         return;
     }
