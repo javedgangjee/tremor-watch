@@ -155,7 +155,7 @@ The features follow the build order in context/tremor-log-plan.html. "Step" mean
     - It is a small Electron app on the Mac. It opens a gzip recording that `tools/watch_cli.py record` saved, plots the gyroscope readings against time, and marks each window whose W line gives result code 0.
     - It reads saved files only. It never opens the watch's port, so `tools/watch_cli.py` stays the only program that talks to the watch.
     - It comes before the wrist tests, so the wrist and demo recordings can be looked over with it.
-    - The status is planned.
+    - The status is in progress.
 
 13. Wrist tests, demo, and deliverables
     - Files written before 2026-10-27 call this feature feature 12, because the recording viewer took that number on that day.
