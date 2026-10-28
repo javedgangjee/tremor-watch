@@ -267,7 +267,7 @@
     <div class="note">
       <ul>
         <li><strong>This page is the build spec.</strong> Where the Claude Design file and this page differ, this page wins.</li>
-        <li><strong>The build targets a recorded demo on the watch alone.</strong> A session lasts one to two hours. The watch needs no Mac app and no Bluetooth while it runs. The laptop is used to build the code, to check it, to set the watch's clock and dose times over USB, and to view saved recordings in a small viewer app.</li>
+        <li><strong>The build targets a recorded demo on the watch alone.</strong> A session lasts one to two hours. The watch needs no Mac app and no Bluetooth while it runs. The laptop is used to build the code, to check it, to set the watch's clock and dose times over USB, to view saved recordings in a small viewer app, and to export them as EDF files.</li>
         <li><strong>The Python toolbox is the reference.</strong> The C detector must follow <code>reference/plain_detector.py</code> step for step, and it counts as correct only while it matches the toolbox.</li>
         <li><strong>The detector is used as published.</strong> Nobody retrains it or changes its stored numbers.</li>
       </ul>
@@ -449,6 +449,7 @@
     </ul>
     <p>The laptop sends commands over the same port. One command sets the clock with the time in UTC and the local offset. Another sets the dose schedule, another starts a new session, and another turns the tone on or off. <code>tools/watch_cli.py</code> sends these commands and saves the recording to a file.</p>
     <p>A small Electron app on the laptop shows a saved recording. It opens a file that <code>tools/watch_cli.py</code> saved, plots the gyroscope readings against time, and marks each window that the watch answered with tremor. It reads saved files only and never opens the watch's port.</p>
+    <p><code>tools/export_edf.py</code> writes a saved recording as an EDF+ file, so that other biosignal programs can open it. It writes the 100 Hz gyroscope samples that <code>replay</code> makes from the recording, and it gives each window's answer, each face change, and each dose as an annotation. A gap between stretches stays a gap in the file. It reads saved files only and never opens the watch's port.</p>
     <p>Until the clock is set, the face shows dashes for the time and the dose schedule stays off.</p>
   </section>
 
@@ -497,7 +498,7 @@
     <h2>Repo layout</h2>
     <ul class="tree">
       <li><code>reference/</code><span>This folder holds <code>plain_detector.py</code>, <code>compare.py</code>, <code>rate_test.py</code>, <code>latency_test.py</code>, <code>spline_test.py</code>, <code>demo_test.py</code>, and the pinned Python requirements.</span></li>
-      <li><code>tools/</code><span>This folder holds <code>gen_tables.py</code>, <code>watch_cli.py</code>, and <code>compare_session.py</code>.</span></li>
+      <li><code>tools/</code><span>This folder holds <code>gen_tables.py</code>, <code>watch_cli.py</code>, <code>compare_session.py</code>, and <code>export_edf.py</code>.</span></li>
       <li><code>core/</code><span>This folder holds the shared C library, KISS FFT, the generated tables, the <code>replay</code> program, and the recording format document.</span></li>
       <li><code>firmware/</code><span>This folder holds the ESP-IDF project for the watch.</span></li>
       <li><code>tests/</code><span>This folder holds the unit tests, the saved test windows with the toolbox's answers, the saved converter cases, and the full PADS match test.</span></li>
@@ -655,6 +656,6 @@
   </section>
 
   <footer>
-    <p>Revised 27 October 2026. The detector comes from Timmermans and colleagues, npj Parkinson's Disease, 2025, and the test data from Varghese and colleagues, npj Parkinson's Disease, 2024. The sensor rates come from the QMI8658A datasheet.</p>
+    <p>Revised 28 October 2026. The detector comes from Timmermans and colleagues, npj Parkinson's Disease, 2025, and the test data from Varghese and colleagues, npj Parkinson's Disease, 2024. The sensor rates come from the QMI8658A datasheet.</p>
   </footer>
 </div>

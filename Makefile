@@ -22,6 +22,13 @@
 # viewer/node_modules is missing or older than viewer/package-lock.json.
 # The install and the first start need the network.
 #
+# `make edf` exports a saved recording as EDF+ files, one for each boot, with
+# tools/export_edf.py in the reference venv. FILE names the recording, OUT_DIR
+# the folder for the files, and BOOT one boot to export, as in
+# `make edf FILE=session.txt.gz OUT_DIR=exports BOOT=2565193163`. With no
+# OUT_DIR the files go beside the recording. It first brings replay up to date,
+# so it needs the laptop build that `make laptop` makes.
+#
 # `make python` runs the pytest tests in tests/ with the reference venv, which
 # holds the toolbox. They include the full PADS match, the check that the
 # detector tables regenerate from the model file, the laptop tools, and the
@@ -35,7 +42,7 @@ TABLES ?= core/detector_tables.h
 IDF_ACTIVATE ?= $(HOME)/.espressif/tools/activate_idf_v6.1.sh
 PYTHON ?= reference/.venv/bin/python
 
-.PHONY: check laptop hash viewer viewer-start viewer-smoke firmware python full
+.PHONY: check laptop hash viewer viewer-start viewer-smoke edf firmware python full
 
 check: laptop hash viewer firmware
 
@@ -72,6 +79,11 @@ viewer-start: $(VIEWER_INSTALLED)
 
 viewer-smoke: $(VIEWER_INSTALLED)
 	npm --prefix viewer run smoke --$(if $(OUT), --out "$(OUT)")
+
+edf:
+	@if [ -z "$(FILE)" ]; then echo "FILE is missing. Run make edf FILE=RECORDING [OUT_DIR=DIR] [BOOT=ID]."; exit 1; fi
+	cmake --build build --target replay
+	"$(PYTHON)" tools/export_edf.py "$(FILE)"$(if $(OUT_DIR), --out-dir "$(OUT_DIR)")$(if $(BOOT), --boot "$(BOOT)")
 
 # The activate script sets IDF_TOOLS_PATH, which export.sh needs here. It also
 # makes idf.py a shell function that make cannot call, so this runs

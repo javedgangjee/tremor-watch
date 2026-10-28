@@ -27,12 +27,10 @@ pass limit.
 from __future__ import annotations
 
 import argparse
-import gzip
 import importlib.metadata
 import io
 import logging
 import math
-import re
 import subprocess
 import sys
 import tempfile
@@ -49,6 +47,8 @@ from paradigma.config import IMUConfig, TremorConfig
 from paradigma.pipelines.tremor_pipeline import detect_tremor, extract_tremor_features
 from paradigma.preprocessing import preprocess_imu_data
 from scipy import signal
+
+from recording_text import read_recording, record_patterns
 
 logger = logging.getLogger("compare_session")
 
@@ -95,30 +95,12 @@ RES_TREMOR = 0
 RES_NO_TREMOR = 1
 RES_ARM_MOVING = 2
 
-FORMAT_DOC = REPO / "core" / "recording_format.md"
-RECORD_LETTERS = "BSTRWFDA"
-
-
-def record_patterns(doc: Path = FORMAT_DOC) -> dict[str, re.Pattern[str]]:
-    """Read the pattern of each record line from the table in core/recording_format.md."""
-    patterns: dict[str, re.Pattern[str]] = {}
-    for row in doc.read_text().splitlines():
-        match = re.match(r"^\| ([A-Z]) \|.*\| `(\^.*\$)` \|$", row)
-        if match:
-            patterns[match.group(1)] = re.compile(match.group(2))
-    if sorted(patterns) != sorted(RECORD_LETTERS):
-        raise ValueError(f"{doc} gives patterns for {''.join(sorted(patterns))}, not for {RECORD_LETTERS}")
-    return patterns
-
-
 # The record lines of core/recording_format.md, read from its table as
 # tests/firmware/record_run.py reads them.
 PATTERNS = record_patterns()
 COUNT_MIN = -32768
 COUNT_MAX = 32767
 BURST_MAX = 256
-
-READ_CHUNK = 1 << 16
 
 REASON_GAP = "after a checked part that ended at a gap"
 REASON_START = "in a stretch that started before the recording"
@@ -192,53 +174,6 @@ class Match:
     near_cut_off: bool
     near_tie: bool
     failed: str
-
-
-def read_gzip_text(path: Path) -> tuple[list[str], bool]:
-    """Read the lines of a gzip text file, and tell whether the file was cut short.
-
-    A recording that stopped without closing its file ends in the middle of
-    the gzip stream. The lines read before the cut are kept, and a last line
-    with no newline is dropped, because it may be part of a line.
-    """
-    data = bytearray()
-    cut_short = False
-    with gzip.open(path, "rb") as source:
-        while True:
-            try:
-                chunk = source.read(READ_CHUNK)
-            except EOFError:
-                cut_short = True
-                break
-            if not chunk:
-                break
-            data += chunk
-    lines = data.decode(errors="replace").splitlines()
-    if cut_short and lines and not data.endswith(b"\n"):
-        lines.pop()
-    return lines, cut_short
-
-
-def read_recording(path: Path) -> tuple[list[str], bool]:
-    """Read a recording as gzip or plain text and drop a leading laptop time and tab.
-
-    It also tells whether a gzip file was cut short.
-    """
-    cut_short = False
-    if path.name.endswith(".gz"):
-        raw_lines, cut_short = read_gzip_text(path)
-    else:
-        raw_lines = path.read_text(errors="replace").splitlines()
-    lines: list[str] = []
-    for raw in raw_lines:
-        stamp, tab, text = raw.partition("\t")
-        try:
-            float(stamp)
-        except ValueError:
-            lines.append(raw)
-            continue
-        lines.append(text if tab else raw)
-    return lines, cut_short
 
 
 def run_replay(replay: Path, lines: list[str], samples: Path) -> tuple[pd.DataFrame, str]:

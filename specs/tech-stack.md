@@ -67,9 +67,11 @@
 - The laptop is a Mac. It builds the code, runs the checks, sets the watch's clock and dose times, and saves recordings over USB.
 - The Python reference runs in its own venv with Python 3.13, ParaDigMa 1.1.2, and scikit-learn 1.6.0. The toolbox's model file needs scikit-learn below 1.6.1.
 - The pinned Python requirements live in reference/.
-- The tools in tools/ are gen_tables.py, gen_face_assets.py, watch_cli.py, and compare_session.py.
+- The tools in tools/ are gen_tables.py, gen_face_assets.py, watch_cli.py, compare_session.py, and export_edf.py. tools/recording_text.py reads a saved recording into lines and reads the record patterns from core/recording_format.md for compare_session.py and export_edf.py, and tools/edfplus.py writes EDF+ bytes for export_edf.py and knows nothing about the watch.
 - tools/watch_cli.py sets the watch's clock and dose schedule, starts a session, turns the tone on or off, and saves a recording. It needs pyserial, which the reference venv lacks, so it runs with the ESP-IDF Python at ~/.espressif/tools/python/v6.1/venv/bin/python.
 - tools/compare_session.py compares a recording with replay and the toolbox and writes a session report. It needs the toolbox, so it runs in the reference venv.
+- tools/export_edf.py writes a saved recording as EDF+ files, one for each boot that has replay samples. The command is `reference/.venv/bin/python tools/export_edf.py RECORDING [--out-dir DIR] [--boot ID] [--replay PATH]`, run from the repo root after the C build, and `make edf FILE=RECORDING [OUT_DIR=DIR] [BOOT=ID]` brings replay up to date and runs it. It needs only numpy and replay, and it runs in the reference venv. Each file holds replay's 100 Hz gyroscope samples with one data record a second, and the answers, face changes, doses, and stretch starts as annotations. A boot with a gap between its replay stretches gives a discontinuous EDF+D file. MNE-Python 1.13.2 places the data records of an EDF+D file back to back, so its times after a gap are wrong, and it drops annotations past the end of the joined data. EDFbrowser and edfio keep the gaps. The rules are in specs/features/13-edf-export/requirements.md.
+- The tests read the EDF+ files back with edfio 0.4.18, which is a test-only package in reference/requirements.txt. It needs only numpy and has an Apache 2.0 licence.
 - The Python tests in tests/ need the toolbox, so they run in the reference venv with `reference/.venv/bin/python -m pytest tests -q`.
 - New Python code follows the user's Python rules. The scripts in reference/ stay as they are, because the measured results come from them. In feature 2, compare.py, rate_test.py, latency_test.py, spline_test.py, and demo_test.py changed their import line to `from plain_detector import build_tables, detect` when they moved from context/, and nothing else changed.
 - reference/pads_counts.py runs the toolbox on every PADS recording. Its results in reference/results/ are pads_windows.csv, pads_counts.csv, and pads_counts.md, and they are committed as the counts the C port must reproduce.
@@ -118,5 +120,6 @@
 - ParaDigMa has an Apache 2.0 licence and needs a credit line. Its paper is Timmermans and colleagues, npj Parkinson's Disease, 2025.
 - PADS has a non-commercial licence. Its paper is Varghese and colleagues, npj Parkinson's Disease, 2024, and the PhysioNet page asks for its own citation as well.
 - KISS FFT has a BSD licence.
+- edfio has an Apache 2.0 licence. Only the tests use it, and pip fetches it into the reference venv.
 - Lucide icons have an ISC licence, and Red Hat Display has the SIL Open Font Licence.
 - Electron and uPlot have MIT licences. npm fetches them into viewer/node_modules/, which is never committed.

@@ -134,9 +134,22 @@ make viewer-start FILE=session.txt.gz
 
 File > Open (Cmd+O) opens another recording. Drag across the plot to zoom in, double click to show the whole boot, and use the left and right arrow keys to move the view. `make viewer` runs the viewer's unit tests, which need no install.
 
+## Export a recording as EDF+
+
+`tools/export_edf.py` writes a saved recording as EDF+ files that other biosignal programs can open. It reads saved files only and never opens the watch's port. Run it from the repo root after the C build.
+
+```
+reference/.venv/bin/python tools/export_edf.py session.txt.gz [--out-dir DIR] [--boot ID]
+make edf FILE=session.txt.gz [OUT_DIR=DIR] [BOOT=ID]
+```
+
+It writes one file for each boot, named after the recording and the boot ID, so `session.txt.gz` with boot 2565193163 gives `session_2565193163.edf` beside the recording or in DIR. It never writes over a file. Each file holds the 100 Hz gyroscope samples that the detector used, in degrees per second, with each window's answer, each face change, each dose, and each stretch start as annotations. The boot's clock gives the start date and time, and a boot with no clock gets the EDF+ placeholders. A gap between stretches stays a gap, so such a file is discontinuous EDF+D.
+
+EDFbrowser and edfio keep the gaps. MNE-Python 1.13.2 places the data records of an EDF+D file back to back, so its times after a gap are wrong, and it drops annotations past the end of the joined data. A boot with no gap gives a continuous EDF+C file, which every reader places correctly.
+
 ## Status
 
-Features 1 to 11 in `specs/roadmap.md` are built, and their laptop tests pass. On the watch, the detector, the time rule, the recording, and the face states have run with the watch on a table. The tap, the BOOT button, the tones, and the battery have not been checked on the watch yet, and firmware version 12, which holds the fixes of a code review, has not run on it. Feature 12, a recording viewer, and feature 13, the wrist tests, are still to come.
+Features 1 to 11 in `specs/roadmap.md` are built, and their laptop tests pass. On the watch, the detector, the time rule, the recording, and the face states have run with the watch on a table. The tap, the BOOT button, the tones, and the battery have not been checked on the watch yet, and firmware version 12, which holds the fixes of a code review, has not run on it. Feature 12, a recording viewer, feature 13, an EDF export, and feature 14, the wrist tests, are still to come.
 
 ## Licence
 
