@@ -79,3 +79,4 @@ No step changes a file in firmware/, core/, reference/, tools/, tests/, or conte
 12. The smoke script runs the bad file and the missing file of case 31 as one case with two captures, so it prints 7 cases as validation.md expects.
 13. npm audit reports advisory GHSA-jr5w-w6x2-84p9 for Electron 44.0.0 to 44.9.0, about trusting compromised eMudhra certificates, with a fix in 44.10.0. The viewer loads no remote content, so it does not reach the advisory's case, and the version stays at the 44.7.1 that requirement 12 and case 25 pin. The user decides whether to move to 44.10.0.
 14. THIRD_PARTY.md and the Status section of README.md were not changed, because the plan does not name them. The replan stage can add Electron and uPlot to THIRD_PARTY.md and mark feature 12 as built in README.md.
+15. viewer/package.json also gives a one-line description and the MIT licence of the project, so npm does not warn about them.

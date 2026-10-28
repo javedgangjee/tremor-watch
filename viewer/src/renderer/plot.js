@@ -63,7 +63,8 @@
       if (min === null || max === null) {
         return [-1, 1];
       }
-      const pad = Math.max((max - min) * 0.05, 1);
+      // A flat signal still gets a range of 2 degrees per second.
+      const pad = (max - min) * 0.05 || 1;
       const low = min - pad;
       const high = max + pad;
       const heightCss = u.bbox && u.bbox.height > 0 ? u.bbox.height / uPlot.pxRatio : 400;
