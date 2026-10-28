@@ -62,3 +62,20 @@ No step changes a file in firmware/, core/, reference/, tools/, tests/, or conte
     - README.md gains a short section on viewing a recording with the install and start commands.
 
 17. Run `make viewer`, `npm --prefix viewer run smoke -- --out SCRATCH/smoke`, and `make check`, fix the failures, and look at the PNG files.
+
+## Changes during implement
+
+1. Check 1 case 9 gave the expected time as 823178 × 1e6 / 114330200 / 1e6, which is 0.0072 seconds, while the same case says about 7200.0049 seconds. The case now reads 823178 × 1e12 / 114330200 / 1e6, which is the time in microseconds over 1e6. The code did not change.
+2. Check 2 case 33 expected 823174 readings. The bursts whose first reading lies before 7200 seconds are bursts 0 to 74834, because burst 74834 starts at reading 823174, which is 7199.97 seconds. That gives 74835 bursts and 823185 readings, so the case now says 823185. The 204 tremor windows and windows 1 to 7195 were right.
+3. The hidden window gave a full image with capturePage() on this Mac, so the fallback that shows the window did not run. OUT.json says so in shownWindow. The fallback stays in capture.js for a Mac that gives an empty image.
+4. uPlot took the typed arrays as they are, and its series gaps hook breaks the lines, so no plain arrays with nulls were needed. uPlot loads from viewer/node_modules with loadFile() under the page's policy.
+5. The parser's counts hold lines, bad, and droppedBursts, and no noB. load.js finds a file with no B line from its empty boot list, and its message gives the number of lines read.
+6. The viewer:recording message for a good file also carries bootId, the boot that `--boot` names, so the page can start on it. A `--boot` ID that the file does not hold gives the page's message and exit code 1 in capture mode, and the message lists the file's boots.
+7. ArgsError lives in viewer/src/lib/errors.js beside RecordingError. `--capture` with no FILE is an ArgsError, because nothing could be drawn. A failure of the app outside these paths exits with code 2, because the page was never drawn.
+8. A boot with no readings shows "This boot holds no readings" in place of the plot. load.js throws only when no boot of the file has a reading.
+9. sampleCells() checks only cells at least 3 page pixels wide, as requirement 23 says, so its checked count leaves narrower cells out. The two hour recording's cells are under 1 pixel wide, so its pixel check has 0 cells.
+10. The page measures drawMs from the moment the recording arrives to two animation frames after the first draw, so the time counts the frame that reaches the screen. OUT.json also gives totalMs, which runs from the start of the load in the main process to the page's report.
+11. The tests use three small helpers that the plan did not name: viewer/test/helpers/paths.js for the repo paths, temp.js for the temporary folder, and readings.js, which turns a timeline index back into its reading number so the tests can name each break by reading.
+12. The smoke script runs the bad file and the missing file of case 31 as one case with two captures, so it prints 7 cases as validation.md expects.
+13. npm audit reports advisory GHSA-jr5w-w6x2-84p9 for Electron 44.0.0 to 44.9.0, about trusting compromised eMudhra certificates, with a fix in 44.10.0. The viewer loads no remote content, so it does not reach the advisory's case, and the version stays at the 44.7.1 that requirement 12 and case 25 pin. The user decides whether to move to 44.10.0.
+14. THIRD_PARTY.md and the Status section of README.md were not changed, because the plan does not name them. The replan stage can add Electron and uPlot to THIRD_PARTY.md and mark feature 12 as built in README.md.
