@@ -1,11 +1,13 @@
 'use strict';
 
 // Runs the real app in capture mode on the cases of check 2 in
-// specs/features/12-recording-viewer/validation.md and
-// specs/features/14-record-button/validation.md, prints one line per case,
+// specs/features/12-recording-viewer/validation.md,
+// specs/features/14-record-button/validation.md, and
+// specs/features/15-viewer-redesign/validation.md, prints one line per case,
 // and exits with code 1 when a case fails. It needs the installed packages and
 // a logged-in screen. The record cases run test/helpers/fake_watch_cli.js in
-// place of watch_cli.py, so they need no watch.
+// place of watch_cli.py, so they need no watch. Every case runs with
+// --theme light unless it names a theme.
 //
 //   npm --prefix viewer run smoke -- [--out DIR]
 
@@ -14,7 +16,8 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const electron = require('electron');
-const { BOOT_B, RATE_UHZ } = require('../test/helpers/synthetic');
+const { BOOT_B, RATE_UHZ, HASH } = require('../test/helpers/synthetic');
+const { startText } = require('../src/lib/title');
 
 const VIEWER = path.join(__dirname, '..');
 const REPO = path.join(VIEWER, '..');
@@ -25,6 +28,10 @@ const RECORDING_NAME = /^tremor-\d{4}-\d{2}-\d{2}-\d{6}\.txt\.gz$/;
 const log = (name) => path.join(REPO, 'tests', 'firmware', `${name}.txt.gz`);
 const CASE_LIMIT_MS = 90000;
 const DRAW_LIMIT_MS = 10000;
+// The --ink colours of colors.css, which fill the tremor blocks.
+const INK_LIGHT = '#16181D';
+const INK_DARK = '#F4F7FA';
+const FONT_FAMILIES = ['Red Hat Display', 'Libre Franklin', 'IBM Plex Mono'];
 
 function outFolder(argv) {
   if (argv.length === 2 && argv[0] === '--out') {
@@ -65,7 +72,8 @@ function runApp(out, name, appArgs, env = {}) {
   const json = path.join(out, `${name}.json`);
   fs.rmSync(png, { force: true });
   fs.rmSync(json, { force: true });
-  const run = spawnSync(electron, [VIEWER, ...appArgs, '--capture', png], {
+  const theme = appArgs.includes('--theme') ? [] : ['--theme', 'light'];
+  const run = spawnSync(electron, [VIEWER, ...appArgs, ...theme, '--capture', png], {
     encoding: 'utf8',
     timeout: CASE_LIMIT_MS,
     env: { ...process.env, ...env },
@@ -97,6 +105,24 @@ function checker() {
 
 const codes = (report, wanted) => wanted.map((code) => report.windowsByCode[code]);
 
+/** Check that the page loaded the three fonts and that the Answer row lines up with the chart. */
+function checkFontsAndRow(c, report) {
+  for (const family of FONT_FAMILIES) {
+    c.ok(`fontsLoaded holds ${family}`, report.fontsLoaded.includes(family));
+  }
+  c.ok(`rowAlignPx is ${report.rowAlignPx}, at most 1`, typeof report.rowAlignPx === 'number' && report.rowAlignPx <= 1);
+}
+
+/** Make the two hour recording of case 33 unless it exists, and give its path. */
+function longFile(c, out) {
+  const file = path.join(out, 'long.txt.gz');
+  if (!fs.existsSync(file)) {
+    const made = spawnSync(process.execPath, [MAKE_SYNTHETIC, '--long', file, '--minutes', '120'], { encoding: 'utf8' });
+    c.equal('make_synthetic.js exit code', made.status, 0);
+  }
+  return file;
+}
+
 // Each case runs the app with run(name, args), which captures to
 // OUT/<name>.png and OUT/<name>.json.
 const CASES = [
@@ -111,6 +137,14 @@ const CASES = [
       c.equal('windows of codes 0 to 3', codes(report, [0, 1, 2, 3]), [39, 92, 18, 2]);
       c.equal('tremor cells', report.tremorCells.length, 39);
       c.equal('tremor cell pixels', [result.tremorCellPixels.checked, result.tremorCellPixels.matched], [39, 39]);
+      c.equal('tremor colour', result.tremorColour, INK_LIGHT);
+      c.equal('theme', report.theme, 'light');
+      c.equal('layout', report.layout, 'overlaid');
+      c.equal('shown axes', report.shownAxes, ['x', 'y', 'z']);
+      c.equal('plot heights', report.plotHeights, [420]);
+      c.equal('start text', report.startText, null);
+      c.equal('selection', report.selection, null);
+      checkFontsAndRow(c, report);
       c.equal(
         'web preferences',
         [prefs.contextIsolation, prefs.nodeIntegration, prefs.sandbox, prefs.webSecurity],
@@ -178,9 +212,8 @@ const CASES = [
     name: 'case 33 two hours',
     test(c, run, out) {
       const file = path.join(out, 'long.txt.gz');
-      const made = spawnSync(process.execPath, [MAKE_SYNTHETIC, '--long', file, '--minutes', '120'], { encoding: 'utf8' });
-      c.equal('make_synthetic.js exit code', made.status, 0);
-      const { code, result } = run('long', [file]);
+      fs.rmSync(file, { force: true });
+      const { code, result } = run('long', [longFile(c, out)]);
       c.equal('exit code', code, 0);
       const { report } = result;
       c.equal('stretch rates', report.stretches.map((s) => s.rateUhz), [RATE_UHZ]);
@@ -216,6 +249,8 @@ const CASES = [
         `the record status ${JSON.stringify(report.recordStatus)} starts with "Saved "`,
         report.recordStatus.startsWith('Saved '),
       );
+      c.ok('the start text is not null', report.startText !== null);
+      c.equal('start text', report.startText, startText(name, []));
       return result;
     },
   },
@@ -231,6 +266,75 @@ const CASES = [
       c.ok('the message names TREMOR_PYTHON', result && /TREMOR_PYTHON/.test(result.message));
       c.ok('the PNG exists', hasPng);
       c.equal('files in the folder', fs.readdirSync(folder), []);
+      return result;
+    },
+  },
+  {
+    name: 'case 15 of feature 15 dark theme',
+    test(c, run) {
+      const { code, result } = run('synthetic_dark', [SYNTHETIC, '--theme', 'dark']);
+      c.equal('exit code', code, 0);
+      const { report } = result;
+      c.equal('theme', report.theme, 'dark');
+      c.equal('tremor colour', result.tremorColour, INK_DARK);
+      c.equal('tremor cell pixels', [result.tremorCellPixels.checked, result.tremorCellPixels.matched], [39, 39]);
+      checkFontsAndRow(c, report);
+      return result;
+    },
+  },
+  {
+    name: 'case 16 of feature 15 stacked layout',
+    test(c, run) {
+      const { code, result } = run('synthetic_stacked', [SYNTHETIC, '--layout', 'stacked']);
+      c.equal('exit code', code, 0);
+      const { report } = result;
+      c.equal('layout', report.layout, 'stacked');
+      c.equal('shown axes', report.shownAxes, ['x', 'y', 'z']);
+      c.equal('plot heights', report.plotHeights, [150, 150, 150]);
+      c.equal('tremor colour', result.tremorColour, INK_LIGHT);
+      c.equal('tremor cell pixels', [result.tremorCellPixels.checked, result.tremorCellPixels.matched], [39, 39]);
+      c.ok(`rowAlignPx is ${report.rowAlignPx}, at most 1`, typeof report.rowAlignPx === 'number' && report.rowAlignPx <= 1);
+      return result;
+    },
+  },
+  {
+    name: 'case 17 of feature 15 two hours stacked',
+    test(c, run, out) {
+      const { code, result } = run('long_stacked', [longFile(c, out), '--layout', 'stacked']);
+      c.equal('exit code', code, 0);
+      const { report } = result;
+      c.equal('readings', report.readings, 823185);
+      c.equal('tremor windows', report.windowsByCode[0], 204);
+      c.equal('plot heights', report.plotHeights, [150, 150, 150]);
+      c.ok(
+        `load and draw take ${Math.round(result.loadMs + result.drawMs)} ms, under ${DRAW_LIMIT_MS} ms`,
+        result.loadMs + result.drawMs < DRAW_LIMIT_MS,
+      );
+      return result;
+    },
+  },
+  {
+    name: 'case 18 of feature 15 boot with no readings',
+    test(c, run, out) {
+      const file = path.join(out, 'noreadings.txt');
+      const lines = [
+        `B,1,11,12,${HASH}`,
+        'S,0,0,1000,114330200,1024',
+        'W,0,0,3,0.5,10,5',
+        `B,2,11,12,${HASH}`,
+        'S,0,0,1000,114330200,1024',
+        'T,0,2,1000',
+        'R,0,32,-32,64,0,0,4096',
+        'R,1,0,0,0,0,0,4096',
+      ];
+      fs.writeFileSync(file, lines.map((line, i) => `${(i / 1000).toFixed(3)}\t${line}\n`).join(''));
+      const { code, result } = run('noreadings', [file, '--boot', '1']);
+      c.equal('exit code', code, 0);
+      const { report } = result;
+      c.equal('readings', report.readings, 0);
+      c.equal('plot heights', report.plotHeights, []);
+      c.equal('tremor cells', report.tremorCells.length, 0);
+      c.equal('windows of codes 0 to 3', codes(report, [0, 1, 2, 3]), [0, 0, 0, 1]);
       return result;
     },
   },
