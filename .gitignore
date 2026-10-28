@@ -10,3 +10,4 @@ __pycache__/
 /build/
 firmware/.cache/
 viewer/node_modules/
+/recordings/

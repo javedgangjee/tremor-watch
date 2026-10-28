@@ -61,6 +61,22 @@ button:hover {
   background: var(--bg);
 }
 
+button:disabled {
+  cursor: default;
+}
+
+/* Record turns into Stop, filled with the face's Tremor navy. */
+button.recording,
+button.recording:hover {
+  border-color: var(--tremor);
+  background: var(--tremor);
+  color: #FFFFFF;
+}
+
+button.recording:disabled {
+  opacity: 0.7;
+}
+
 button:focus-visible,
 select:focus-visible {
   outline: 2px solid var(--focus);
@@ -78,6 +94,17 @@ select:focus-visible {
   margin-left: auto;
   color: var(--text-2);
   font-variant-numeric: tabular-nums;
+}
+
+.record-status {
+  margin: 12px 20px 0;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.record-status.failed {
+  color: var(--text);
 }
 
 .note {

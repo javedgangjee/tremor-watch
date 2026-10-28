@@ -11,12 +11,15 @@
   <header class="bar">
     <h1>Tremor log</h1>
     <button id="open" type="button">Open recording</button>
+    <button id="record" type="button">Record</button>
     <label id="boot-picker" class="picker" hidden>
       Boot
       <select id="boot"></select>
     </label>
     <span id="file-name" class="file-name"></span>
   </header>
+
+  <p id="record-status" class="record-status" role="status" hidden></p>
 
   <p id="cut-short" class="note" hidden>This file was cut short, so the viewer shows it up to the cut.</p>
   <dl id="summary" class="summary" hidden></dl>
