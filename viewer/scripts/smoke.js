@@ -91,6 +91,30 @@ function checkTremorLines(c, result, charts) {
   c.equal('tremor line pixels', [pixels.checked, pixels.matched], [12 * charts, 12 * charts]);
 }
 
+/**
+ * Check that each chart shades each episode of boot A in view, from where it
+ * puts the episode's start to where it puts its end, within 1 page pixel.
+ */
+function checkBands(c, report, charts) {
+  const view = report.view;
+  const want = bootA().spans.filter(([a, b]) => b > view.min && a < view.max);
+  c.equal('tremor band charts', report.tremorBands.length, charts);
+  report.tremorBands.forEach((bands, i) => {
+    c.equal(`tremor bands of chart ${i}`, bands.length, want.length);
+    const edges = report.plotEdges[i];
+    const xOf = (t) => edges.left + C.xAt(Math.min(Math.max(t, view.min), view.max), view, edges.right - edges.left);
+    bands.forEach((band, k) => {
+      if (k >= want.length) {
+        return;
+      }
+      const [a, b] = want[k];
+      c.ok(`band ${k} of chart ${i} starts at ${band.x}, not within 1 px of ${xOf(a)}`, Math.abs(band.x - xOf(a)) <= PLACE_SLACK_PX);
+      const right = band.x + band.width;
+      c.ok(`band ${k} of chart ${i} ends at ${right}, not within 1 px of ${xOf(b)}`, Math.abs(right - xOf(b)) <= PLACE_SLACK_PX);
+    });
+  });
+}
+
 /** Check that each chart has the range of boot A. */
 function checkRangeOfBootA(c, report, charts) {
   c.equal('y range charts', report.yRanges.length, charts);
@@ -216,11 +240,13 @@ const CASES = [
       c.equal('theme', report.theme, 'light');
       c.equal('layout', report.layout, 'overlaid');
       c.equal('shown axes', report.shownAxes, ['x', 'y', 'z']);
-      c.equal('plot heights', report.plotHeights, [420]);
+      c.equal('plot heights', report.plotHeights, [340]);
+      c.equal('time span', report.span, 'all');
       c.equal('start text', report.startText, null);
       c.equal('selection', report.selection, null);
       checkFontsAndRow(c, report);
       checkTremorLines(c, result, 1);
+      checkBands(c, report, 1);
       c.equal('selection lines', report.selectionLines, [[]]);
       c.equal('selection line pixels sampled', result.selectionLinePixels.sampled, 0);
       checkRangeOfBootA(c, report, 1);
@@ -371,11 +397,12 @@ const CASES = [
       const { report } = result;
       c.equal('layout', report.layout, 'stacked');
       c.equal('shown axes', report.shownAxes, ['x', 'y', 'z']);
-      c.equal('plot heights', report.plotHeights, [150, 150, 150]);
+      c.equal('plot heights', report.plotHeights, [120, 120, 120]);
       c.equal('tremor colour', result.tremorColour, INK_LIGHT);
       c.equal('tremor cell pixels', [result.tremorCellPixels.checked, result.tremorCellPixels.matched], [39, 39]);
       c.ok(`rowAlignPx is ${report.rowAlignPx}, at most 1`, typeof report.rowAlignPx === 'number' && report.rowAlignPx <= 1);
       checkTremorLines(c, result, 3);
+      checkBands(c, report, 3);
       checkRangeOfBootA(c, report, 3);
       checkSharedY(c, report);
       return result;
@@ -389,7 +416,7 @@ const CASES = [
       const { report } = result;
       c.equal('readings', report.readings, 823185);
       c.equal('tremor windows', report.windowsByCode[0], 204);
-      c.equal('plot heights', report.plotHeights, [150, 150, 150]);
+      c.equal('plot heights', report.plotHeights, [120, 120, 120]);
       c.ok(
         `load and draw take ${Math.round(result.loadMs + result.drawMs)} ms, under ${DRAW_LIMIT_MS} ms`,
         result.loadMs + result.drawMs < DRAW_LIMIT_MS,
@@ -421,6 +448,8 @@ const CASES = [
       c.equal('tremor cells', report.tremorCells.length, 0);
       c.equal('windows of codes 0 to 3', codes(report, [0, 1, 2, 3]), [0, 0, 0, 1]);
       c.equal('tremor lines', report.tremorLines, []);
+      c.equal('tremor bands', report.tremorBands, []);
+      c.equal('time span', report.span, null);
       c.equal('selection lines', report.selectionLines, []);
       c.equal('y ranges', report.yRanges, null);
       return result;

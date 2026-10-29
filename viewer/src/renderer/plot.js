@@ -3,21 +3,21 @@
 // Draws the gyroscope readings of one boot with uPlot. Overlaid is one chart
 // with the three axes, and Stacked is one chart for each shown axis. All
 // charts share one view, the time range on the x axis, and one cursor. In
-// Stacked they also share one y range. Every chart marks the start and the
-// end of each tremor episode and the span of the selected window with
-// vertical lines. The page loads this as a classic script, so it adds one
+// Stacked they also share one y range. Every chart shades each tremor
+// episode, marks its start and end with vertical lines, and marks the span
+// of the selected window with dashed lines. The page loads this as a classic script, so it adds one
 // global, TremorPlot.
 
 (function () {
   const C = window.TremorChart;
 
   const READINGS = { x: 'gx', y: 'gy', z: 'gz' };
-  const HEIGHT = { overlaid: 420, stacked: 150 };
+  const HEIGHT = { overlaid: 340, stacked: 120 };
   // Room above and below the plotting area, so the top and bottom tick labels show whole.
   const PADDING = [8, 0, 8, 0];
   const Y_AXIS_PX = 64;
   const Y_LABEL_GAP_PX = 12;
-  // The least room between two y ticks, so each 150 px stacked plot shows at least two.
+  // The least room between two y ticks, so each 120 px stacked plot shows at least two.
   const Y_TICK_SPACE_PX = { overlaid: 48, stacked: 24 };
   const TIME_TICK_SPACE_PX = 90;
   const SYNC_KEY = 'tremor-x';
@@ -58,6 +58,7 @@
       y: body.querySelector('#readout-y'),
       z: body.querySelector('#readout-z'),
       answer: body.querySelector('#readout-answer'),
+      axes: [...body.querySelectorAll('.readout-values [data-axis]')],
     };
     const last = boot.timeS.length - 1;
     const bounds = { min: boot.timeS[0], max: boot.timeS[last] };
@@ -160,6 +161,34 @@
       return drawn;
     }
 
+    // The shade of each tremor episode lies under the grid and the readings.
+    // uPlot calls this hook after it clears the canvas and before it draws
+    // the axes. Gives the shades drawn, in canvas pixels.
+    function drawBands(u) {
+      const { ctx, bbox } = u;
+      const { min, max } = u.scales.x;
+      const drawn = [];
+      if (min === null || max === null) {
+        u.tremorBands = drawn;
+        return;
+      }
+      ctx.save();
+      ctx.fillStyle = state.palette.surfaceSunken;
+      for (const [start, end] of boot.tremorSpans) {
+        if (end <= min || start >= max) {
+          continue;
+        }
+        const left = Math.max(canvasX(u, Math.max(start, min)), bbox.left);
+        const right = Math.min(canvasX(u, Math.min(end, max)), bbox.left + bbox.width);
+        if (right > left) {
+          ctx.fillRect(left, bbox.top, right - left, bbox.height);
+          drawn.push({ startS: start, endS: end, left, width: right - left, top: bbox.top, height: bbox.height });
+        }
+      }
+      ctx.restore();
+      u.tremorBands = drawn;
+    }
+
     // The tremor lines and then the selection lines lie over the readings.
     function drawMarks(u) {
       const { min, max } = u.scales.x;
@@ -245,6 +274,9 @@
       readout.x.textContent = C.formatValue(boot.gx[idx]);
       readout.y.textContent = C.formatValue(boot.gy[idx]);
       readout.z.textContent = C.formatValue(boot.gz[idx]);
+      for (const el of readout.axes) {
+        el.hidden = !state.shown.includes(el.dataset.axis);
+      }
       readout.answer.textContent = C.answerText(boot.windows, t);
       const over = u.over.getBoundingClientRect();
       const offset = over.left - body.getBoundingClientRect().left;
@@ -316,6 +348,7 @@
           })),
         ],
         hooks: {
+          drawClear: [drawBands],
           drawAxes: [drawZero],
           draw: [drawMarks, onDrawn],
           setScale: [onScale],
@@ -349,7 +382,9 @@
           const name = document.createElement('span');
           name.className = 'plot-name';
           name.setAttribute('aria-hidden', 'true');
-          name.textContent = axes[0];
+          const line = document.createElement('span');
+          line.className = `axis-line axis-line-${axes[0]}`;
+          name.append(line, axes[0]);
           box.append(name);
         }
         plotsEl.append(box);
@@ -442,6 +477,20 @@
       /** The tremor and selection lines each chart drew last, in page pixels. */
       lines: () =>
         charts.map((u) => ({ tremor: pageLines(u, u.tremorLines), selection: pageLines(u, u.selectionLines) })),
+      /** The tremor shades each chart drew last, in page pixels. */
+      bands: () =>
+        charts.map((u) => {
+          const rect = u.ctx.canvas.getBoundingClientRect();
+          const ratio = uPlot.pxRatio;
+          return (u.tremorBands || []).map((b) => ({
+            startS: b.startS,
+            endS: b.endS,
+            x: rect.left + b.left / ratio,
+            width: b.width / ratio,
+            top: rect.top + b.top / ratio,
+            height: b.height / ratio,
+          }));
+        }),
       yRanges: () => charts.map((u) => [u.scales.y.min, u.scales.y.max]),
       yTicks: () => charts.map((u) => [...(u.tremorTicks || [])]),
       destroy() {

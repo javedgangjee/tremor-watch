@@ -9,7 +9,7 @@
 const fs = require('node:fs');
 const { performance } = require('node:perf_hooks');
 const { ipcMain } = require('electron');
-const { sampleCells, samplePoints, countColumn, INK, BORDER_CONTROL } = require('./lib/pixels');
+const { sampleCells, samplePoints, countColumn, INK, INK_SECONDARY } = require('./lib/pixels');
 
 const DRAW_LIMIT_MS = 60000;
 // The time a window shown for the fallback capture gets to paint.
@@ -104,10 +104,10 @@ function checkTremorLines(data, report, colour) {
 
 /**
  * Count the pixels down each selection line of every chart that match
- * --border-control and --ink of the theme.
+ * --ink-secondary and --ink of the theme.
  */
 function checkSelectionLines(data, report) {
-  const colours = [BORDER_CONTROL[report.theme] ?? BORDER_CONTROL.light, tremorColour(report)];
+  const colours = [INK_SECONDARY[report.theme] ?? INK_SECONDARY.light, tremorColour(report)];
   const total = { lines: 0, sampled: 0, lineColour: 0, tremorColour: 0 };
   for (const lines of report.selectionLines ?? []) {
     for (const line of lines) {

@@ -1,8 +1,8 @@
 'use strict';
 
-// The page: the Open and Record buttons, the record status, the title block,
-// the boot list, the chips and the layout control, the legend, the summary,
-// and the notices. TremorPlot in plot.js draws the charts, and TremorAnswers
+// The page: the Open and Record buttons, the record status, the boot list,
+// the chips, the layout and time span controls, the Earlier button, the
+// summary, and the notices. TremorPlot in plot.js draws the charts, and TremorAnswers
 // in answer_row.js draws the Answer row.
 
 (function () {
@@ -19,9 +19,6 @@
     message: $('message'),
     messageText: $('message-text'),
     empty: $('empty'),
-    titleBlock: $('title-block'),
-    startText: $('start-text'),
-    fileName: $('file-name'),
     bootPicker: $('boot-picker'),
     boot: $('boot'),
     cutShort: $('cut-short'),
@@ -30,6 +27,9 @@
     chips: [...document.querySelectorAll('#chips .md-chip')],
     layout: $('layout'),
     layoutOptions: [...document.querySelectorAll('#layout .md-seg-opt')],
+    span: $('span'),
+    spanOptions: [...document.querySelectorAll('#span .md-seg-opt')],
+    earlier: $('earlier'),
     chartBody: $('chart-body'),
     plots: $('plots'),
     answerLine: $('answer-line'),
@@ -39,10 +39,10 @@
     timeLabels: $('time-labels'),
     noReadings: $('no-readings'),
     readout: $('readout'),
-    counts: [0, 1, 2, 3].map((code) => $(`count-${code}`)),
     selectionText: $('selection-text'),
     summary: $('summary'),
-    facts: $('facts'),
+    factsRecording: $('facts-recording'),
+    factsQuality: $('facts-quality'),
   };
 
   // The faces the canvases draw with, loaded before the first draw so that
@@ -95,54 +95,47 @@
     boot = null;
     showCount++;
     clearCharts();
-    for (const el of [els.titleBlock, els.cutShort, els.bootView, els.chartCard, els.summary, els.empty]) {
+    for (const el of [els.bootPicker, els.cutShort, els.bootView, els.chartCard, els.summary, els.empty]) {
       show(el, false);
     }
     els.messageText.textContent = text;
     show(els.message, true);
   }
 
-  function fact(label, value, mono = false) {
-    const item = document.createElement('div');
+  // One fact of the summary, as a dt and a dd. look is 'mono' for an
+  // identifier, or 'quiet' for a count of zero.
+  function fact(label, value, look = null) {
     const dt = document.createElement('dt');
     const dd = document.createElement('dd');
-    dt.className = 'field-label';
     dt.textContent = label;
     dd.textContent = value;
-    if (mono) {
-      dd.classList.add('fact-mono');
+    if (look !== null) {
+      dd.classList.add(`fact-${look}`);
     }
-    item.append(dt, dd);
-    return item;
+    return [dt, dd];
   }
 
-  function stretchText(s) {
-    const rate = (s.rateUhz / 1e6).toFixed(6);
-    return `${s.number} from reading ${count(s.first)} at ${rate}/s${s.estimated ? ' (estimated)' : ''}`;
+  // A count of the data quality group, quiet when it is zero.
+  function issue(label, n) {
+    return fact(label, count(n), n === 0 ? 'quiet' : null);
   }
 
   function showSummary(b) {
-    const answers = [0, 1, 2, 3].map((code) => `${count(b.counts.windowsByCode[code])} ${C.answerName(code).toLowerCase()}`);
-    els.facts.replaceChildren(
-      fact('Boot', String(b.id), true),
-      fact('Firmware', String(b.firmware)),
-      fact('Reset cause', String(b.resetCause)),
-      fact(b.stretches.length === 1 ? 'Stretch' : 'Stretches', b.stretches.map(stretchText).join('; ') || 'none'),
-      fact('Readings', count(b.counts.readings)),
-      fact('Windows', answers.join(', ')),
-      fact('Sensor faults', count(b.counts.faults)),
-      fact('Bad lines in the file', count(recording.counts.bad)),
-      fact('Dropped bursts in the file', count(recording.counts.droppedBursts)),
-      fact('Readings with no stretch', count(b.counts.noStretchReadings)),
-      fact('Windows not placed', count(b.counts.notPlaced)),
+    els.factsRecording.replaceChildren(
+      ...fact('File', recording.fileName, 'mono'),
+      ...fact('Boot', String(b.id), 'mono'),
+      ...fact('Firmware', String(b.firmware)),
+      ...fact('Reset cause', String(b.resetCause)),
+      ...fact('Readings', count(b.counts.readings)),
+    );
+    els.factsQuality.replaceChildren(
+      ...issue('Sensor faults', b.counts.faults),
+      ...issue('Bad lines in the file', recording.counts.bad),
+      ...issue('Dropped bursts in the file', recording.counts.droppedBursts),
+      ...issue('Readings with no stretch', b.counts.noStretchReadings),
+      ...issue('Windows not placed', b.counts.notPlaced),
     );
     show(els.summary, true);
-  }
-
-  function showLegend(b) {
-    els.counts.forEach((el, code) => {
-      el.textContent = count(b.counts.windowsByCode[code]);
-    });
   }
 
   function fillBootList(boots, selected) {
@@ -177,9 +170,59 @@
   }
 
   function enableControls(on) {
-    for (const el of [...els.chips, ...els.layoutOptions]) {
+    for (const el of [...els.chips, ...els.layoutOptions, ...els.spanOptions]) {
       el.disabled = !on;
     }
+    if (!on) {
+      els.earlier.disabled = true;
+    }
+  }
+
+  // The option of the time span control that the view matches: All when the
+  // view shows the whole boot, else the option of the view's width, else
+  // none, as after a drag to another width.
+  function spanOf(view, bounds) {
+    const near = (a, b) => Math.abs(a - b) < 1e-6;
+    if (near(view.min, bounds.min) && near(view.max, bounds.max)) {
+      return 'all';
+    }
+    const width = view.max - view.min;
+    const option = els.spanOptions.find((o) => o.dataset.span !== 'all' && near(Number(o.dataset.span), width));
+    return option === undefined ? null : option.dataset.span;
+  }
+
+  // Mark the time span option of the view and turn the Earlier button off at
+  // the start of the boot. With no option marked, the first one takes the
+  // keyboard focus.
+  function showSpan() {
+    if (plot === null) {
+      return;
+    }
+    const view = plot.view();
+    const bounds = plot.bounds();
+    const on = spanOf(view, bounds);
+    els.spanOptions.forEach((option, i) => {
+      const selected = option.dataset.span === on;
+      option.classList.toggle('md-seg-on', selected);
+      option.setAttribute('aria-checked', selected ? 'true' : 'false');
+      option.tabIndex = selected || (on === null && i === 0) ? 0 : -1;
+    });
+    els.earlier.disabled = view.min <= bounds.min + 1e-6;
+  }
+
+  // Show the given span, centred where the view's centre is, inside the boot.
+  function setSpan(span) {
+    if (plot === null) {
+      return;
+    }
+    const bounds = plot.bounds();
+    if (span === 'all') {
+      plot.setView(bounds);
+      return;
+    }
+    const view = plot.view();
+    const width = Number(span);
+    plot.setView(C.clampView((view.min + view.max) / 2 - width / 2, width, bounds));
   }
 
   function drawTimeLabels() {
@@ -205,6 +248,7 @@
       row.draw();
     }
     drawTimeLabels();
+    showSpan();
   }
 
   // Two frames make sure the drawing has reached the screen before the report,
@@ -256,6 +300,8 @@
       startText: recording.startText,
       selection: selectionReport(),
       rowAlignPx: rowAlignPx(),
+      span: plot === null ? null : spanOf(plot.view(), plot.bounds()),
+      tremorBands: plot === null ? [] : plot.bands(),
       ...lineReport(),
     };
   }
@@ -299,7 +345,6 @@
     show(els.bootView, true);
     show(els.chartCard, true);
     showSummary(b);
-    showLegend(b);
     showChips();
     showLayout();
     const hasReadings = b.counts.readings > 0;
@@ -343,10 +388,6 @@
     recording = next;
     const b =
       recording.boots.find((x) => x.id === bootId) || recording.boots.find((x) => x.counts.readings > 0);
-    show(els.titleBlock, true);
-    els.startText.textContent = recording.startText ?? '';
-    show(els.startText, recording.startText !== null);
-    els.fileName.textContent = recording.fileName;
     show(els.cutShort, recording.cutShort);
     fillBootList(recording.boots, b);
     showBoot(b);
@@ -405,12 +446,30 @@
   for (const option of els.layoutOptions) {
     option.addEventListener('click', () => setLayout(option.dataset.layout));
   }
+  for (const option of els.spanOptions) {
+    option.addEventListener('click', () => setSpan(option.dataset.span));
+  }
+  els.earlier.addEventListener('click', () => {
+    if (plot !== null) {
+      plot.setView(C.panView(plot.view(), plot.bounds(), -1));
+    }
+  });
 
-  // The keys of the design system's SegmentedControl.
-  els.layout.addEventListener('keydown', (event) => {
-    const options = els.layoutOptions;
-    const current = Math.max(0, options.findIndex((o) => o.dataset.layout === layout));
-    const key = event.key;
+  // The keys of the design system's SegmentedControl. current gives the
+  // index of the chosen option, and choose takes the option to choose.
+  function segmentKeys(group, options, current, choose) {
+    group.addEventListener('keydown', (event) => {
+      const next = segmentStep(options, current(), event.key);
+      if (next === null || options[next].disabled) {
+        return;
+      }
+      event.preventDefault();
+      choose(options[next]);
+      options[next].focus();
+    });
+  }
+
+  function segmentStep(options, current, key) {
     let next = null;
     if (key === 'ArrowRight' || key === 'ArrowDown') {
       next = (current + 1) % options.length;
@@ -421,13 +480,21 @@
     } else if (key === 'End') {
       next = options.length - 1;
     }
-    if (next === null || options[next].disabled) {
-      return;
-    }
-    event.preventDefault();
-    setLayout(options[next].dataset.layout);
-    options[next].focus();
-  });
+    return next;
+  }
+
+  segmentKeys(
+    els.layout,
+    els.layoutOptions,
+    () => Math.max(0, els.layoutOptions.findIndex((o) => o.dataset.layout === layout)),
+    (option) => setLayout(option.dataset.layout),
+  );
+  segmentKeys(
+    els.span,
+    els.spanOptions,
+    () => Math.max(0, els.spanOptions.findIndex((o) => o.classList.contains('md-seg-on'))),
+    (option) => setSpan(option.dataset.span),
+  );
 
   /** Give a time in milliseconds as h:mm:ss. */
   function clock(ms) {

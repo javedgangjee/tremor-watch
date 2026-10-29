@@ -283,7 +283,15 @@
     return index;
   }
 
-  /** Put a view of the same width inside the bounds. */
+  /**
+   * Give a view of the given width that starts at min, moved inside the
+   * bounds. A width that covers the bounds gives the bounds.
+   *
+   * @param {number} min
+   * @param {number} width
+   * @param {{min: number, max: number}} bounds
+   * @returns {{min: number, max: number}}
+   */
   function clampView(min, width, bounds) {
     if (width >= bounds.max - bounds.min) {
       return { min: bounds.min, max: bounds.max };
@@ -344,11 +352,12 @@
 
   // How the lines over the plots are drawn. Each token is a key of
   // TremorTheme.palette(). The tremor lines take the colour of the tremor
-  // blocks, and the selection lines are dashed grey, so neither looks like
-  // an axis trace or the hover line.
+  // blocks. The selection lines are dashed in --ink-secondary, as the v2
+  // design draws them, so they look like neither an axis trace nor the solid
+  // hover line.
   const LINES = {
     tremor: { token: 'ink', widthPx: 2, dashPx: [] },
-    selection: { token: 'borderControl', widthPx: 1, dashPx: [4, 4] },
+    selection: { token: 'inkSecondary', widthPx: 1, dashPx: [4, 4] },
   };
 
   /**
@@ -436,6 +445,7 @@
     answerText,
     windowText,
     stepSelection,
+    clampView,
     keepInView,
     panView,
     toggleAxis,

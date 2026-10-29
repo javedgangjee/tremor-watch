@@ -210,9 +210,17 @@ test('case 20 of feature 15: paddedRange() and sharedRange()', () => {
 
 test('case 21 of feature 15: LINES', () => {
   assert.deepEqual(C.LINES.tremor, { token: 'ink', widthPx: 2, dashPx: [] });
-  assert.deepEqual(C.LINES.selection, { token: 'borderControl', widthPx: 1, dashPx: [4, 4] });
+  assert.deepEqual(C.LINES.selection, { token: 'inkSecondary', widthPx: 1, dashPx: [4, 4] });
   assert.notEqual(C.LINES.tremor.token, C.LINES.selection.token);
   for (const style of [C.LINES.tremor, C.LINES.selection]) {
-    assert.ok(!['warning', 'link', 'success', 'inkSecondary'].includes(style.token), style.token);
+    assert.ok(!['warning', 'link', 'success'].includes(style.token), style.token);
   }
+});
+
+test('case 25 of feature 15: clampView()', () => {
+  const bounds = { min: 0, max: 100 };
+  assert.deepEqual(C.clampView(40, 10, bounds), { min: 40, max: 50 });
+  assert.deepEqual(C.clampView(-5, 10, bounds), { min: 0, max: 10 });
+  assert.deepEqual(C.clampView(95, 10, bounds), { min: 90, max: 100 });
+  assert.deepEqual(C.clampView(20, 120, bounds), { min: 0, max: 100 });
 });

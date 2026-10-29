@@ -7,7 +7,7 @@ const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
 const { REPO, VIEWER } = require('./helpers/paths');
-const { INK, BORDER_CONTROL } = require('../src/lib/pixels');
+const { INK, INK_SECONDARY } = require('../src/lib/pixels');
 
 const RENDERER = path.join(VIEWER, 'src', 'renderer');
 const DESIGN = path.join(REPO, 'context', 'viewer-design');
@@ -101,7 +101,7 @@ test('case 14 of feature 15: the page, its policy, its icons, and its colours', 
   assert.ok(!html.includes('style='), 'index.html holds a style attribute');
 
   const bundle = read(path.join(DESIGN, '_ds_bundle.js'));
-  for (const icon of ['folder', 'play']) {
+  for (const icon of ['folder', 'play', 'chevron']) {
     const paths = new RegExp(`\\n\\s*${icon}: \\[([^\\]]+)\\]`).exec(bundle)[1];
     for (const [, d] of paths.matchAll(/'([^']+)'/g)) {
       assert.ok(html.includes(`d="${d}"`), `index.html holds the ${icon} path ${d}`);
@@ -123,10 +123,15 @@ test('case 14 of feature 15: the page, its policy, its icons, and its colours', 
   const colors = read(path.join(RENDERER, 'design', 'colors.css'));
   assert.equal(INK.light, tokenValue(colors, ':root, [data-theme="light"]', '--ink'));
   assert.equal(INK.dark, tokenValue(colors, '[data-theme="dark"]', '--ink'));
-  assert.equal(BORDER_CONTROL.light, tokenValue(colors, ':root, [data-theme="light"]', '--border-control'));
-  assert.equal(BORDER_CONTROL.dark, tokenValue(colors, '[data-theme="dark"]', '--border-control'));
+  assert.equal(INK_SECONDARY.light, tokenValue(colors, ':root, [data-theme="light"]', '--ink-secondary'));
+  assert.equal(INK_SECONDARY.dark, tokenValue(colors, '[data-theme="dark"]', '--ink-secondary'));
 
-  const legend = /<ul class="legend">([\s\S]*?)<\/ul>/.exec(html)[1];
-  const items = [...legend.matchAll(/<li>[\s\S]*?<\/li>/g)].map(([li]) => /<span>([^<]+)<\/span>/.exec(li)[1]);
-  assert.deepEqual(items, ['Tremor', 'No tremor', 'Arm moving', 'Warming up', 'Tremor start and end', 'Window span']);
+  assert.ok(!html.includes('class="legend'), 'index.html holds no legend');
+  const span = /<div id="span"[^>]*>([\s\S]*?)<\/div>/.exec(html)[1];
+  const options = [...span.matchAll(/data-span="([^"]+)">([^<]+)</g)].map(([, value, text]) => [value, text]);
+  assert.deepEqual(options, [['10', '10 s'], ['30', '30 s'], ['60', '1 min'], ['all', 'All']]);
+  assert.ok(/<button id="earlier"[^>]*aria-label="Earlier"/.test(html), 'index.html holds the Earlier button');
+  for (const title of ['Recording', 'Data quality']) {
+    assert.ok(html.includes(`<h3 class="summary-group-title">${title}</h3>`), `the summary has the group ${title}`);
+  }
 });

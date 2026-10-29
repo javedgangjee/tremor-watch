@@ -3,9 +3,9 @@
 // The --ink colour of the page's light and dark themes, from
 // viewer/src/renderer/design/colors.css, which fills the tremor blocks.
 const INK = { light: '#16181D', dark: '#F4F7FA' };
-// The --border-control colour of the light and dark themes, from the same
+// The --ink-secondary colour of the light and dark themes, from the same
 // file, which draws the dashes of the selection lines.
-const BORDER_CONTROL = { light: '#7F8693', dark: '#727A89' };
+const INK_SECONDARY = { light: '#3A4150', dark: '#DCE3EC' };
 
 // A cell narrower than this has no centre pixel that is safely inside it.
 const MIN_CELL_WIDTH = 3;
@@ -136,4 +136,4 @@ function countColumn(bitmap, imageWidth, imageHeight, scale, line, colours, tole
   return { sampled, matches };
 }
 
-module.exports = { sampleCells, samplePoints, countColumn, MIN_CELL_WIDTH, INK, BORDER_CONTROL };
+module.exports = { sampleCells, samplePoints, countColumn, MIN_CELL_WIDTH, INK, INK_SECONDARY };

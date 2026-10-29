@@ -2,7 +2,7 @@
 
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { sampleCells, samplePoints, countColumn, INK, BORDER_CONTROL } = require('../src/lib/pixels');
+const { sampleCells, samplePoints, countColumn, INK, INK_SECONDARY } = require('../src/lib/pixels');
 
 // Feature 15 checks the tremor blocks against the light theme's --ink.
 const INK_LIGHT = INK.light;
@@ -52,13 +52,13 @@ test('case 22 of feature 15: samplePoints() and countColumn()', () => {
   );
 
   const grey = new Uint8Array(WIDTH * HEIGHT * 4).fill(255);
-  const [r, g, b] = [0x7f, 0x86, 0x93];
+  const [r, g, b] = [0x3a, 0x41, 0x50];
   for (const y of [0, 1, 2, 3, 8, 9]) {
     for (const x of [4, 5]) {
       grey.set([b, g, r, 255], (y * WIDTH + x) * 4);
     }
   }
-  const colours = [BORDER_CONTROL.light, INK_LIGHT];
+  const colours = [INK_SECONDARY.light, INK_LIGHT];
   const line = (x) => ({ x, width: 1, top: 0, height: 5 });
   assert.deepEqual(countColumn(grey, WIDTH, HEIGHT, 2, line(2), colours), { sampled: 5, matches: [3, 0] });
   assert.deepEqual(countColumn(grey, WIDTH, HEIGHT, 2, line(6), colours), { sampled: 5, matches: [0, 0] });
