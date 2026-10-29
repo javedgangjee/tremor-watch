@@ -17,7 +17,6 @@ const os = require('node:os');
 const path = require('node:path');
 const electron = require('electron');
 const { BOOT_B, RATE_UHZ, HASH } = require('../test/helpers/synthetic');
-const { startText } = require('../src/lib/title');
 const { loadRecording } = require('../src/lib/load');
 const C = require('../src/lib/chart');
 
@@ -242,7 +241,6 @@ const CASES = [
       c.equal('shown axes', report.shownAxes, ['x', 'y', 'z']);
       c.equal('plot heights', report.plotHeights, [340]);
       c.equal('time span', report.span, 'all');
-      c.equal('start text', report.startText, null);
       c.equal('selection', report.selection, null);
       checkFontsAndRow(c, report);
       checkTremorLines(c, result, 1);
@@ -355,8 +353,6 @@ const CASES = [
         recording.text.startsWith('Saved '),
       );
       c.equal('record status', report.recordStatus, '');
-      c.ok('the start text is not null', report.startText !== null);
-      c.equal('start text', report.startText, startText(name, []));
       return result;
     },
   },

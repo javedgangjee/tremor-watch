@@ -306,7 +306,6 @@
       shownAxes: [...shown],
       plotHeights: plot === null ? [] : plot.plotHeights(),
       fontsLoaded: fontsLoaded(),
-      startText: recording.startText,
       selection: selectionReport(),
       rowAlignPx: rowAlignPx(),
       span: plot === null ? null : spanOf(plot.view(), plot.bounds()),

@@ -501,5 +501,5 @@
     };
   }
 
-  window.TremorPlot = { create, HEIGHT };
+  window.TremorPlot = { create };
 })();
