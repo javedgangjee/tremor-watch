@@ -41,3 +41,8 @@ These come from the design system's readme.
 - The toolbar is exactly as the v2 design draws it: the time span control and the Earlier button only, with no Later button and no range text.
 - The summary gives only the rows the v2 design lists. The stretches and the window counts go.
 - The agent read the rest: the boot select appears only when the file holds more than one boot, no warning icons show beside nonzero counts, a boot still opens showing the whole boot, and the selected window's text sits next to the Earlier button. Feature 15's requirement 37 gives the details.
+- Later the same day the user asked for these changes. Feature 15's requirement 38 gives the details.
+  - The Answer row goes entirely. The window selection, which only the row could make, goes with it. This reverses the first answer above.
+  - In Stacked each axis name sits half way down its plot, with no coloured line.
+  - A time span option as long as the boot or longer is turned off, after the user found that "1 min just defaults to All" on a short boot.
+  - A recording that ends well no longer shows the "Saved N lines to FILE." line, and a long file name in the Summary ends in an ellipsis.

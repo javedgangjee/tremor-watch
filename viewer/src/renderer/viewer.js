@@ -2,8 +2,7 @@
 
 // The page: the Open and Record buttons, the record status, the boot list,
 // the chips, the layout and time span controls, the Earlier button, the
-// summary, and the notices. TremorPlot in plot.js draws the charts, and TremorAnswers
-// in answer_row.js draws the Answer row.
+// summary, and the notices. TremorPlot in plot.js draws the charts.
 
 (function () {
   const C = window.TremorChart;
@@ -32,14 +31,10 @@
     earlier: $('earlier'),
     chartBody: $('chart-body'),
     plots: $('plots'),
-    answerLine: $('answer-line'),
-    answerRow: $('answer-row'),
-    answerCanvas: $('answer-canvas'),
     timeLine: $('time-line'),
     timeLabels: $('time-labels'),
     noReadings: $('no-readings'),
     readout: $('readout'),
-    selectionText: $('selection-text'),
     summary: $('summary'),
     factsRecording: $('facts-recording'),
     factsQuality: $('facts-quality'),
@@ -56,14 +51,10 @@
   let recording = null;
   let boot = null;
   let plot = null;
-  let row = null;
   let layout = 'overlaid';
   let shown = [...C.AXES];
   let palette = TremorTheme.palette();
   let startedAt = 0;
-  // The window that capture mode selects in the first file's shown boot
-  // before it reports, as { stretch, window }, or null.
-  let pendingSelect = null;
   // Counts the boots shown, so a boot that waits for the fonts is dropped
   // when another one came after it.
   let showCount = 0;
@@ -81,12 +72,7 @@
       plot.destroy();
       plot = null;
     }
-    if (row !== null) {
-      row.destroy();
-      row = null;
-    }
     els.timeLabels.replaceChildren();
-    els.selectionText.textContent = '';
     els.readout.hidden = true;
   }
 
@@ -201,8 +187,9 @@
   }
 
   // Mark the time span option of the view and turn the Earlier button off at
-  // the start of the boot. With no option marked, the first one takes the
-  // keyboard focus.
+  // the start of the boot. An option as long as the boot or longer would
+  // only show what All shows, so it is off. With no option marked, the first
+  // one takes the keyboard focus.
   function showSpan() {
     if (plot === null) {
       return;
@@ -215,6 +202,7 @@
       option.classList.toggle('md-seg-on', selected);
       option.setAttribute('aria-checked', selected ? 'true' : 'false');
       option.tabIndex = selected || (on === null && i === 0) ? 0 : -1;
+      option.disabled = option.dataset.span !== 'all' && Number(option.dataset.span) >= bounds.max - bounds.min;
     });
     els.earlier.disabled = view.min <= bounds.min + 1e-6;
   }
@@ -253,9 +241,6 @@
   }
 
   function onView() {
-    if (row !== null) {
-      row.draw();
-    }
     drawTimeLabels();
     showSpan();
   }
@@ -277,20 +262,6 @@
     return [...families];
   }
 
-  function rowAlignPx() {
-    if (plot === null || row === null) {
-      return null;
-    }
-    const a = plot.firstPlotEdges();
-    const b = row.edges();
-    return Math.max(Math.abs(a.left - b.left), Math.abs(a.right - b.right));
-  }
-
-  function selectionReport() {
-    const w = row === null ? null : row.selection();
-    return w === null ? null : { stretch: w.stretch, window: w.window, code: w.code };
-  }
-
   function bootReport(b) {
     return {
       ok: true,
@@ -298,7 +269,6 @@
       readings: b.counts.readings,
       stretches: b.stretches.map(({ number, first, rateUhz, estimated }) => ({ number, first, rateUhz, estimated })),
       windowsByCode: b.counts.windowsByCode,
-      tremorCells: row === null ? [] : row.tremorBlocks(),
       drawMs: performance.now() - startedAt,
       recordStatus: els.recordText.textContent,
       theme: document.documentElement.dataset.theme,
@@ -306,46 +276,29 @@
       shownAxes: [...shown],
       plotHeights: plot === null ? [] : plot.plotHeights(),
       fontsLoaded: fontsLoaded(),
-      selection: selectionReport(),
-      rowAlignPx: rowAlignPx(),
       span: plot === null ? null : spanOf(plot.view(), plot.bounds()),
+      spansOff: els.spanOptions.filter((o) => o.disabled).map((o) => o.dataset.span),
       tremorBands: plot === null ? [] : plot.bands(),
       ...lineReport(),
     };
   }
 
-  // Where the charts put the view and the lines they drew, in page pixels.
+  // Where the charts put the view and the tremor lines they drew, in page pixels.
   function lineReport() {
     if (plot === null) {
-      return { view: null, plotEdges: null, tremorLines: [], selectionLines: [], yRanges: null, yTicks: null };
+      return { view: null, plotEdges: null, tremorLines: [], yRanges: null, yTicks: null };
     }
-    const lines = plot.lines();
     return {
       view: plot.view(),
       plotEdges: plot.plotEdges(),
-      tremorLines: lines.map((l) => l.tremor),
-      selectionLines: lines.map((l) => l.selection),
+      tremorLines: plot.tremorLines(),
       yRanges: plot.yRanges(),
       yTicks: plot.yTicks(),
     };
   }
 
-  // Select the window that capture mode asked for, when this boot holds it.
-  function selectWanted(b, wanted) {
-    if (wanted === null || row === null) {
-      return;
-    }
-    const w = b.windows.find((x) => x.stretch === wanted.stretch && x.window === wanted.window);
-    if (w !== undefined) {
-      row.select(w);
-    }
-  }
-
   async function showBoot(b) {
     const mine = ++showCount;
-    // Only the first boot shown of the first file takes the capture's selection.
-    const wanted = pendingSelect;
-    pendingSelect = null;
     clearCharts();
     boot = b;
     show(els.message, false);
@@ -357,7 +310,7 @@
     showLayout();
     const hasReadings = b.counts.readings > 0;
     enableControls(hasReadings);
-    for (const el of [els.plots, els.answerLine, els.timeLine]) {
+    for (const el of [els.plots, els.timeLine]) {
       show(el, hasReadings);
     }
     show(els.noReadings, !hasReadings);
@@ -376,18 +329,8 @@
       onView,
       onFirstDraw: () => {
         onView();
-        // uPlot calls this from inside its draw, where a redraw would be
-        // dropped, so the selection waits for the draw to end. The report
-        // waits two frames, so the charts have drawn the selection by then.
-        queueMicrotask(() => selectWanted(b, wanted));
         report(() => bootReport(b));
       },
-    });
-    row = TremorAnswers.create(els.answerRow, els.answerCanvas, els.selectionText, b, {
-      palette,
-      getView: () => plot.view(),
-      onSelect: (w) => plot.setSelection(w),
-      onShowSpan: (view) => plot.setView(view),
     });
     onView();
   }
@@ -407,7 +350,6 @@
       if (message.layout === 'overlaid' || message.layout === 'stacked') {
         layout = message.layout;
       }
-      pendingSelect = message.select ?? null;
       showRecording(message.recording, message.bootId);
     } else {
       showMessage(message.message);
@@ -424,7 +366,6 @@
     palette = TremorTheme.palette();
     if (plot !== null) {
       plot.rebuild(palette);
-      row.setPalette(palette);
       drawTimeLabels();
     }
   });
@@ -464,10 +405,16 @@
   });
 
   // The keys of the design system's SegmentedControl. current gives the
-  // index of the chosen option, and choose takes the option to choose.
+  // index of the chosen option, and choose takes the option to choose. The
+  // arrow keys pass over an option that is off.
   function segmentKeys(group, options, current, choose) {
     group.addEventListener('keydown', (event) => {
-      const next = segmentStep(options, current(), event.key);
+      let next = segmentStep(options, current(), event.key);
+      // Home and End go on inwards from an end that is off.
+      const onward = { Home: 'ArrowRight', End: 'ArrowLeft' }[event.key] ?? event.key;
+      for (let tries = 1; next !== null && options[next].disabled && tries < options.length; tries++) {
+        next = segmentStep(options, next, onward);
+      }
       if (next === null || options[next].disabled) {
         return;
       }

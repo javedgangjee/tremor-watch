@@ -10,7 +10,7 @@ const { pathToFileURL } = require('node:url');
 const { performance } = require('node:perf_hooks');
 const { app, BrowserWindow, Menu, dialog, ipcMain, nativeTheme, session } = require('electron');
 const { ArgsError, RecordError, RecordingError } = require('./lib/errors');
-const { parseArgs, captureSelect, USAGE } = require('./lib/args');
+const { parseArgs, USAGE } = require('./lib/args');
 const { loadRecording } = require('./lib/load');
 const { Recorder, recorderSettings } = require('./lib/recorder');
 const { runCapture } = require('./capture');
@@ -30,10 +30,7 @@ let quitting = false;
 function readArgs() {
   try {
     // `electron .` leaves the app's own arguments after the first two.
-    const args = parseArgs(process.argv.slice(2), process.env.INIT_CWD || process.cwd());
-    // A test hook for capture mode only: the window the page selects before it reports.
-    args.select = args.capture === null ? null : captureSelect(process.env);
-    return args;
+    return parseArgs(process.argv.slice(2), process.env.INIT_CWD || process.cwd());
   } catch (err) {
     if (!(err instanceof ArgsError)) {
       throw err;
@@ -51,11 +48,10 @@ function isOwnPage(win, event) {
 
 /**
  * Load a recording and send it, or the reason it cannot be shown, to the page.
- * A layout given here is the one the page starts the file with, and a select
- * given here is the window the page selects before it reports. Returns the
+ * A layout given here is the one the page starts the file with. Returns the
  * message and the time the load took.
  */
-function openRecording(win, filePath, bootId = null, layout = null, select = null) {
+function openRecording(win, filePath, bootId = null, layout = null) {
   const started = performance.now();
   let message;
   try {
@@ -67,9 +63,6 @@ function openRecording(win, filePath, bootId = null, layout = null, select = nul
     message = { ok: true, recording, bootId };
     if (layout !== null) {
       message.layout = layout;
-    }
-    if (select !== null) {
-      message.select = select;
     }
   } catch (err) {
     const text = err instanceof RecordingError ? err.message : `Could not open ${filePath}: ${err.message}`;
@@ -233,7 +226,7 @@ async function start() {
         win,
         args,
         open: args.recordFor === null
-          ? () => openRecording(win, args.file, args.bootId, args.layout, args.select)
+          ? () => openRecording(win, args.file, args.bootId, args.layout)
           : () => recordThenOpen(win, args.recordFor, args.bootId),
         isOwnPage: (event) => isOwnPage(win, event),
       });

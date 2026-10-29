@@ -1,8 +1,8 @@
 'use strict';
 
 // The pure rules of the viewer's page: number and time text, the time ticks,
-// the map from time to x, the answer blocks, the selection, the shown axes,
-// the tremor and selection lines, and the y ranges. It requires nothing.
+// the map from time to x, the answer at a time, the view, the shown axes,
+// the tremor lines, and the y ranges. It requires nothing.
 // Under Node it sets module.exports, and the page, which loads it as a
 // classic script, gets the global TremorChart.
 
@@ -24,11 +24,6 @@
   ];
   // The least room between two time ticks, in CSS pixels.
   const TIME_TICK_SPACE_PX = 90;
-
-  // An answer cell narrower than this joins its neighbours into one band.
-  const JOIN_BELOW_PX = 4;
-  // The gap between two answer blocks that do not join.
-  const GAP_PX = 2;
 
   // The answer of each result code, as res_name() in core/window.c names them.
   const ANSWER_NAMES = ['Tremor', 'No tremor', 'Arm moving', 'Warming up'];
@@ -140,47 +135,6 @@
   }
 
   /**
-   * Give the time at an x in a view drawn across widthPx pixels.
-   *
-   * @param {number} x
-   * @param {{min: number, max: number}} view
-   * @param {number} widthPx
-   * @returns {number}
-   */
-  function timeAt(x, view, widthPx) {
-    return view.min + (x * (view.max - view.min)) / widthPx;
-  }
-
-  /**
-   * Give where an answer block is drawn, or null when its cell lies outside
-   * the view. A cell of JOIN_BELOW_PX or more is drawn GAP_PX narrower than
-   * the cell. A narrower cell is drawn its full width and at least 1 px, and
-   * it joins its neighbours. The block is clipped at the edges of the view.
-   *
-   * @param {{cellStartS: number}} window
-   * @param {{min: number, max: number}} view
-   * @param {number} widthPx
-   * @returns {{x: number, width: number, joined: boolean} | null}
-   */
-  function blockLayout(window, view, widthPx) {
-    const start = window.cellStartS;
-    const end = start + 1;
-    if (end <= view.min || start >= view.max) {
-      return null;
-    }
-    const x0 = xAt(start, view, widthPx);
-    const cellWidth = xAt(end, view, widthPx) - x0;
-    const joined = cellWidth < JOIN_BELOW_PX;
-    const width = joined ? Math.max(1, cellWidth) : cellWidth - GAP_PX;
-    const left = Math.max(0, x0);
-    const right = Math.min(widthPx, x0 + width);
-    if (right <= left) {
-      return null;
-    }
-    return { x: left, width: right - left, joined };
-  }
-
-  /**
    * Give the placed window whose cell, from cellStartS for 1 second, holds t,
    * or null. The windows are in order of time.
    *
@@ -230,60 +184,6 @@
   }
 
   /**
-   * Give a placed window as text for the selection line.
-   *
-   * @param {{stretch: number, window: number, code: number, startS: number, endS: number}} w
-   * @returns {string}
-   */
-  function windowText(w) {
-    const name = (answerName(w.code) ?? 'no answer').toLowerCase();
-    return `Window ${w.window} of stretch ${w.stretch}: ${name}, from ${formatClock(w.startS, 1)} to ${formatClock(w.endS, 1)}`;
-  }
-
-  /**
-   * Give the selected index after a key. With no selection the right arrow
-   * picks the first window whose cell ends after the view's start, and the
-   * left arrow the last whose cell starts before the view's end. Escape gives
-   * null, and any other key keeps the index.
-   *
-   * @param {{cellStartS: number}[]} windows
-   * @param {number | null} index
-   * @param {string} key
-   * @param {{min: number, max: number}} view
-   * @returns {number | null}
-   */
-  function stepSelection(windows, index, key, view) {
-    const last = windows.length - 1;
-    if (key === 'Escape') {
-      return null;
-    }
-    if (last < 0) {
-      return index;
-    }
-    if (key === 'Home') {
-      return 0;
-    }
-    if (key === 'End') {
-      return last;
-    }
-    if (key === 'ArrowRight') {
-      if (index === null) {
-        const found = windows.findIndex((w) => w.cellStartS + 1 > view.min);
-        return found < 0 ? last : found;
-      }
-      return Math.min(index + 1, last);
-    }
-    if (key === 'ArrowLeft') {
-      if (index === null) {
-        const found = windows.findLastIndex((w) => w.cellStartS < view.max);
-        return found < 0 ? 0 : found;
-      }
-      return Math.max(index - 1, 0);
-    }
-    return index;
-  }
-
-  /**
    * Give a view of the given width that starts at min, moved inside the
    * bounds. A width that covers the bounds gives the bounds.
    *
@@ -298,24 +198,6 @@
     }
     const start = Math.min(Math.max(min, bounds.min), bounds.max - width);
     return { min: start, max: start + width };
-  }
-
-  /**
-   * Keep the view while the span from start to end lies in it. Otherwise
-   * centre the span in a view of the same width, inside the bounds.
-   *
-   * @param {{min: number, max: number}} view
-   * @param {{min: number, max: number}} bounds
-   * @param {number} start
-   * @param {number} end
-   * @returns {{min: number, max: number}}
-   */
-  function keepInView(view, bounds, start, end) {
-    if (start >= view.min && end <= view.max) {
-      return { min: view.min, max: view.max };
-    }
-    const width = view.max - view.min;
-    return clampView((start + end) / 2 - width / 2, width, bounds);
   }
 
   /**
@@ -351,13 +233,9 @@
   }
 
   // How the lines over the plots are drawn. Each token is a key of
-  // TremorTheme.palette(). The tremor lines take the colour of the tremor
-  // blocks. The selection lines are dashed in --ink-secondary, as the v2
-  // design draws them, so they look like neither an axis trace nor the solid
-  // hover line.
+  // TremorTheme.palette().
   const LINES = {
-    tremor: { token: 'ink', widthPx: 2, dashPx: [] },
-    selection: { token: 'inkSecondary', widthPx: 1, dashPx: [4, 4] },
+    tremor: { token: 'ink', widthPx: 2 },
   };
 
   /**
@@ -429,8 +307,6 @@
   return {
     MINUS,
     TIME_STEPS,
-    JOIN_BELOW_PX,
-    GAP_PX,
     AXES,
     formatValue,
     decimalsFor,
@@ -438,15 +314,10 @@
     timeLabel,
     timeTicks,
     xAt,
-    timeAt,
-    blockLayout,
     answerAt,
     answerName,
     answerText,
-    windowText,
-    stepSelection,
     clampView,
-    keepInView,
     panView,
     toggleAxis,
     edgesInView,

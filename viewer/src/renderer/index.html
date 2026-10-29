@@ -90,12 +90,9 @@
 
         <div id="chart-body" class="chart-body">
           <div class="toolbar">
-            <div class="toolbar-start">
-              <button id="earlier" type="button" class="md-btn md-btn-ghost md-btn-sm md-btn-icononly" aria-label="Earlier">
-                <svg class="md-icon earlier-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9 L12 15 L18 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              </button>
-              <p id="selection-text" class="selection-text" role="status"></p>
-            </div>
+            <button id="earlier" type="button" class="md-btn md-btn-ghost md-btn-sm md-btn-icononly" aria-label="Earlier">
+              <svg class="md-icon earlier-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 9 L12 15 L18 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
             <div id="span" class="md-seg" role="radiogroup" aria-label="Time span">
               <button type="button" class="md-seg-opt" role="radio" aria-checked="false" tabindex="-1" data-span="10">10 s</button>
               <button type="button" class="md-seg-opt" role="radio" aria-checked="false" tabindex="-1" data-span="30">30 s</button>
@@ -104,12 +101,6 @@
             </div>
           </div>
           <div id="plots" class="plots"></div>
-          <div id="answer-line" class="answer-line">
-            <span class="answer-label">Answer</span>
-            <div id="answer-row" class="answer-row" tabindex="0" role="group" aria-label="Window answers">
-              <canvas id="answer-canvas" class="answer-canvas"></canvas>
-            </div>
-          </div>
           <div id="time-line" class="time-line">
             <span></span>
             <div id="time-labels" class="time-labels"></div>
@@ -147,7 +138,6 @@
   <script src="../../node_modules/uplot/dist/uPlot.iife.min.js"></script>
   <script src="../lib/chart.js"></script>
   <script src="plot.js"></script>
-  <script src="answer_row.js"></script>
   <script src="viewer.js"></script>
 </body>
 </html>

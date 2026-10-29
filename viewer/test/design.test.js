@@ -7,7 +7,7 @@ const path = require('node:path');
 const test = require('node:test');
 const vm = require('node:vm');
 const { REPO, VIEWER } = require('./helpers/paths');
-const { INK, INK_SECONDARY } = require('../src/lib/pixels');
+const { INK } = require('../src/lib/pixels');
 
 const RENDERER = path.join(VIEWER, 'src', 'renderer');
 const DESIGN = path.join(REPO, 'context', 'viewer-design');
@@ -95,7 +95,6 @@ test('case 14 of feature 15: the page, its policy, its icons, and its colours', 
     '../../node_modules/uplot/dist/uPlot.iife.min.js',
     '../lib/chart.js',
     'plot.js',
-    'answer_row.js',
     'viewer.js',
   ]);
   assert.ok(!html.includes('style='), 'index.html holds a style attribute');
@@ -109,7 +108,7 @@ test('case 14 of feature 15: the page, its policy, its icons, and its colours', 
   }
 
   const colourLiteral = /#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3,4})(?![0-9a-zA-Z])|\b(?:rgba?|hsl)\(/;
-  for (const name of ['viewer.css', 'theme.js', 'plot.js', 'answer_row.js', 'viewer.js']) {
+  for (const name of ['viewer.css', 'theme.js', 'plot.js', 'viewer.js']) {
     const found = colourLiteral.exec(read(path.join(RENDERER, name)));
     assert.equal(found, null, `${name} holds the colour literal ${found && found[0]}`);
   }
@@ -123,10 +122,9 @@ test('case 14 of feature 15: the page, its policy, its icons, and its colours', 
   const colors = read(path.join(RENDERER, 'design', 'colors.css'));
   assert.equal(INK.light, tokenValue(colors, ':root, [data-theme="light"]', '--ink'));
   assert.equal(INK.dark, tokenValue(colors, '[data-theme="dark"]', '--ink'));
-  assert.equal(INK_SECONDARY.light, tokenValue(colors, ':root, [data-theme="light"]', '--ink-secondary'));
-  assert.equal(INK_SECONDARY.dark, tokenValue(colors, '[data-theme="dark"]', '--ink-secondary'));
 
   assert.ok(!html.includes('class="legend'), 'index.html holds no legend');
+  assert.ok(!html.includes('answer-row'), 'index.html holds no Answer row');
   const span = /<div id="span"[^>]*>([\s\S]*?)<\/div>/.exec(html)[1];
   const options = [...span.matchAll(/data-span="([^"]+)">([^<]+)</g)].map(([, value, text]) => [value, text]);
   assert.deepEqual(options, [['10', '10 s'], ['30', '30 s'], ['60', '1 min'], ['all', 'All']]);

@@ -4,9 +4,8 @@
 // with the three axes, and Stacked is one chart for each shown axis. All
 // charts share one view, the time range on the x axis, and one cursor. In
 // Stacked they also share one y range. Every chart shades each tremor
-// episode, marks its start and end with vertical lines, and marks the span
-// of the selected window with dashed lines. The page loads this as a classic script, so it adds one
-// global, TremorPlot.
+// episode and marks its start and end with vertical lines. The page loads
+// this as a classic script, so it adds one global, TremorPlot.
 
 (function () {
   const C = window.TremorChart;
@@ -62,7 +61,7 @@
     };
     const last = boot.timeS.length - 1;
     const bounds = { min: boot.timeS[0], max: boot.timeS[last] };
-    const state = { layout, shown: [...shown], palette, view: { ...bounds }, selection: null };
+    const state = { layout, shown: [...shown], palette, view: { ...bounds } };
     let charts = [];
     let boxes = [];
     let syncing = false;
@@ -126,15 +125,13 @@
     }
 
     // Draw one vertical line at each time in view, the full height of the
-    // plotting area, with a style of C.LINES. Each line and each dash covers
-    // whole device pixels, so its colour is exact. Gives the lines drawn, in
-    // canvas pixels.
+    // plotting area, with a style of C.LINES. Each line covers whole device
+    // pixels, so its colour is exact. Gives the lines drawn, in canvas pixels.
     function drawLines(u, times, style) {
       const { ctx, bbox } = u;
       const { min, max } = u.scales.x;
       const ratio = uPlot.pxRatio;
       const lw = Math.max(1, Math.round(style.widthPx * ratio));
-      const dash = style.dashPx.map((d) => Math.max(1, Math.round(d * ratio)));
       const drawn = [];
       ctx.save();
       ctx.beginPath();
@@ -146,13 +143,7 @@
           continue;
         }
         const left = canvasX(u, t) - Math.floor(lw / 2);
-        if (dash.length === 0) {
-          ctx.fillRect(left, bbox.top, lw, bbox.height);
-        } else {
-          for (let y = bbox.top; y < bbox.top + bbox.height; y += dash[0] + dash[1]) {
-            ctx.fillRect(left, y, lw, Math.min(dash[0], bbox.top + bbox.height - y));
-          }
-        }
+        ctx.fillRect(left, bbox.top, lw, bbox.height);
         const from = Math.max(left, bbox.left);
         const to = Math.min(left + lw, bbox.left + bbox.width);
         drawn.push({ t, left: from, width: to - from, top: bbox.top, height: bbox.height });
@@ -189,12 +180,10 @@
       u.tremorBands = drawn;
     }
 
-    // The tremor lines and then the selection lines lie over the readings.
+    // The tremor lines lie over the readings.
     function drawMarks(u) {
       const { min, max } = u.scales.x;
-      const w = state.selection;
       u.tremorLines = drawLines(u, C.edgesInView(boot.tremorSpans, { min, max }), C.LINES.tremor);
-      u.selectionLines = w === null ? [] : drawLines(u, [w.startS, w.endS], C.LINES.selection);
     }
 
     // The lines a chart drew last, in page pixels.
@@ -382,9 +371,7 @@
           const name = document.createElement('span');
           name.className = 'plot-name';
           name.setAttribute('aria-hidden', 'true');
-          const line = document.createElement('span');
-          line.className = `axis-line axis-line-${axes[0]}`;
-          name.append(line, axes[0]);
+          name.textContent = axes[0];
           box.append(name);
         }
         plotsEl.append(box);
@@ -408,7 +395,7 @@
         return;
       }
       const target = event.target;
-      if (target instanceof HTMLSelectElement || (target instanceof Element && target.closest('.md-seg, .answer-row'))) {
+      if (target instanceof HTMLSelectElement || (target instanceof Element && target.closest('.md-seg'))) {
         return;
       }
       event.preventDefault();
@@ -454,12 +441,6 @@
         boxes[0].axes = state.shown;
         updateAria();
       },
-      setSelection(w) {
-        state.selection = w;
-        for (const u of charts) {
-          u.redraw(false);
-        }
-      },
       setView(view) {
         setViewAll(view, null);
       },
@@ -470,13 +451,10 @@
         build();
       },
       plotHeights: () => charts.map((u) => u.height),
-      /** Where the first chart puts the view's start and end, in page pixels. */
-      firstPlotEdges: () => plotEdges(charts[0]),
       /** Where each chart puts the view's start and end, in page pixels. */
       plotEdges: () => charts.map(plotEdges),
-      /** The tremor and selection lines each chart drew last, in page pixels. */
-      lines: () =>
-        charts.map((u) => ({ tremor: pageLines(u, u.tremorLines), selection: pageLines(u, u.selectionLines) })),
+      /** The tremor lines each chart drew last, in page pixels. */
+      tremorLines: () => charts.map((u) => pageLines(u, u.tremorLines)),
       /** The tremor shades each chart drew last, in page pixels. */
       bands: () =>
         charts.map((u) => {

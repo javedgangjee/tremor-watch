@@ -2,7 +2,7 @@
 
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { parseArgs, captureSelect } = require('../src/lib/args');
+const { parseArgs } = require('../src/lib/args');
 const { ArgsError } = require('../src/lib/errors');
 
 test('case 23: the command line', () => {
@@ -65,10 +65,3 @@ test('case 12 of feature 15: --theme and --layout', () => {
   }
 });
 
-test('case 23 of feature 15: TREMOR_CAPTURE_SELECT', () => {
-  assert.deepEqual(captureSelect({ TREMOR_CAPTURE_SELECT: '0,105' }), { stretch: 0, window: 105 });
-  assert.equal(captureSelect({}), null);
-  for (const text of ['', 'a,1', '1', '1,2,3', '-1,2', '0,1.5']) {
-    assert.throws(() => captureSelect({ TREMOR_CAPTURE_SELECT: text }), ArgsError, JSON.stringify(text));
-  }
-});

@@ -9,7 +9,7 @@
 const fs = require('node:fs');
 const { performance } = require('node:perf_hooks');
 const { ipcMain } = require('electron');
-const { sampleCells, samplePoints, countColumn, INK, INK_SECONDARY } = require('./lib/pixels');
+const { samplePoints, INK } = require('./lib/pixels');
 
 const DRAW_LIMIT_MS = 60000;
 // The time a window shown for the fallback capture gets to paint.
@@ -70,7 +70,7 @@ async function grab(win) {
   return { image, scaleFactor, shownWindow };
 }
 
-/** The colour of the tremor blocks in the report's theme. */
+/** The colour of the tremor lines in the report's theme. */
 function tremorColour(report) {
   return INK[report.theme] ?? INK.light;
 }
@@ -80,10 +80,6 @@ function imageData(win, image, scaleFactor) {
   const { width, height } = image.getSize(scaleFactor);
   const scale = width / win.getContentSize()[0];
   return { bitmap: image.toBitmap({ scaleFactor }), width, height, scale };
-}
-
-function checkTremorCells(data, cells, colour) {
-  return sampleCells(data.bitmap, data.width, data.height, data.scale, cells, colour);
 }
 
 // The shares of a tremor line's height at which its colour is checked.
@@ -100,25 +96,6 @@ function checkTremorLines(data, report, colour) {
     }
   }
   return samplePoints(data.bitmap, data.width, data.height, data.scale, points, colour);
-}
-
-/**
- * Count the pixels down each selection line of every chart that match
- * --ink-secondary and --ink of the theme.
- */
-function checkSelectionLines(data, report) {
-  const colours = [INK_SECONDARY[report.theme] ?? INK_SECONDARY.light, tremorColour(report)];
-  const total = { lines: 0, sampled: 0, lineColour: 0, tremorColour: 0 };
-  for (const lines of report.selectionLines ?? []) {
-    for (const line of lines) {
-      const { sampled, matches } = countColumn(data.bitmap, data.width, data.height, data.scale, line, colours);
-      total.lines++;
-      total.sampled += sampled;
-      total.lineColour += matches[0];
-      total.tremorColour += matches[1];
-    }
-  }
-  return total;
 }
 
 function jsonPath(pngPath) {
@@ -181,9 +158,7 @@ async function runCapture({ win, args, open, isOwnPage }) {
     pageHasProcess,
     theme: report.theme ?? null,
     tremorColour: colour,
-    tremorCellPixels: message.ok ? checkTremorCells(data, report.tremorCells, colour) : null,
     tremorLinePixels: message.ok ? checkTremorLines(data, report, colour) : null,
-    selectionLinePixels: message.ok ? checkSelectionLines(data, report) : null,
   });
   return exitCode;
 }

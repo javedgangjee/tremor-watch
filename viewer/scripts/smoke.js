@@ -29,20 +29,15 @@ const RECORDING_NAME = /^tremor-\d{4}-\d{2}-\d{2}-\d{6}\.txt\.gz$/;
 const log = (name) => path.join(REPO, 'tests', 'firmware', `${name}.txt.gz`);
 const CASE_LIMIT_MS = 90000;
 const DRAW_LIMIT_MS = 10000;
-// The --ink colours of colors.css, which fill the tremor blocks.
+// The --ink colours of colors.css, which draw the tremor lines.
 const INK_LIGHT = '#16181D';
 const INK_DARK = '#F4F7FA';
 const FONT_FAMILIES = ['Red Hat Display', 'Libre Franklin', 'IBM Plex Mono'];
-// The tremor line width in page pixels, the room allowed for rounding, and
-// the share of a selection line that its dashes fill.
+// The tremor line width in page pixels and the room allowed for rounding.
 const TREMOR_LINE_PX = 2;
 const WIDTH_SLACK_PX = 0.5;
 const PLACE_SLACK_PX = 1;
 const TIME_SLACK_S = 1e-6;
-const DASH_SHARE = [0.25, 0.75];
-// Window 105 of stretch 0 of boot A, a no tremor window away from both episodes.
-const SELECT = '0,105';
-const SELECT_SPAN = [105.25, 109.25];
 
 /** The episodes and the full y range of boot A of the made-up recording. */
 const bootA = (() => {
@@ -72,9 +67,7 @@ function checkLines(c, what, report, lists, wantTimes, widthPx) {
       const want = edges.left + C.xAt(line.t, report.view, edges.right - edges.left);
       const at = line.x + line.width / 2;
       c.ok(`the ${what} line at ${line.t} of chart ${i} is at ${at}, not within 1 px of ${want}`, Math.abs(at - want) <= PLACE_SLACK_PX);
-      if (widthPx !== null) {
-        c.ok(`the ${what} line at ${line.t} of chart ${i} is ${line.width} px wide`, Math.abs(line.width - widthPx) <= WIDTH_SLACK_PX);
-      }
+      c.ok(`the ${what} line at ${line.t} of chart ${i} is ${line.width} px wide`, Math.abs(line.width - widthPx) <= WIDTH_SLACK_PX);
     }
   });
 }
@@ -203,12 +196,11 @@ function checker() {
 
 const codes = (report, wanted) => wanted.map((code) => report.windowsByCode[code]);
 
-/** Check that the page loaded the three fonts and that the Answer row lines up with the chart. */
-function checkFontsAndRow(c, report) {
+/** Check that the page loaded the three fonts. */
+function checkFonts(c, report) {
   for (const family of FONT_FAMILIES) {
     c.ok(`fontsLoaded holds ${family}`, report.fontsLoaded.includes(family));
   }
-  c.ok(`rowAlignPx is ${report.rowAlignPx}, at most 1`, typeof report.rowAlignPx === 'number' && report.rowAlignPx <= 1);
 }
 
 /** Make the two hour recording of case 33 unless it exists, and give its path. */
@@ -233,20 +225,16 @@ const CASES = [
       c.equal('boot', report.bootId, 305419896);
       c.equal('readings', report.readings, 18260);
       c.equal('windows of codes 0 to 3', codes(report, [0, 1, 2, 3]), [39, 92, 18, 2]);
-      c.equal('tremor cells', report.tremorCells.length, 39);
-      c.equal('tremor cell pixels', [result.tremorCellPixels.checked, result.tremorCellPixels.matched], [39, 39]);
       c.equal('tremor colour', result.tremorColour, INK_LIGHT);
       c.equal('theme', report.theme, 'light');
       c.equal('layout', report.layout, 'overlaid');
       c.equal('shown axes', report.shownAxes, ['x', 'y', 'z']);
       c.equal('plot heights', report.plotHeights, [340]);
       c.equal('time span', report.span, 'all');
-      c.equal('selection', report.selection, null);
-      checkFontsAndRow(c, report);
+      c.equal('time spans off', report.spansOff, []);
+      checkFonts(c, report);
       checkTremorLines(c, result, 1);
       checkBands(c, report, 1);
-      c.equal('selection lines', report.selectionLines, [[]]);
-      c.equal('selection line pixels sampled', result.selectionLinePixels.sampled, 0);
       checkRangeOfBootA(c, report, 1);
       c.equal(
         'web preferences',
@@ -264,7 +252,9 @@ const CASES = [
       c.equal('exit code', code, 0);
       c.equal('readings', result.report.readings, 913);
       c.equal('estimated stretches', result.report.stretches.map((s) => s.estimated), [true]);
-      c.equal('tremor cells', result.report.tremorCells.length, 0);
+      c.equal('tremor bands', result.report.tremorBands, [[]]);
+      c.equal('time span', result.report.span, 'all');
+      c.equal('time spans off', result.report.spansOff, ['10', '30', '60']);
       return result;
     },
   },
@@ -275,7 +265,7 @@ const CASES = [
       c.equal('exit code', code, 0);
       c.equal('readings', result.report.readings, 206041);
       c.equal('windows of codes 1 and 3', codes(result.report, [1, 3]), [1797, 1]);
-      c.equal('tremor cells', result.report.tremorCells.length, 0);
+      c.equal('tremor bands', result.report.tremorBands, [[]]);
       return result;
     },
   },
@@ -379,8 +369,7 @@ const CASES = [
       const { report } = result;
       c.equal('theme', report.theme, 'dark');
       c.equal('tremor colour', result.tremorColour, INK_DARK);
-      c.equal('tremor cell pixels', [result.tremorCellPixels.checked, result.tremorCellPixels.matched], [39, 39]);
-      checkFontsAndRow(c, report);
+      checkFonts(c, report);
       const pixels = result.tremorLinePixels;
       c.equal('tremor line pixels against INK dark', [pixels.checked, pixels.matched], [12, 12]);
       return result;
@@ -396,8 +385,6 @@ const CASES = [
       c.equal('shown axes', report.shownAxes, ['x', 'y', 'z']);
       c.equal('plot heights', report.plotHeights, [120, 120, 120]);
       c.equal('tremor colour', result.tremorColour, INK_LIGHT);
-      c.equal('tremor cell pixels', [result.tremorCellPixels.checked, result.tremorCellPixels.matched], [39, 39]);
-      c.ok(`rowAlignPx is ${report.rowAlignPx}, at most 1`, typeof report.rowAlignPx === 'number' && report.rowAlignPx <= 1);
       checkTremorLines(c, result, 3);
       checkBands(c, report, 3);
       checkRangeOfBootA(c, report, 3);
@@ -442,38 +429,11 @@ const CASES = [
       const { report } = result;
       c.equal('readings', report.readings, 0);
       c.equal('plot heights', report.plotHeights, []);
-      c.equal('tremor cells', report.tremorCells.length, 0);
       c.equal('windows of codes 0 to 3', codes(report, [0, 1, 2, 3]), [0, 0, 0, 1]);
       c.equal('tremor lines', report.tremorLines, []);
       c.equal('tremor bands', report.tremorBands, []);
       c.equal('time span', report.span, null);
-      c.equal('selection lines', report.selectionLines, []);
       c.equal('y ranges', report.yRanges, null);
-      return result;
-    },
-  },
-  {
-    name: 'case 24 of feature 15 selection lines',
-    test(c, run) {
-      const { code, result, hasPng } = run('selected', [SYNTHETIC], { TREMOR_CAPTURE_SELECT: SELECT });
-      c.equal('exit code', code, 0);
-      c.ok('selected.png exists', hasPng);
-      const { report } = result;
-      c.equal('selection', report.selection, { stretch: 0, window: 105, code: 1 });
-      c.equal('selection line charts', report.selectionLines.length, 1);
-      checkLines(c, 'selection lines', report, report.selectionLines, SELECT_SPAN, null);
-      const lines = result.selectionLinePixels;
-      c.equal('selection lines drawn', lines.lines, 2);
-      c.equal('selection line pixels in the tremor colour', lines.tremorColour, 0);
-      const share = lines.sampled > 0 ? lines.lineColour / lines.sampled : 0;
-      c.ok(
-        `the dashes fill ${share.toFixed(3)} of the selection lines, from ${DASH_SHARE[0]} to ${DASH_SHARE[1]}`,
-        share >= DASH_SHARE[0] && share <= DASH_SHARE[1],
-      );
-      const pixels = result.tremorLinePixels;
-      c.equal('tremor line pixels', [pixels.checked, pixels.matched], [12, 12]);
-      const bad = run('selected_bad', [SYNTHETIC], { TREMOR_CAPTURE_SELECT: 'abc' });
-      c.equal('exit code for TREMOR_CAPTURE_SELECT abc', bad.code, 2);
       return result;
     },
   },

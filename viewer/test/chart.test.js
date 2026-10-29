@@ -17,7 +17,6 @@ const bootA = () => loadRecording(SYNTHETIC).boots.find((b) => b.id === BOOT_A);
 
 /** The placed window at n: its span runs from n to n + 4 and its cell from n + 3. */
 const windowAt = (n) => ({ stretch: 0, window: n, code: 1, startS: n, endS: n + 4, cellStartS: n + 3 });
-const windows0to9 = () => Array.from({ length: 10 }, (_, n) => windowAt(n));
 
 test('case 1 of feature 15: formatValue()', () => {
   const cases = [
@@ -80,18 +79,9 @@ test('case 3 of feature 15: timeTicks()', () => {
   assert.equal(d.ticks.length, 9);
 });
 
-test('case 4 of feature 15: xAt(), timeAt(), and blockLayout()', () => {
-  const view = { min: 0, max: 10 };
-  assert.equal(C.xAt(5, view, 1000), 500);
-  assert.equal(C.timeAt(250, view, 1000), 2.5);
-  const cell = (start) => ({ cellStartS: start });
-  assert.deepEqual(C.blockLayout(cell(3), view, 1000), { x: 300, width: 98, joined: false });
-  assert.deepEqual(C.blockLayout(cell(9.5), view, 1000), { x: 950, width: 50, joined: false });
-  assert.deepEqual(C.blockLayout(cell(-0.5), view, 1000), { x: 0, width: 48, joined: false });
-  assert.equal(C.blockLayout(cell(10), view, 1000), null);
-  assert.equal(C.blockLayout(cell(-1), view, 1000), null);
-  assert.deepEqual(C.blockLayout(cell(100), { min: 0, max: 250 }, 1000), { x: 400, width: 2, joined: false });
-  assert.deepEqual(C.blockLayout(cell(3600), { min: 0, max: 7200 }, 1300), { x: 650, width: 1, joined: true });
+test('case 4 of feature 15: xAt()', () => {
+  assert.equal(C.xAt(5, { min: 0, max: 10 }, 1000), 500);
+  assert.equal(C.xAt(2.5, { min: 0, max: 10 }, 1000), 250);
 });
 
 test('case 5 of feature 15: answerAt(), answerText(), and answerName()', () => {
@@ -120,37 +110,14 @@ test('case 5 of feature 15: answerAt(), answerText(), and answerName()', () => {
   }
 });
 
-test('case 6 of feature 15: windowText() and the 4 second span', () => {
-  const w = { stretch: 0, window: 5, code: 0, startS: 5.25, endS: 9.25, cellStartS: 8.25 };
-  assert.equal(C.windowText(w), 'Window 5 of stretch 0: tremor, from 0:00:05.3 to 0:00:09.3');
+test('case 6 of feature 15: the 4 second span', () => {
   for (const placed of bootA().windows) {
     assert.ok(near(placed.endS - placed.startS, 4), `window ${placed.window} of stretch ${placed.stretch}`);
   }
 });
 
-test('case 7 of feature 15: stepSelection()', () => {
-  const ws = windows0to9();
-  const view = { min: 5, max: 8 };
-  const step = (index, key) => C.stepSelection(ws, index, key, view);
-  assert.equal(step(null, 'ArrowRight'), 2);
-  assert.equal(step(null, 'ArrowLeft'), 4);
-  assert.equal(step(3, 'ArrowRight'), 4);
-  assert.equal(step(9, 'ArrowRight'), 9);
-  assert.equal(step(0, 'ArrowLeft'), 0);
-  assert.equal(step(3, 'Home'), 0);
-  assert.equal(step(3, 'End'), 9);
-  assert.equal(step(3, 'Escape'), null);
-  assert.equal(step(3, 'a'), 3);
-  assert.equal(C.stepSelection([], null, 'ArrowRight', view), null);
-});
-
-test('case 8 of feature 15: keepInView() and panView()', () => {
+test('case 8 of feature 15: panView()', () => {
   const bounds = { min: 0, max: 100 };
-  const ten = { min: 0, max: 10 };
-  assert.deepEqual(C.keepInView(ten, bounds, 3, 4), { min: 0, max: 10 });
-  assert.deepEqual(C.keepInView(ten, bounds, 50, 51), { min: 45.5, max: 55.5 });
-  assert.deepEqual(C.keepInView(ten, bounds, 99, 100), { min: 90, max: 100 });
-  assert.deepEqual(C.keepInView({ min: 20, max: 30 }, bounds, 1, 2), { min: 0, max: 10 });
   assert.deepEqual(C.panView({ min: 10, max: 20 }, bounds, 1), { min: 15, max: 25 });
   assert.deepEqual(C.panView({ min: 10, max: 20 }, bounds, -1), { min: 5, max: 15 });
   assert.deepEqual(C.panView({ min: 0, max: 10 }, bounds, -1), { min: 0, max: 10 });
@@ -209,12 +176,7 @@ test('case 20 of feature 15: paddedRange() and sharedRange()', () => {
 });
 
 test('case 21 of feature 15: LINES', () => {
-  assert.deepEqual(C.LINES.tremor, { token: 'ink', widthPx: 2, dashPx: [] });
-  assert.deepEqual(C.LINES.selection, { token: 'inkSecondary', widthPx: 1, dashPx: [4, 4] });
-  assert.notEqual(C.LINES.tremor.token, C.LINES.selection.token);
-  for (const style of [C.LINES.tremor, C.LINES.selection]) {
-    assert.ok(!['warning', 'link', 'success'].includes(style.token), style.token);
-  }
+  assert.deepEqual(C.LINES, { tremor: { token: 'ink', widthPx: 2 } });
 });
 
 test('case 25 of feature 15: clampView()', () => {

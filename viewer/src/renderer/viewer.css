@@ -199,21 +199,14 @@ code {
   padding: var(--space-3) var(--space-5) var(--space-5);
 }
 
-/* The row above the charts: the Earlier button and the selection at the
-   left, the time span control at the right. */
+/* The row above the charts: the Earlier button at the left, the time span
+   control at the right. */
 .toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-3);
-}
-
-.toolbar-start {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  min-width: 0;
 }
 
 /* A ghost button keeps no fill or border when it is off. */
@@ -242,16 +235,14 @@ code {
   margin-top: calc(var(--space-1) * -1);
 }
 
-/* The axis name of a stacked chart, with its line, at the top of the left
-   gutter. */
+/* The axis name of a stacked chart, at the left of the gutter and half way
+   down the chart. */
 .plot-name {
   position: absolute;
-  top: 0;
+  top: 50%;
   left: 0;
   z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  transform: translateY(-50%);
   font-size: 12px;
   line-height: 16px;
   font-weight: 500;
@@ -278,47 +269,14 @@ code {
   background: color-mix(in srgb, var(--link) 12%, transparent);
 }
 
-/* The Answer row. The canvas holds 28 px of blocks with 4 px above and
-   below for the ring, so the row's box reaches 4 px past the blocks. */
-.answer-line,
+/* The time labels sit under the plotting area, past the 64 px y axis
+   gutter. The chart's 8 px of padding and the card body's 12 px gap, less
+   this margin, leave 8 px between the plot and the labels. */
 .time-line {
   display: grid;
   grid-template-columns: var(--space-16) minmax(0, 1fr);
   align-items: center;
-}
-
-.answer-line {
   margin-top: calc(var(--space-3) * -1);
-}
-
-.answer-label {
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 500;
-  color: var(--ink-secondary);
-}
-
-.answer-row {
-  height: 36px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-}
-
-.answer-row:focus {
-  outline: none;
-}
-
-.answer-row:focus-visible {
-  outline: 2px solid transparent;
-  box-shadow: var(--shadow-focus);
-}
-
-.answer-canvas {
-  display: block;
-}
-
-.time-line {
-  margin-top: calc(var(--space-1) * -1);
 }
 
 .time-labels {
@@ -401,14 +359,6 @@ code {
   font-size: 13px;
   line-height: 20px;
   color: var(--ink-secondary);
-}
-
-.selection-text {
-  min-width: 0;
-  font-size: 13px;
-  line-height: 20px;
-  color: var(--ink-secondary);
-  font-variant-numeric: tabular-nums;
 }
 
 /* The chart card and the Summary card share a row, and the Summary card
