@@ -33,7 +33,7 @@ The limits come from these sources. The 10 second kill limit comes from requirem
 2. The real app passes the smoke cases.
    - The command is `npm --prefix viewer run smoke -- --out SCRATCH/smoke`.
    - Feature 12's cases 27 to 33 run as before. Case 27 has failed once in five runs on 2026-10-28, with a PNG of the empty start page, because the capture took a frame before the drawn plot reached it. When case 27 alone fails, run the command once more and judge the second run, and report both runs.
-     34. With TREMOR_PYTHON set to SCRATCH/smoke/fake-python, TREMOR_RECORDINGS set to a new folder SCRATCH/smoke/recordings, and FAKE_WATCH_CLI giving copy as viewer/test/fixtures/synthetic.txt.gz, the app runs with `--record-for 2 --capture SCRATCH/smoke/record_fake.png`. It exits with code 0. OUT.json's recording has exitCode 0 and a file in SCRATCH/smoke/recordings whose name matches `^tremor-\d{4}-\d{2}-\d{2}-\d{6}\.txt\.gz$`, and that folder holds only that file. The report gives boot 305419896 and 18260 readings, and its recordStatus starts with `Saved `.
+     34. With TREMOR_PYTHON set to SCRATCH/smoke/fake-python, TREMOR_RECORDINGS set to a new folder SCRATCH/smoke/recordings, and FAKE_WATCH_CLI giving copy as viewer/test/fixtures/synthetic.txt.gz, the app runs with `--record-for 2 --capture SCRATCH/smoke/record_fake.png`. It exits with code 0. OUT.json's recording has exitCode 0 and a file in SCRATCH/smoke/recordings whose name matches `^tremor-\d{4}-\d{2}-\d{2}-\d{6}\.txt\.gz$`, and that folder holds only that file. OUT.json's recording.text starts with `Saved `. The report gives boot 305419896 and 18260 readings, and its recordStatus is empty.
      35. With TREMOR_PYTHON set to SCRATCH/smoke/no-such-python and TREMOR_RECORDINGS set to a new folder SCRATCH/smoke/recordings_none, `--record-for 2 --capture SCRATCH/smoke/record_missing.png` exits with code 1. OUT.json's message names TREMOR_PYTHON, the PNG exists, and no file is in the folder.
    - The expected result is that the script prints a pass for all 9 cases and exits with code 0.
    - The validate agent opens SCRATCH/smoke/record_fake.png and checks by eye that the bar shows Open recording and Record, that the status line says the recording was saved, and that the made-up recording is drawn as in feature 12's check 2.
@@ -49,7 +49,7 @@ The limits come from these sources. The 10 second kill limit comes from requirem
      - The app exits with code 0, and OUT.json's recording has exitCode 0 and signal null. F lies in SCRATCH/rec with a name of the form of requirement 13, and `gzip -t F` exits with code 0.
      - F holds a `> CLOCK,` line and the answer `A,1,0` after its first B line, and only one boot ID.
      - The report gives at least 5700 readings and at least 30 windows, and windowsByCode for each code 0 to 4 equals the count of the awk command for that code.
-     - The page's recordStatus starts with `Saved `, and the PNG shows the plot of F.
+     - OUT.json's recording.text starts with `Saved `, the page's recordStatus is empty, and the PNG shows the plot of F.
    - When the watch is not on USB or runs other firmware, this check is recorded as not run, and the validate stage says so. When the watch restarts during the minute, so that F holds two boot IDs, run the check once more.
    - If the validate agent can drive the window with Playwright's Electron support, as feature 12's check 6 did, it also presses the real Record button, waits about 20 seconds, presses Stop, and records what the page showed. This part is for information and does not decide the check.
 
@@ -60,7 +60,7 @@ The limits come from these sources. The 10 second kill limit comes from requirem
 ## Manual checks
 
 6. The button works by hand.
-   - With the watch on USB, run `npm --prefix viewer start`. Press Record. The button turns navy and reads Stop, the time counts up each second, and within a few seconds the status line says "The watch set its clock.". After about a minute press Stop. The button reads Stopping for about a second, then Record, the status line gives "Saved N lines to ..." with a path in recordings/, and the plot of the new file shows.
+   - With the watch on USB, run `npm --prefix viewer start`. Press Record. The button turns navy and reads Stop, the time counts up each second, and within a few seconds the status line says "The watch set its clock.". After about a minute press Stop. The button reads Stopping for about a second, then Record, the status line goes, and the plot of the new file shows with its name in the Summary.
    - Press Record again, and after about 20 seconds press Cmd+Q. The app stays open for about a second and then quits. Run `gzip -t` on the newest file in recordings/, and it exits with code 0.
    - Unplug the watch, start the app, and press Record. Within a few seconds the status line gives "watch_cli.py stopped with code 1:" and a line that says the port could not be opened, the button reads Record again, and the plot does not change.
    - Run `TREMOR_PYTHON=/nope npm --prefix viewer start` and press Record. The status line gives one plain message that names /nope and TREMOR_PYTHON.

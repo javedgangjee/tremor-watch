@@ -351,9 +351,10 @@ const CASES = [
       c.equal('boot', report.bootId, 305419896);
       c.equal('readings', report.readings, 18260);
       c.ok(
-        `the record status ${JSON.stringify(report.recordStatus)} starts with "Saved "`,
-        report.recordStatus.startsWith('Saved '),
+        `the outcome text ${JSON.stringify(recording.text)} starts with "Saved "`,
+        recording.text.startsWith('Saved '),
       );
+      c.equal('record status', report.recordStatus, '');
       c.ok('the start text is not null', report.startText !== null);
       c.equal('start text', report.startText, startText(name, []));
       return result;

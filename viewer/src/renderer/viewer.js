@@ -120,9 +120,18 @@
     return fact(label, count(n), n === 0 ? 'quiet' : null);
   }
 
+  // The file name sits on its own line under its label, and a name too long
+  // for the card ends in an ellipsis. The tooltip gives the whole name.
+  function fileFact(name) {
+    const [dt, dd] = fact('File', name, 'mono');
+    dd.classList.add('fact-file');
+    dd.title = name;
+    return [dt, dd];
+  }
+
   function showSummary(b) {
     els.factsRecording.replaceChildren(
-      ...fact('File', recording.fileName, 'mono'),
+      ...fileFact(recording.fileName),
       ...fact('Boot', String(b.id), 'mono'),
       ...fact('Firmware', String(b.firmware)),
       ...fact('Reset cause', String(b.resetCause)),
@@ -503,7 +512,9 @@
 
   function showRecordStatus() {
     const { state, startedAt: since, text, ok } = recordStatus;
-    let line = text ?? '';
+    // A recording that ended well opens its file, so the line goes. A failure
+    // stays until the next press of Record.
+    let line = ok === true ? '' : text ?? '';
     if (state !== 'idle') {
       const label = state === 'recording' ? 'Recording' : 'Stopping';
       line = `${label} ${since === null ? '' : clock(Date.now() - since)}.${text ? ` ${text}` : ''}`;

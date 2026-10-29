@@ -134,4 +134,8 @@ test('case 14 of feature 15: the page, its policy, its icons, and its colours', 
   for (const title of ['Recording', 'Data quality']) {
     assert.ok(html.includes(`<h3 class="summary-group-title">${title}</h3>`), `the summary has the group ${title}`);
   }
+  const fileRule = /\.facts \.fact-file \{([^}]*)\}/.exec(read(path.join(RENDERER, 'viewer.css')))[1];
+  for (const line of ['grid-column: 1 / -1;', 'white-space: nowrap;', 'overflow: hidden;', 'text-overflow: ellipsis;']) {
+    assert.ok(fileRule.includes(line), `the file name rule holds ${line}`);
+  }
 });
