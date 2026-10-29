@@ -27,3 +27,17 @@ These come from the design system's readme.
 - The two lines for the selected answer block stay, but dashed and grey, so they never look like the tremor lines or the blue y trace. A window covers 4 seconds, as feature 12's requirement 18 says, so they mark that 4-second span and not the mock's 7 seconds.
 - In stacked mode the plots share one y range, so each plot has readable labels and the same scale.
 - The work runs as spec-driven feature 15, and the wrist tests move to feature 16.
+
+## The v2 design, 2026-10-29
+
+- `Tremor Log Viewer v2.dc.html` is a local copy of the user's second design, saved on 2026-10-29 from the same project. Its design system tokens are the same as the copies here, so the token files did not change.
+- The v2 design moves the file name into the summary, drops the title block, puts a 300 px boot select above the cards, adds a time span control (10 s, 30 s, 1 min, All) and an Earlier button above the plots, shrinks the plots to 340 px and 120 px, shades each tremor episode in `--surface-sunken` under the start and end lines, draws the selection lines dashed in `--ink-secondary`, and splits the summary into Recording and Data quality.
+- Some parts of the v2 design were left half deleted in the design tool: an empty boot select with only its chevron, an empty slot for a Later button, empty warning icon slots in Data quality, and an empty slot under it. The answer row and the legend are gone from the markup, though its script still computes them.
+
+## The user's decisions on 2026-10-29
+
+- The Answer row and the window selection stay. The legend and its counts go.
+- Each tremor episode gets the v2 design's grey shade as well as the start and end lines. This reverses the decision of 2026-10-28 that the lines take the place of shading.
+- The toolbar is exactly as the v2 design draws it: the time span control and the Earlier button only, with no Later button and no range text.
+- The summary gives only the rows the v2 design lists. The stretches and the window counts go.
+- The agent read the rest: the boot select appears only when the file holds more than one boot, no warning icons show beside nonzero counts, a boot still opens showing the whole boot, and the selected window's text sits next to the Earlier button. Feature 15's requirement 37 gives the details.
