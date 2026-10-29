@@ -8,7 +8,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 const { performance } = require('node:perf_hooks');
-const { app, BrowserWindow, Menu, dialog, ipcMain, session } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain, nativeTheme, session } = require('electron');
 const { ArgsError, RecordError, RecordingError } = require('./lib/errors');
 const { parseArgs, USAGE } = require('./lib/args');
 const { loadRecording } = require('./lib/load');
@@ -17,6 +17,9 @@ const { runCapture } = require('./capture');
 
 const PAGE = path.join(__dirname, 'renderer', 'index.html');
 const PAGE_URL = pathToFileURL(PAGE).href;
+// The --surface-page colour of the page's light and dark themes, from
+// viewer/src/renderer/design/colors.css, so the window shows no flash.
+const PAGE_BACKGROUND = { light: '#F6F7F9', dark: '#16181D' };
 
 const recorder = new Recorder(
   recorderSettings({ env: process.env, home: os.homedir(), cwd: process.env.INIT_CWD || process.cwd() }),
@@ -45,9 +48,10 @@ function isOwnPage(win, event) {
 
 /**
  * Load a recording and send it, or the reason it cannot be shown, to the page.
- * Returns the message and the time the load took.
+ * A layout given here is the one the page starts the file with. Returns the
+ * message and the time the load took.
  */
-function openRecording(win, filePath, bootId = null) {
+function openRecording(win, filePath, bootId = null, layout = null) {
   const started = performance.now();
   let message;
   try {
@@ -57,6 +61,9 @@ function openRecording(win, filePath, bootId = null) {
       throw new RecordingError(`${recording.fileName} holds no boot ${bootId}. Its boots are ${ids}.`);
     }
     message = { ok: true, recording, bootId };
+    if (layout !== null) {
+      message.layout = layout;
+    }
   } catch (err) {
     const text = err instanceof RecordingError ? err.message : `Could not open ${filePath}: ${err.message}`;
     message = { ok: false, file: filePath, message: text };
@@ -170,7 +177,7 @@ function createWindow(capture) {
     height: 860,
     show: !capture,
     title: 'Tremor log viewer',
-    backgroundColor: '#F6F3EE',
+    backgroundColor: nativeTheme.shouldUseDarkColors ? PAGE_BACKGROUND.dark : PAGE_BACKGROUND.light,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -185,6 +192,7 @@ function createWindow(capture) {
 async function start() {
   const args = readArgs();
   await app.whenReady();
+  nativeTheme.themeSource = args.theme;
   const win = createWindow(args.capture !== null);
   lockDown(win);
   setMenu(win);
@@ -218,7 +226,7 @@ async function start() {
         win,
         args,
         open: args.recordFor === null
-          ? () => openRecording(win, args.file, args.bootId)
+          ? () => openRecording(win, args.file, args.bootId, args.layout)
           : () => recordThenOpen(win, args.recordFor, args.bootId),
         isOwnPage: (event) => isOwnPage(win, event),
       });
@@ -227,7 +235,7 @@ async function start() {
     }
     app.exit(code);
   } else if (args.file !== null) {
-    openRecording(win, args.file, args.bootId);
+    openRecording(win, args.file, args.bootId, args.layout);
   }
 }
 

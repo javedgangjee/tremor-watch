@@ -1,203 +1,442 @@
-/* Colours from core/look.h, so the viewer matches the watch face. */
-:root {
-  --bg: #F6F3EE;
-  --card: #FFFFFF;
-  --text: #111315;
-  --text-2: #5C6265;
-  --line: #DDD9D2;
-  --tremor: #1B2E42;
-  --focus: #2A7242;
-  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-  font-size: 14px;
-  color: var(--text);
-}
+/* The page's own layout, from context/viewer-design/Tremor Log Viewer v2.dc.html.
+   The tokens and the component classes come from design/. Every colour here
+   is a token. */
 
 [hidden] {
   display: none !important;
 }
 
-html,
-body {
-  height: 100%;
-  margin: 0;
+html {
+  background: var(--surface-page);
 }
 
 body {
+  min-height: 100vh;
+  font-size: 13px;
+  line-height: 20px;
+}
+
+h1,
+h2,
+h3,
+p,
+ul,
+dl,
+dd {
+  margin: 0;
+}
+
+code {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+/* The sticky header. */
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-header);
+}
+
+.app-header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  min-height: 64px;
+  padding: 0 var(--space-6);
+}
+
+.wordmark {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+.header-actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+/* The page. */
+.page {
   display: flex;
   flex-direction: column;
-  background: var(--bg);
-}
-
-.bar {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 12px 20px;
-  border-bottom: 1px solid var(--line);
-  background: var(--card);
-}
-
-.bar h1 {
-  margin: 0;
-  font-size: 17px;
-  font-weight: 650;
-}
-
-button,
-select {
-  font: inherit;
-  color: var(--text);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--card);
-  padding: 6px 12px;
-}
-
-button {
-  cursor: pointer;
-}
-
-button:hover {
-  background: var(--bg);
-}
-
-button:disabled {
-  cursor: default;
-}
-
-/* Record turns into Stop, filled with the face's Tremor navy. */
-button.recording,
-button.recording:hover {
-  border-color: var(--tremor);
-  background: var(--tremor);
-  color: #FFFFFF;
-}
-
-button.recording:disabled {
-  opacity: 0.7;
-}
-
-button:focus-visible,
-select:focus-visible {
-  outline: 2px solid var(--focus);
-  outline-offset: 2px;
-}
-
-.picker {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--text-2);
-}
-
-.file-name {
-  margin-left: auto;
-  color: var(--text-2);
-  font-variant-numeric: tabular-nums;
+  gap: var(--space-5);
+  padding: var(--space-6);
 }
 
 .record-status {
-  margin: 12px 20px 0;
-  color: var(--text-2);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-secondary);
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
 
-.record-status.failed {
-  color: var(--text);
+.md-notice-main {
+  overflow-wrap: anywhere;
 }
 
-.note {
-  margin: 12px 20px 0;
-  padding: 8px 12px;
-  border-left: 3px solid var(--tremor);
-  background: var(--card);
+.empty-card {
+  color: var(--ink-secondary);
 }
 
-.summary {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 24px;
-  margin: 12px 20px 0;
+/* The boot picker, a select 300 px wide above the cards. */
+.boot-picker {
+  position: relative;
+  width: 300px;
+  max-width: 100%;
+}
+
+.boot-picker .md-input {
+  display: block;
+  appearance: none;
+  padding-right: var(--space-10);
   font-variant-numeric: tabular-nums;
+  cursor: pointer;
 }
 
-.summary div {
+.select-chevron {
+  position: absolute;
+  top: 50%;
+  right: var(--space-3);
+  transform: translateY(-50%);
+  color: var(--ink-secondary);
+  pointer-events: none;
+}
+
+/* The chart card. The card titles are 16 px in the v2 design. */
+.boot-view .md-card-title {
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: -0.01em;
+}
+
+.chart-head {
+  flex-wrap: wrap;
+}
+
+.chart-title {
   display: flex;
-  gap: 6px;
+  align-items: baseline;
+  gap: var(--space-2);
 }
 
-.summary dt {
-  color: var(--text-2);
+.chart-unit {
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-muted);
 }
 
-.summary dd {
-  margin: 0;
-}
-
-.legend {
+.chart-controls {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px 20px;
-  margin: 10px 20px 0;
-  padding: 0;
-  list-style: none;
-  color: var(--text-2);
+  align-items: center;
+  gap: var(--space-3);
 }
 
-.legend li {
+.chips {
   display: flex;
+  gap: var(--space-2);
+}
+
+.chip-text {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 
-.swatch {
-  width: 18px;
-  height: 12px;
-  border-radius: 2px;
+.axis-line {
+  display: inline-block;
+  width: 12px;
+  height: 2px;
+  border-radius: 1px;
 }
 
-.swatch.line {
-  height: 3px;
+.axis-line-x {
+  background: var(--warning);
 }
 
-.stage {
+.axis-line-y {
+  background: var(--link);
+}
+
+.axis-line-z {
+  background: var(--success);
+}
+
+.md-chip:disabled .axis-line {
+  background: var(--ink-disabled);
+}
+
+.md-chip:disabled .md-icon {
+  color: var(--ink-disabled);
+}
+
+.md-seg-opt:disabled,
+.md-seg-opt:disabled:hover {
+  color: var(--ink-disabled);
+  cursor: not-allowed;
+}
+
+.md-seg-on:disabled {
+  background: var(--surface-sunken);
+  box-shadow: 0 0 0 1px var(--border);
+}
+
+.chart-body {
   position: relative;
-  flex: 1;
-  min-height: 0;
-  margin: 12px 20px 20px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--card);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-5) var(--space-5);
+}
+
+/* The row above the charts: the Earlier button at the left, the time span
+   control at the right. */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+/* A ghost button keeps no fill or border when it is off. */
+.md-btn-ghost:disabled {
+  background: transparent;
+  border-color: transparent;
+}
+
+/* The chevron points down, so a quarter turn points it to the left. */
+.earlier-icon {
+  transform: rotate(90deg);
+}
+
+/* Each chart has 8 px above and below its plotting area for the tick labels,
+   so the margins below take 8 px back from the design's 12 px gaps. */
+.plots {
+  display: flex;
+  flex-direction: column;
 }
 
 .plot {
-  position: absolute;
-  inset: 12px 12px 4px 4px;
+  position: relative;
 }
 
-.empty,
-.message {
+.plot + .plot {
+  margin-top: calc(var(--space-1) * -1);
+}
+
+/* The axis name of a stacked chart, at the left of the gutter and half way
+   down the chart. */
+.plot-name {
   position: absolute;
-  inset: 0;
+  top: 50%;
+  left: 0;
+  z-index: 1;
+  transform: translateY(-50%);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 500;
+  color: var(--ink-secondary);
+  pointer-events: none;
+}
+
+.uplot {
+  font-family: var(--font-sans);
+  line-height: 16px;
+}
+
+.u-over {
+  cursor: crosshair;
+}
+
+/* uPlot's own rule for the hover line is .u-hz .u-cursor-x, so this one
+   names the same classes. */
+.u-hz .u-cursor-x {
+  border-right: 1px solid var(--ink-secondary);
+}
+
+.u-select {
+  background: color-mix(in srgb, var(--link) 12%, transparent);
+}
+
+/* The time labels sit under the plotting area, past the 64 px y axis
+   gutter. The chart's 8 px of padding and the card body's 12 px gap, less
+   this margin, leave 8 px between the plot and the labels. */
+.time-line {
+  display: grid;
+  grid-template-columns: var(--space-16) minmax(0, 1fr);
+  align-items: center;
+  margin-top: calc(var(--space-3) * -1);
+}
+
+.time-labels {
+  position: relative;
+  height: 16px;
+}
+
+.time-label {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.no-readings {
+  padding: var(--space-12) 0;
+  text-align: center;
+  font-size: 14px;
+  line-height: 22px;
+  color: var(--ink-secondary);
+}
+
+/* The hover readout, which floats over the charts. */
+.readout {
+  position: absolute;
+  top: var(--space-16);
+  z-index: 3;
   display: flex;
   flex-direction: column;
+  gap: var(--space-2);
+  min-width: 168px;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--surface-card);
+  box-shadow: var(--shadow-card);
+  transform: translateX(12px);
+  pointer-events: none;
+}
+
+.readout-flip {
+  transform: translateX(calc(-100% - 12px));
+}
+
+.readout-time {
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.readout-values {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px var(--space-4);
+  font-size: 13px;
+  line-height: 20px;
+  font-variant-numeric: tabular-nums;
+}
+
+.readout-axis {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  margin: 0;
-  padding: 24px;
-  text-align: center;
-  color: var(--text-2);
+  gap: 6px;
+  color: var(--ink-muted);
 }
 
-.message h2 {
-  margin: 0 0 8px;
-  font-size: 17px;
-  color: var(--text);
+.readout-value {
+  text-align: right;
+  color: var(--ink);
 }
 
-.message p {
-  max-width: 640px;
-  margin: 0;
+.readout-answer {
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 20px;
+  color: var(--ink-secondary);
+}
+
+/* The chart card and the Summary card share a row, and the Summary card
+   wraps under the chart card when the row has no room for 640 px and 300 px.
+   Cards in one row are as tall as each other. */
+.boot-view {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--space-4);
+}
+
+.boot-view .chart-card {
+  flex: 999 1 640px;
+  min-width: 0;
+}
+
+.boot-view .summary {
+  flex: 1 1 300px;
+  min-width: 0;
+}
+
+/* The summary card holds two groups, Recording and Data quality. */
+.summary-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-5);
+}
+
+.summary-group + .summary-group {
+  gap: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.summary-group-title {
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* Each fact is a label at the left and its value at the right. The file
+   name is the one value that takes a line of its own. */
+.facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-2) var(--space-4);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.facts dt {
+  color: var(--ink-secondary);
+}
+
+.facts dd {
+  min-width: 0;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
   overflow-wrap: anywhere;
+}
+
+.facts .fact-mono {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.facts .fact-file {
+  grid-column: 1 / -1;
+  margin-top: calc(-1 * var(--space-1));
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.facts .fact-quiet {
+  color: var(--ink-muted);
 }

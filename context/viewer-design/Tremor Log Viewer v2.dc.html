@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/my-default-design-system-f28e8cbf-0a46-451b-944e-a308bcb9138e/tokens/fonts.css">
+<link rel="stylesheet" href="_ds/my-default-design-system-f28e8cbf-0a46-451b-944e-a308bcb9138e/tokens/colors.css">
+<link rel="stylesheet" href="_ds/my-default-design-system-f28e8cbf-0a46-451b-944e-a308bcb9138e/tokens/typography.css">
+<link rel="stylesheet" href="_ds/my-default-design-system-f28e8cbf-0a46-451b-944e-a308bcb9138e/tokens/spacing.css">
+<link rel="stylesheet" href="_ds/my-default-design-system-f28e8cbf-0a46-451b-944e-a308bcb9138e/tokens/components.css">
+<link rel="stylesheet" href="_ds/my-default-design-system-f28e8cbf-0a46-451b-944e-a308bcb9138e/styles.css">
+<script src="_ds/my-default-design-system-f28e8cbf-0a46-451b-944e-a308bcb9138e/_ds_bundle.js"></script>
+<style>
+body { margin: 0; background: var(--surface-page); }
+a { color: var(--link); }
+a:hover { color: var(--brand-strong); }
+</style>
+</helmet>
+
+<div data-theme="{{ theme }}" style="min-height:100vh;background:var(--surface-page);color:var(--ink);font-family:var(--font-sans)">
+
+<header data-screen-label="Top app bar" style="position:sticky;top:0;z-index:5;background:var(--surface-card);box-shadow:var(--shadow-header)">
+<div style="display:flex;align-items:center;gap:var(--space-4);padding:0 var(--space-6);min-height:64px;flex-wrap:wrap">
+<div style="font-family:var(--font-display);font-size:22px;line-height:28px;font-weight:700;letter-spacing:-0.02em;color:var(--ink)">Tremor log</div>
+<div style="display:flex;gap:var(--space-2);margin-left:auto">
+<x-import component-from-global-scope="MyDefaultDesignSystem_f28e8c.Button" icon="folder" hint-size="140px,32px">Open recording</x-import>
+<x-import component-from-global-scope="MyDefaultDesignSystem_f28e8c.Button" variant="primary" icon="play" hint-size="90px,32px">Record</x-import>
+</div>
+</div>
+</header>
+
+<main style="padding:var(--space-6);display:flex;flex-direction:column;gap:var(--space-5)">
+
+<div data-screen-label="Recording context" style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-4) var(--space-8);flex-wrap:wrap">
+<label style="position:relative;display:block;width:300px;max-width:100%">
+
+
+<span style="position:absolute;right:var(--space-3);top:50%;transform:translateY(-50%);display:flex;color:var(--ink-secondary);pointer-events:none"><x-import component-from-global-scope="MyDefaultDesignSystem_f28e8c.Icon" name="chevron" size="{{ 18 }}" hint-size="18px,18px"></x-import></span>
+</label>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;gap:var(--space-4);align-items:stretch">
+
+<section data-screen-label="Gyroscope chart" style="flex:999 1 640px;min-width:0;background:var(--surface-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-rest);overflow:hidden">
+
+<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap;padding:var(--space-4) var(--space-5);border-bottom:1px solid var(--border)">
+<div style="display:flex;align-items:baseline;gap:var(--space-2)">
+<h2 style="margin:0;font-size:16px;line-height:24px;font-weight:600;letter-spacing:-0.01em">Gyroscope</h2>
+<div style="font-size:13px;line-height:20px;color:var(--ink-muted)">°/s</div>
+</div>
+<div style="display:flex;align-items:center;gap:var(--space-3);flex-wrap:wrap">
+<div role="group" aria-label="Axes" style="display:flex;gap:var(--space-2)">
+<x-import component-from-global-scope="MyDefaultDesignSystem_f28e8c.Chip" selected="{{ axisX }}" onClick="{{ toggleX }}" hint-size="64px,32px"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:12px;height:2px;border-radius:1px;background:var(--warning)"></span>x</span></x-import>
+<x-import component-from-global-scope="MyDefaultDesignSystem_f28e8c.Chip" selected="{{ axisY }}" onClick="{{ toggleY }}" hint-size="64px,32px"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:12px;height:2px;border-radius:1px;background:var(--link)"></span>y</span></x-import>
+<x-import component-from-global-scope="MyDefaultDesignSystem_f28e8c.Chip" selected="{{ axisZ }}" onClick="{{ toggleZ }}" hint-size="64px,32px"><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:12px;height:2px;border-radius:1px;background:var(--success)"></span>z</span></x-import>
+</div>
+<x-import component-from-global-scope="MyDefaultDesignSystem_f28e8c.SegmentedControl" options="{{ layoutOptions }}" value="{{ layout }}" onChange="{{ setLayout }}" label="Chart layout" hint-size="160px,32px"></x-import>
+</div>
+</div>
+
+<div style="position:relative;padding:var(--space-3) var(--space-5) var(--space-5);display:flex;flex-direction:column;gap:var(--space-3)">
+
+<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-3);flex-wrap:wrap">
+<div style="display:flex;align-items:center;gap:var(--space-1)">
+<span style="display:flex;transform:rotate(90deg)"><x-import component-from-global-scope="MyDefaultDesignSystem_f28e8c.Button" variant="ghost" size="sm" icon="chevron" iconOnly="{{ true }}" aria-label="Earlier" disabled="{{ atStart }}" onClick="{{ panBack }}" hint-size="28px,28px"></x-import></span>
+<span style="display:flex;transform:rotate(-90deg)"></span>
+
+</div>
+<x-import component-from-global-scope="MyDefaultDesignSystem_f28e8c.SegmentedControl" options="{{ zoomOptions }}" value="{{ zoom }}" onChange="{{ setZoom }}" label="Time span" hint-size="220px,32px"></x-import>
+</div>
+
+<sc-for list="{{ plots }}" as="plot" hint-placeholder-count="1">
+<div style="display:grid;grid-template-columns:64px minmax(0,1fr)">
+<div style="position:relative;height:{{ plot.h }}px">
+<sc-for list="{{ plot.ticks }}" as="tk">
+<div style="position:absolute;right:var(--space-3);top:{{ tk.top }}%;transform:translateY(-50%);font-size:12px;line-height:16px;color:var(--ink-muted);font-variant-numeric:tabular-nums;white-space:nowrap">{{ tk.label }}</div>
+</sc-for>
+<sc-if value="{{ plot.showName }}">
+<div style="position:absolute;left:0;top:0;display:flex;align-items:center;gap:6px;font-size:12px;line-height:16px;font-weight:500;color:var(--ink-secondary)"><span style="width:12px;height:2px;border-radius:1px;background:{{ plot.color }}"></span>{{ plot.name }}</div>
+</sc-if>
+</div>
+<div onMouseMove="{{ onMove }}" onMouseLeave="{{ onLeave }}" style="position:relative;height:{{ plot.h }}px;cursor:crosshair">
+<sc-for list="{{ tremorBands }}" as="b">
+<div style="position:absolute;top:0;bottom:0;left:{{ b.left }}%;width:{{ b.width }}%;background:var(--surface-sunken);pointer-events:none"></div>
+</sc-for>
+<sc-for list="{{ vTicks }}" as="vt">
+<div style="position:absolute;top:0;bottom:0;left:{{ vt.left }}%;width:1px;background:var(--border)"></div>
+</sc-for>
+<sc-for list="{{ plot.ticks }}" as="tk">
+<div style="position:absolute;left:0;right:0;top:{{ tk.top }}%;height:1px;background:{{ tk.color }}"></div>
+</sc-for>
+<svg viewBox="0 0 1000 1000" preserveAspectRatio="none" role="img" aria-label="{{ plot.aria }}" style="position:absolute;inset:0;width:100%;height:100%;overflow:hidden">
+<sc-for list="{{ plot.series }}" as="s">
+<path d="{{ s.d }}" fill="none" stroke-width="1.25" vector-effect="non-scaling-stroke" stroke-linejoin="round" style="stroke:{{ s.color }}"></path>
+</sc-for>
+</svg>
+<sc-for list="{{ tremorMarks }}" as="m">
+<div style="position:absolute;top:0;bottom:0;left:{{ m.left }}%;width:0;border-left:2px solid var(--ink);transform:translateX(-1px);pointer-events:none"></div>
+</sc-for>
+<sc-if value="{{ showSpan }}">
+<sc-for list="{{ spanMarks }}" as="m">
+<div style="position:absolute;top:0;bottom:0;left:{{ m.left }}%;width:0;border-left:1px dashed var(--ink-secondary);pointer-events:none"></div>
+</sc-for>
+</sc-if>
+<sc-if value="{{ hovering }}">
+<div style="position:absolute;top:0;bottom:0;left:{{ hoverLeft }}%;width:1px;background:var(--ink-secondary);pointer-events:none"></div>
+</sc-if>
+</div>
+</div>
+</sc-for>
+
+<div style="display:grid;grid-template-columns:64px minmax(0,1fr)">
+<div></div>
+<div style="position:relative;height:16px">
+<sc-for list="{{ vTicks }}" as="vt">
+<div style="position:absolute;top:0;left:{{ vt.left }}%;transform:translateX(-50%);font-size:12px;line-height:16px;color:var(--ink-muted);font-variant-numeric:tabular-nums;white-space:nowrap">{{ vt.label }}</div>
+</sc-for>
+</div>
+</div>
+
+<sc-if value="{{ hovering }}">
+<div style="position:absolute;top:64px;left:{{ tipLeft }};transform:{{ tipTransform }};pointer-events:none;z-index:3;min-width:168px;background:var(--surface-card);border-radius:var(--radius-md);box-shadow:var(--shadow-card);padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2)">
+<div style="font-size:13px;line-height:20px;font-weight:500;color:var(--ink);font-variant-numeric:tabular-nums">{{ tip.time }}</div>
+<div style="display:grid;grid-template-columns:auto 1fr;gap:2px var(--space-4);font-size:13px;line-height:20px;font-variant-numeric:tabular-nums">
+<sc-for list="{{ tip.rows }}" as="r">
+<div style="display:flex;align-items:center;gap:6px;color:var(--ink-muted)"><span style="width:12px;height:2px;border-radius:1px;background:{{ r.color }}"></span>{{ r.name }}</div>
+<div style="text-align:right;color:var(--ink)">{{ r.val }}</div>
+</sc-for>
+</div>
+<div style="border-top:1px solid var(--border);padding-top:var(--space-2);font-size:13px;line-height:20px;color:var(--ink-secondary)">{{ tip.answer }}</div>
+</div>
+</sc-if>
+
+</div>
+
+
+
+</section>
+
+<aside data-screen-label="Summary" style="flex:1 1 300px;min-width:0;background:var(--surface-card);border-radius:var(--radius-lg);box-shadow:var(--shadow-rest);overflow:hidden">
+<div style="padding:var(--space-4) var(--space-5);border-bottom:1px solid var(--border)">
+<h2 style="margin:0;font-size:16px;line-height:24px;font-weight:600;letter-spacing:-0.01em">Summary</h2>
+</div>
+
+<div style="padding:var(--space-4) var(--space-5);display:flex;flex-direction:column;gap:var(--space-2)">
+<h3 style="margin:0;font-size:14px;line-height:20px;font-weight:600;color:var(--ink)">Recording</h3>
+<dl style="margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--space-2) var(--space-4);font-size:14px;line-height:20px">
+<dt style="color:var(--ink-secondary)">File</dt><dd style="margin:0;text-align:right;font-family:var(--font-mono);font-size:13px;overflow-wrap:anywhere">synthetic.txt.gz</dd>
+<dt style="color:var(--ink-secondary)">Boot</dt><dd style="margin:0;text-align:right;font-family:var(--font-mono);font-size:13px">305419896</dd>
+<dt style="color:var(--ink-secondary)">Firmware</dt><dd style="margin:0;text-align:right;font-variant-numeric:tabular-nums">12</dd>
+<dt style="color:var(--ink-secondary)">Reset cause</dt><dd style="margin:0;text-align:right;font-variant-numeric:tabular-nums">11</dd>
+<dt style="color:var(--ink-secondary)">Readings</dt><dd style="margin:0;text-align:right;font-variant-numeric:tabular-nums">18,260</dd>
+</dl>
+</div>
+
+<div style="padding:var(--space-4) var(--space-5);border-top:1px solid var(--border);display:flex;flex-direction:column;gap:var(--space-3)">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:var(--space-3)">
+<h3 style="margin:0;font-size:14px;line-height:20px;font-weight:600;color:var(--ink)">Data quality</h3>
+
+</div>
+<dl style="margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:var(--space-2) var(--space-4);font-size:14px;line-height:20px">
+<dt style="color:var(--ink-secondary)">Sensor faults</dt><dd style="margin:0;display:flex;align-items:center;justify-content:flex-end;gap:6px;font-variant-numeric:tabular-nums"><span style="display:flex;color:var(--warning)"></span>1</dd>
+<dt style="color:var(--ink-secondary)">Bad lines in the file</dt><dd style="margin:0;display:flex;align-items:center;justify-content:flex-end;gap:6px;font-variant-numeric:tabular-nums"><span style="display:flex;color:var(--warning)"></span>1</dd>
+<dt style="color:var(--ink-secondary)">Dropped bursts in the file</dt><dd style="margin:0;display:flex;align-items:center;justify-content:flex-end;gap:6px;font-variant-numeric:tabular-nums"><span style="display:flex;color:var(--warning)"></span>1</dd>
+<dt style="color:var(--ink-secondary)">Readings with no stretch</dt><dd style="margin:0;text-align:right;color:var(--ink-muted);font-variant-numeric:tabular-nums">0</dd>
+<dt style="color:var(--ink-secondary)">Windows not placed</dt><dd style="margin:0;text-align:right;color:var(--ink-muted);font-variant-numeric:tabular-nums">0</dd>
+</dl>
+<div style="display:flex">
+
+</div>
+</div>
+
+</aside>
+
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;theme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;light&quot;,&quot;dark&quot;],&quot;default&quot;:&quot;light&quot;,&quot;tsType&quot;:&quot;'light' | 'dark'&quot;},&quot;showSpan&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { x: true, y: true, z: true, layout: 'Overlaid', zoom: '30 s', start: 100, hoverF: null, sel: 121, boot: '305419896' };
+
+  data() {
+    if (this._d) return this._d;
+    const R0 = 114.3302, R1 = 114.331, N = 18260, SPLIT = 13728, GAP = 1.4, GAPAT = SPLIT / R0;
+    const time = new Float64Array(N);
+    for (let i = 0; i < N; i++) time[i] = i < SPLIT ? i / R0 : GAPAT + GAP + (i - SPLIT) / R1;
+    const TEND = time[N - 1];
+    const seq = [['Warming up', 2], ['No tremor', 20], ['Tremor', 12], ['No tremor', 15], ['Arm moving', 18], ['No tremor', 12], ['Tremor', 14], ['No tremor', 20], ['Tremor', 13], ['No tremor', 25]];
+    const kinds = seq.flatMap(([k, n]) => Array(n).fill(k));
+    const windows = kinds.map((answer, k) => { const rs = k + 1.07, s = rs >= GAPAT - 1e-6 ? rs + GAP : rs; return { answer, start: s, end: s + 1 }; });
+    const episodes = [];
+    windows.forEach((w, k) => { if (w.answer !== 'Tremor') return; const p = windows[k - 1]; if (p && p.answer === 'Tremor') episodes[episodes.length - 1][1] = w.end; else episodes.push([w.start, w.end]); });
+    const kindAt = t => { const w = windows.find(w => t >= w.start && t < w.end); return w ? w.answer : (t < 1 ? 'Warming up' : 'No tremor'); };
+    let seed = 11;
+    const rnd = () => { seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
+    const x = new Float32Array(N), y = new Float32Array(N), z = new Float32Array(N);
+    let pT = 0, pA = 0, aT = 0, aA = 0, nx = 0, ny = 0, nz = 0, cyc = 1, lastC = 0;
+    for (let i = 0; i < N; i++) {
+      const t = time[i], k = kindAt(t), dt = i ? Math.min(time[i] - time[i - 1], 0.01) : 0.0087;
+      aT += ((k === 'Tremor' ? 30 : 0) - aT) * 0.025;
+      aA += ((k === 'Arm moving' ? 58 : 0) - aA) * 0.02;
+      pT += 2 * Math.PI * (5.1 + 0.3 * Math.sin(t * 0.6)) * dt;
+      pA += 2 * Math.PI * 1.7 * dt;
+      const c = Math.floor(pT / (2 * Math.PI)); if (c !== lastC) { lastC = c; cyc = 0.75 + rnd() * 0.4; }
+      nx = nx * 0.9 + (rnd() - 0.5) * 0.8; ny = ny * 0.9 + (rnd() - 0.5) * 0.8; nz = nz * 0.9 + (rnd() - 0.5) * 0.7;
+      y[i] = aT * cyc * Math.sin(pT) + aA * Math.sin(pA) + ny;
+      x[i] = 0.32 * aT * cyc * Math.sin(pT + 1.1) + 0.22 * aA * Math.sin(pA + 0.6) + nx;
+      z[i] = 0.2 * aT * cyc * Math.sin(pT + 2.3) + 0.15 * aA * Math.sin(pA + 1.9) + nz;
+    }
+    this._d = { N, SPLIT, GAPAT, GAP, TEND, time, x, y, z, windows, episodes };
+    this._pc = new Map();
+    return this._d;
+  }
+
+  lb(t) { const a = this._d.time; let lo = 0, hi = a.length; while (lo < hi) { const m = (lo + hi) >> 1; if (a[m] < t) lo = m + 1; else hi = m; } return lo; }
+
+  path(axis, v0, dur, YMAX) {
+    const key = axis + '|' + v0.toFixed(3) + '|' + dur;
+    if (this._pc.has(key)) return this._pc.get(key);
+    const d = this._d, arr = d[axis], tm = d.time;
+    const X = t => ((t - v0) / dur * 1000).toFixed(1), Y = v => ((YMAX - v) / (2 * YMAX) * 1000).toFixed(1);
+    let s = '';
+    for (const [a0, b0] of [[0, d.SPLIT], [d.SPLIT, d.N]]) {
+      const a = Math.max(a0, this.lb(v0) - 1), b = Math.min(b0, this.lb(v0 + dur) + 1);
+      if (b - a < 2) continue;
+      const n = b - a, step = n > 2400 ? Math.ceil(n / 1200) : 1;
+      let first = true;
+      for (let i = a; i < b; i += step) {
+        if (step === 1) { s += (first ? 'M' : 'L') + X(tm[i]) + ' ' + Y(arr[i]); first = false; continue; }
+        let mn = i, mx = i; const e = Math.min(b, i + step);
+        for (let j = i; j < e; j++) { if (arr[j] < arr[mn]) mn = j; if (arr[j] > arr[mx]) mx = j; }
+        const [p, q] = mn < mx ? [mn, mx] : [mx, mn];
+        s += (first ? 'M' : 'L') + X(tm[p]) + ' ' + Y(arr[p]) + 'L' + X(tm[q]) + ' ' + Y(arr[q]); first = false;
+      }
+    }
+    if (this._pc.size > 60) this._pc.clear();
+    this._pc.set(key, s);
+    return s;
+  }
+
+  fmt(t, dec) {
+    const h = Math.floor(t / 3600), m = Math.floor(t / 60) % 60, s = t - Math.floor(t / 60) * 60;
+    const ss = dec ? s.toFixed(1).padStart(4, '0') : String(Math.floor(s + 1e-6)).padStart(2, '0');
+    return `${h}:${String(m).padStart(2, '0')}:${ss}`;
+  }
+
+  view() {
+    const T = this.data().TEND, dur = { '10 s': 10, '30 s': 30, '1 min': 60, 'All': T }[this.state.zoom];
+    return { v0: Math.max(0, Math.min(this.state.start, T - dur)), dur, T };
+  }
+
+  renderVals() {
+    const d = this.data(), { v0, dur, T } = this.view(), v1 = v0 + dur;
+    const pct = t => (t - v0) / dur * 100;
+    const inView = (a, b) => b > v0 && a < v1;
+    const num = v => (v < 0 ? '−' : '') + Math.abs(v).toFixed(1);
+    const style = {
+      'Tremor': { bg: 'var(--ink)', border: 'none' },
+      'Arm moving': { bg: 'var(--border-strong)', border: 'none' },
+      'No tremor': { bg: 'var(--surface-card)', border: '1px solid var(--border-control)' },
+      'Warming up': { bg: 'var(--surface-sunken)', border: '1px dashed var(--border-control)' }
+    };
+    const colors = { x: 'var(--warning)', y: 'var(--link)', z: 'var(--success)' };
+    const on = ['x', 'y', 'z'].filter(k => this.state[k]);
+    const stacked = this.state.layout === 'Stacked', YMAX = 75;
+    const ticksFor = vals => vals.map(v => ({ top: (YMAX - v) / (2 * YMAX) * 100, label: v === 0 ? '0' : num(v).replace('.0', ''), color: v === 0 ? 'var(--border-strong)' : 'var(--border)' }));
+    const aria = keys => `Gyroscope ${keys} in degrees per second from ${this.fmt(v0)} to ${this.fmt(v1)}`;
+    const plots = stacked
+      ? on.map(k => ({ h: 120, showName: true, name: k, color: colors[k], ticks: ticksFor([60, 0, -60]), aria: aria(k), series: [{ d: this.path(k, v0, dur, YMAX), color: colors[k] }] }))
+      : [{ h: 340, showName: false, name: '', color: '', ticks: ticksFor([60, 40, 20, 0, -20, -40, -60]), aria: aria(on.join(', ') || 'no axes'), series: ['y', 'x', 'z'].filter(k => this.state[k]).map(k => ({ d: this.path(k, v0, dur, YMAX), color: colors[k] })) }];
+
+    const step = dur <= 10 ? 2 : dur <= 30 ? 5 : dur <= 60 ? 10 : 30;
+    const vTicks = [];
+    for (let s = Math.ceil(v0 / step - 1e-6) * step; s <= v1 + 1e-6; s += step) vTicks.push({ left: pct(s), label: this.fmt(s) });
+
+    const sel = d.windows[this.state.sel];
+    let spanStart = sel.end - 3;
+    if (spanStart < d.GAPAT + d.GAP && sel.end > d.GAPAT + d.GAP) spanStart = Math.max(spanStart, d.GAPAT + d.GAP);
+    spanStart = Math.max(0, spanStart);
+    const mark = ts => ts.filter(t => t >= v0 && t <= v1).map(t => ({ left: pct(t) }));
+
+    const windows = [];
+    d.windows.forEach((w, i) => {
+      if (!inView(w.start, w.end)) return;
+      const l = Math.max(0, pct(w.start)), r = Math.min(100, pct(w.end)), isSel = i === this.state.sel;
+      windows.push({
+        left: l, width: r - l, bg: style[w.answer].bg, border: style[w.answer].border, z: isSel ? 2 : 1,
+        ring: isSel ? '0 0 0 2px var(--surface-card), 0 0 0 4px var(--link)' : 'none',
+        pressed: isSel ? 'true' : 'false', tab: isSel ? 0 : -1,
+        aria: `Window ${i + 1}, ${w.answer.toLowerCase()}, ends ${this.fmt(w.end, true)}`,
+        select: () => this.setState({ sel: i })
+      });
+    });
+    const overview = d.windows.map(w => ({ left: w.start / T * 100, width: (w.end - w.start) / T * 100, bg: w.answer === 'No tremor' ? 'var(--surface-card)' : w.answer === 'Warming up' ? 'var(--surface-sunken)' : style[w.answer].bg }));
+
+    const gA = d.GAPAT, gB = d.GAPAT + d.GAP, gShow = inView(gA, gB);
+    const gap = { show: gShow, left: gShow ? Math.max(0, pct(gA)) : 0, width: gShow ? Math.min(100, pct(gB)) - Math.max(0, pct(gA)) : 0 };
+
+    const f = this.state.hoverF, hovering = f !== null;
+    let tip = { time: '', rows: [], answer: '' };
+    if (hovering) {
+      const t = v0 + f * dur;
+      if (t > gA && t < gB) tip = { time: this.fmt(t, true), rows: [], answer: 'No readings (dropped burst)' };
+      else {
+        let i = Math.min(d.N - 1, this.lb(t)); if (i > 0 && t - d.time[i - 1] < d.time[i] - t) i--;
+        const w = d.windows.find(w => t >= w.start && t < w.end);
+        tip = { time: this.fmt(d.time[i], true), rows: on.map(k => ({ name: k, color: colors[k], val: num(d[k][i]) })), answer: w ? w.answer : 'No answer yet' };
+      }
+    }
+
+    const setStart = s => this.setState({ start: Math.max(0, Math.min(s, T - dur)) });
+    const ensureVisible = i => { const w = d.windows[i]; if (w.start < v0 || w.end > v1) setStart(w.start + 0.5 - dur / 2); };
+
+    return {
+      theme: this.props.theme ?? 'light',
+      boot: this.state.boot, setBoot: e => this.setState({ boot: e.target.value }),
+      axisX: this.state.x, axisY: this.state.y, axisZ: this.state.z,
+      toggleX: () => this.setState(s => ({ x: !s.x })),
+      toggleY: () => this.setState(s => ({ y: !s.y })),
+      toggleZ: () => this.setState(s => ({ z: !s.z })),
+      layoutOptions: ['Overlaid', 'Stacked'], layout: this.state.layout,
+      setLayout: v => this.setState({ layout: v }),
+      zoomOptions: ['10 s', '30 s', '1 min', 'All'], zoom: this.state.zoom,
+      setZoom: v => { const c = v0 + dur / 2, nd = { '10 s': 10, '30 s': 30, '1 min': 60, 'All': T }[v]; this.setState({ zoom: v, start: Math.max(0, Math.min(c - nd / 2, T - nd)) }); },
+      rangeText: `${this.fmt(v0)} to ${this.fmt(v1)}`,
+      atStart: v0 <= 0.001, atEnd: v1 >= T - 0.001,
+      panBack: () => setStart(v0 - dur / 2), panFwd: () => setStart(v0 + dur / 2),
+      onOverview: e => { const r = e.currentTarget.getBoundingClientRect(); setStart((e.clientX - r.left) / r.width * T - dur / 2); },
+      vp: { left: v0 / T * 100, width: dur / T * 100 },
+      showBurst: () => { const nd = this.state.zoom === 'All' ? 30 : dur; this.setState({ zoom: this.state.zoom === 'All' ? '30 s' : this.state.zoom, start: Math.max(0, Math.min(gA + d.GAP / 2 - nd / 2, T - nd)) }); },
+      plots, vTicks, windows, overview, gap,
+      tremorMarks: mark(d.episodes.flat()),
+      tremorBands: d.episodes.filter(([a, b]) => inView(a, b)).map(([a, b]) => { const l = Math.max(0, pct(a)); return { left: l, width: Math.min(100, pct(b)) - l }; }),
+      spanMarks: mark([spanStart, sel.end]),
+      showSpan: this.props.showSpan ?? true,
+      selText: `Window ${this.state.sel + 1} of ${d.windows.length} · ${sel.answer} · ${this.fmt(spanStart, true)} to ${this.fmt(sel.end, true)}`,
+      onKey: e => {
+        const n = d.windows.length, cur = this.state.sel;
+        const next = { ArrowRight: cur + 1, ArrowLeft: cur - 1, Home: 0, End: n - 1 }[e.key];
+        if (next === undefined) return;
+        e.preventDefault();
+        const i = Math.max(0, Math.min(n - 1, next));
+        this.setState({ sel: i }); ensureVisible(i);
+        const root = e.currentTarget;
+        setTimeout(() => { const b = root.querySelector('button[aria-pressed="true"]'); if (b) b.focus(); }, 0);
+      },
+      hovering, tip,
+      hoverLeft: hovering ? f * 100 : 0,
+      tipLeft: hovering ? `calc(84px + (100% - 104px) * ${f})` : '0',
+      tipTransform: hovering && f > 0.6 ? 'translateX(calc(-100% - 12px))' : 'translateX(12px)',
+      onMove: e => { const r = e.currentTarget.getBoundingClientRect(); this.setState({ hoverF: Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) }); },
+      onLeave: () => this.setState({ hoverF: null })
+    };
+  }
+}
+</script>
+</body>
+</html>

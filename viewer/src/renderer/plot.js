@@ -1,75 +1,92 @@
 'use strict';
 
-// Draws one boot of a recording with uPlot: the gyroscope's three axes, the
-// tremor spans shaded behind them, and a lane of answer cells along the
-// bottom. The page loads this as a classic script, so it adds one global,
-// TremorPlot.
+// Draws the gyroscope readings of one boot with uPlot. Overlaid is one chart
+// with the three axes, and Stacked is one chart for each shown axis. All
+// charts share one view, the time range on the x axis, and one cursor. In
+// Stacked they also share one y range. Every chart shades each tremor
+// episode and marks its start and end with vertical lines. The page loads
+// this as a classic script, so it adds one global, TremorPlot.
 
 (function () {
-  // The Okabe and Ito colours, which people with weak colour vision can tell apart.
-  const SERIES = [
-    { key: 'gx', name: 'gyroscope x', colour: '#D55E00' },
-    { key: 'gy', name: 'gyroscope y', colour: '#009E73' },
-    { key: 'gz', name: 'gyroscope z', colour: '#CC79A7' },
-  ];
+  const C = window.TremorChart;
 
-  // The names of res_name() in core/window.c. Tremor is the face's Tremor navy,
-  // LOOK_TREMOR in core/look.h, and arm moving is a pale tint of LOOK_ARM.
-  const ANSWERS = [
-    { code: 0, name: 'tremor', colour: '#1B2E42' },
-    { code: 1, name: 'no tremor', colour: '#DDD9D2' },
-    { code: 2, name: 'arm moving', colour: '#A8C9B3' },
-    { code: 3, name: 'warming up', colour: '#EFECE6' },
-  ];
-  const ANSWER_COLOURS = new Map(ANSWERS.map((a) => [a.code, a.colour]));
-  const TREMOR = 0;
-  const SHADE = 'rgba(27, 46, 66, 0.18)';
+  const READINGS = { x: 'gx', y: 'gy', z: 'gz' };
+  const HEIGHT = { overlaid: 340, stacked: 120 };
+  // Room above and below the plotting area, so the top and bottom tick labels show whole.
+  const PADDING = [8, 0, 8, 0];
+  const Y_AXIS_PX = 64;
+  const Y_LABEL_GAP_PX = 12;
+  // The least room between two y ticks, so each 120 px stacked plot shows at least two.
+  const Y_TICK_SPACE_PX = { overlaid: 48, stacked: 24 };
+  const TIME_TICK_SPACE_PX = 90;
+  const SYNC_KEY = 'tremor-x';
+  // The readout moves to the left of the pointer past this share of the width.
+  const FLIP_AT = 0.6;
 
-  const LANE_HEIGHT = 16;
-  // Space between the lowest reading and the lane, in page pixels.
-  const LANE_GAP = 6;
-  const AXIS_COLOUR = '#5C6265';
-  const GRID_COLOUR = '#ECE8E1';
+  // Steps of 1, 2, and 5 for the y axis, so formatValue() with decimalsFor()
+  // gives each tick its own text.
+  const Y_STEPS = [];
+  for (let power = -2; power <= 5; power++) {
+    for (const m of [1, 2, 5]) {
+      Y_STEPS.push(Number((m * 10 ** power).toPrecision(1)));
+    }
+  }
 
-  // Steps for the time axis in seconds, so its ticks fall on whole times.
-  const TIME_STEPS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200];
+  function axisColour(palette, axis) {
+    return { x: palette.warning, y: palette.link, z: palette.success }[axis];
+  }
 
-  /** Give seconds as h:mm:ss, with decimals when the axis steps by less than a second. */
-  function formatTime(seconds, step) {
-    const decimals = step < 0.1 ? 2 : step < 1 ? 1 : 0;
-    const unit = 10 ** decimals;
-    const units = Math.round(Math.abs(seconds) * unit);
-    const whole = Math.floor(units / unit);
-    const h = Math.floor(whole / 3600);
-    const m = Math.floor((whole % 3600) / 60);
-    const s = String(whole % 60).padStart(2, '0');
-    const part = decimals > 0 ? `.${String(units % unit).padStart(decimals, '0')}` : '';
-    return `${seconds < 0 ? '-' : ''}${h}:${String(m).padStart(2, '0')}:${s}${part}`;
+  function listText(axes) {
+    if (axes.length < 2) {
+      return axes.join('');
+    }
+    return `${axes.slice(0, -1).join(', ')} and ${axes[axes.length - 1]}`;
   }
 
   /**
-   * Make the plot of one boot in target. onFirstDraw runs once, after the
-   * first draw.
+   * Make the charts of one boot in body, the chart card's body. onView runs
+   * after each change of the view and of the width, and onFirstDraw runs once,
+   * after every chart has drawn for the first time.
    */
-  function create(target, boot, onFirstDraw) {
-    let drawn = false;
+  function create(body, boot, { layout, shown, palette, onView, onFirstDraw }) {
+    const plotsEl = body.querySelector('.plots');
+    const readout = {
+      box: body.querySelector('.readout'),
+      time: body.querySelector('#readout-time'),
+      x: body.querySelector('#readout-x'),
+      y: body.querySelector('#readout-y'),
+      z: body.querySelector('#readout-z'),
+      answer: body.querySelector('#readout-answer'),
+      axes: [...body.querySelectorAll('.readout-values [data-axis]')],
+    };
+    const last = boot.timeS.length - 1;
+    const bounds = { min: boot.timeS[0], max: boot.timeS[last] };
+    const state = { layout, shown: [...shown], palette, view: { ...bounds } };
+    let charts = [];
+    let boxes = [];
+    let syncing = false;
+    let reported = false;
+    let width = plotsEl.clientWidth;
+    // The last shared range of the stacked plots, kept for its first and last
+    // reading and its axes, so the plots scan the readings once for each view.
+    let shared = { key: null, range: null };
 
-    function canvasX(u, seconds) {
-      return Math.round(u.valToPos(seconds, 'x', true));
-    }
+    const plotWidth = (u) => u.bbox.width / uPlot.pxRatio;
+    const canvasX = (u, seconds) => Math.round(u.valToPos(seconds, 'x', true));
 
-    // Leave room under the readings for the answer lane.
+    // Overlaid fits the shown readings in view. Stacked gives every plot the
+    // range of the readings of every shown axis in view. uPlot sets the
+    // indexes of the readings in view before it ranges y.
     function yRange(u, min, max) {
-      if (min === null || max === null) {
-        return [-1, 1];
+      if (state.layout !== 'stacked') {
+        return C.paddedRange(min, max);
       }
-      // A flat signal still gets a range of 2 degrees per second.
-      const pad = (max - min) * 0.05 || 1;
-      const low = min - pad;
-      const high = max + pad;
-      const heightCss = u.bbox && u.bbox.height > 0 ? u.bbox.height / uPlot.pxRatio : 400;
-      const room = LANE_HEIGHT + LANE_GAP;
-      return [low - ((high - low) * room) / Math.max(heightCss - room, 1), high];
+      const [i0, i1] = u.series[0].idxs;
+      const key = `${i0},${i1},${state.shown.join('')}`;
+      if (shared.key !== key) {
+        shared = { key, range: C.sharedRange(state.shown.map((a) => boot[READINGS[a]]), i0, i1) };
+      }
+      return [...shared.range];
     }
 
     // Break the lines at each break in view, so no line joins two stretches
@@ -89,122 +106,378 @@
       return gaps.sort((a, b) => a[0] - b[0]);
     }
 
-    function shadeTremor(u) {
+    function lineWidth() {
+      return Math.max(1, Math.round(uPlot.pxRatio));
+    }
+
+    // The zero line lies over the grid and under the readings.
+    function drawZero(u) {
+      const { min, max } = u.scales.y;
+      if (!(min <= 0 && max >= 0)) {
+        return;
+      }
+      const { ctx, bbox } = u;
+      const w = lineWidth();
+      ctx.save();
+      ctx.fillStyle = state.palette.borderStrong;
+      ctx.fillRect(bbox.left, Math.round(u.valToPos(0, 'y', true) - w / 2), bbox.width, w);
+      ctx.restore();
+    }
+
+    // Draw one vertical line at each time in view, the full height of the
+    // plotting area, with a style of C.LINES. Each line covers whole device
+    // pixels, so its colour is exact. Gives the lines drawn, in canvas pixels.
+    function drawLines(u, times, style) {
       const { ctx, bbox } = u;
       const { min, max } = u.scales.x;
+      const ratio = uPlot.pxRatio;
+      const lw = Math.max(1, Math.round(style.widthPx * ratio));
+      const drawn = [];
       ctx.save();
-      ctx.fillStyle = SHADE;
+      ctx.beginPath();
+      ctx.rect(bbox.left, bbox.top, bbox.width, bbox.height);
+      ctx.clip();
+      ctx.fillStyle = state.palette[style.token];
+      for (const t of times) {
+        if (!(t >= min && t <= max)) {
+          continue;
+        }
+        const left = canvasX(u, t) - Math.floor(lw / 2);
+        ctx.fillRect(left, bbox.top, lw, bbox.height);
+        const from = Math.max(left, bbox.left);
+        const to = Math.min(left + lw, bbox.left + bbox.width);
+        drawn.push({ t, left: from, width: to - from, top: bbox.top, height: bbox.height });
+      }
+      ctx.restore();
+      return drawn;
+    }
+
+    // The shade of each tremor episode lies under the grid and the readings.
+    // uPlot calls this hook after it clears the canvas and before it draws
+    // the axes. Gives the shades drawn, in canvas pixels.
+    function drawBands(u) {
+      const { ctx, bbox } = u;
+      const { min, max } = u.scales.x;
+      const drawn = [];
+      if (min === null || max === null) {
+        u.tremorBands = drawn;
+        return;
+      }
+      ctx.save();
+      ctx.fillStyle = state.palette.surfaceSunken;
       for (const [start, end] of boot.tremorSpans) {
-        if (end > min && start < max) {
-          const left = canvasX(u, Math.max(start, min));
-          ctx.fillRect(left, bbox.top, canvasX(u, Math.min(end, max)) - left, bbox.height);
+        if (end <= min || start >= max) {
+          continue;
+        }
+        const left = Math.max(canvasX(u, Math.max(start, min)), bbox.left);
+        const right = Math.min(canvasX(u, Math.min(end, max)), bbox.left + bbox.width);
+        if (right > left) {
+          ctx.fillRect(left, bbox.top, right - left, bbox.height);
+          drawn.push({ startS: start, endS: end, left, width: right - left, top: bbox.top, height: bbox.height });
         }
       }
       ctx.restore();
+      u.tremorBands = drawn;
     }
 
-    // Tremor cells go last, so they always show where cells overlap.
-    function drawLane(u) {
-      const { ctx, bbox } = u;
+    // The tremor lines lie over the readings.
+    function drawMarks(u) {
       const { min, max } = u.scales.x;
-      const height = LANE_HEIGHT * uPlot.pxRatio;
-      const top = bbox.top + bbox.height - height;
-      ctx.save();
-      for (const tremorPass of [false, true]) {
-        for (const w of boot.windows) {
-          const colour = ANSWER_COLOURS.get(w.code);
-          const cellEnd = w.cellStartS + 1;
-          if ((w.code === TREMOR) !== tremorPass || colour === undefined || cellEnd <= min || w.cellStartS >= max) {
-            continue;
-          }
-          const left = canvasX(u, Math.max(w.cellStartS, min));
-          ctx.fillStyle = colour;
-          ctx.fillRect(left, top, Math.max(1, canvasX(u, Math.min(cellEnd, max)) - left), height);
-        }
-      }
-      ctx.restore();
+      u.tremorLines = drawLines(u, C.edgesInView(boot.tremorSpans, { min, max }), C.LINES.tremor);
     }
 
-    function firstDraw() {
-      if (!drawn) {
-        drawn = true;
+    // The lines a chart drew last, in page pixels.
+    function pageLines(u, lines) {
+      const rect = u.ctx.canvas.getBoundingClientRect();
+      const ratio = uPlot.pxRatio;
+      return (lines || []).map((l) => ({
+        t: l.t,
+        x: rect.left + l.left / ratio,
+        width: l.width / ratio,
+        top: rect.top + l.top / ratio,
+        height: l.height / ratio,
+      }));
+    }
+
+    function plotEdges(u) {
+      const box = u.over.getBoundingClientRect();
+      return {
+        left: box.left + u.valToPos(state.view.min, 'x'),
+        right: box.left + u.valToPos(state.view.max, 'x'),
+      };
+    }
+
+    function sameView(a, b) {
+      return Math.abs(a.min - b.min) < 1e-9 && Math.abs(a.max - b.max) < 1e-9;
+    }
+
+    function ariaText(axes) {
+      const { min, max } = state.view;
+      return `Gyroscope ${listText(axes)} in degrees per second from ${C.formatClock(min)} to ${C.formatClock(max)}`;
+    }
+
+    function updateAria() {
+      for (const box of boxes) {
+        box.setAttribute('aria-label', ariaText(box.axes));
+      }
+    }
+
+    // Set the view on every chart but one, and tell the page.
+    function setViewAll(view, except) {
+      state.view = { min: view.min, max: view.max };
+      syncing = true;
+      for (const u of charts) {
+        if (u !== except && !sameView(u.scales.x, state.view)) {
+          u.setScale('x', { min: state.view.min, max: state.view.max });
+        }
+      }
+      syncing = false;
+      updateAria();
+      onView(state.view);
+    }
+
+    function onScale(u, key) {
+      if (key !== 'x' || syncing) {
+        return;
+      }
+      const view = { min: u.scales.x.min, max: u.scales.x.max };
+      if (view.min === null || view.max === null || sameView(view, state.view)) {
+        return;
+      }
+      setViewAll(view, u);
+    }
+
+    function hideReadout() {
+      readout.box.hidden = true;
+    }
+
+    // The readout gives the reading nearest the pointer and the answer at its time.
+    function onCursor(u) {
+      const { idx, left } = u.cursor;
+      if (idx === null || idx === undefined || left === undefined || left < 0) {
+        hideReadout();
+        return;
+      }
+      const t = boot.timeS[idx];
+      readout.time.textContent = C.formatClock(t, 1);
+      readout.x.textContent = C.formatValue(boot.gx[idx]);
+      readout.y.textContent = C.formatValue(boot.gy[idx]);
+      readout.z.textContent = C.formatValue(boot.gz[idx]);
+      for (const el of readout.axes) {
+        el.hidden = !state.shown.includes(el.dataset.axis);
+      }
+      readout.answer.textContent = C.answerText(boot.windows, t);
+      const over = u.over.getBoundingClientRect();
+      const offset = over.left - body.getBoundingClientRect().left;
+      readout.box.style.left = `${offset + left}px`;
+      readout.box.classList.toggle('readout-flip', left / over.width > FLIP_AT);
+      readout.box.hidden = false;
+    }
+
+    function onDrawn(u) {
+      u.tremorDrawn = true;
+      if (!reported && charts.length > 0 && charts.every((c) => c.tremorDrawn)) {
+        reported = true;
         onFirstDraw();
       }
     }
 
-    const axis = { stroke: AXIS_COLOUR, grid: { stroke: GRID_COLOUR, width: 1 }, ticks: { stroke: GRID_COLOUR, width: 1 } };
-    const options = {
-      width: target.clientWidth,
-      height: target.clientHeight,
-      legend: { show: false },
-      cursor: { drag: { x: true, y: false } },
-      scales: { x: { time: false }, y: { range: yRange } },
-      axes: [
-        {
-          ...axis,
-          label: 'Time since boot (h:mm:ss)',
-          incrs: TIME_STEPS,
-          space: 90,
-          values: (u, splits, _axisIdx, _space, step) => splits.map((v) => formatTime(v, step)),
+    function options(axes, height) {
+      const p = state.palette;
+      const space = Y_TICK_SPACE_PX[state.layout === 'stacked' ? 'stacked' : 'overlaid'];
+      const font = `12px ${p.fontSans}`;
+      return {
+        width,
+        height,
+        padding: PADDING,
+        legend: { show: false },
+        cursor: {
+          sync: { key: SYNC_KEY },
+          y: false,
+          points: { show: false },
+          drag: { x: true, y: false },
         },
-        { ...axis, label: 'Gyroscope (degrees per second)', size: 60 },
-      ],
-      series: [{}, ...SERIES.map((s) => ({ label: s.name, stroke: s.colour, width: 1, gaps: breakGaps }))],
-      hooks: { drawClear: [shadeTremor], draw: [drawLane, firstDraw] },
-    };
-    const u = new uPlot(options, [boot.timeS, boot.gx, boot.gy, boot.gz], target);
+        scales: { x: { time: false }, y: { range: yRange } },
+        axes: [
+          {
+            size: 0,
+            space: TIME_TICK_SPACE_PX,
+            incrs: C.TIME_STEPS,
+            splits: (u, _i, min, max) => C.timeTicks(min, max, plotWidth(u)).ticks.map((t) => t.value),
+            values: (_u, splits) => splits.map(() => ''),
+            ticks: { show: false },
+            grid: { stroke: p.border, width: 1 },
+            border: { show: false },
+          },
+          {
+            size: Y_AXIS_PX,
+            gap: Y_LABEL_GAP_PX,
+            space,
+            incrs: Y_STEPS,
+            font,
+            stroke: p.inkMuted,
+            values: (u, splits, _i, _space, step) => {
+              u.tremorTicks = splits.map((v) => C.formatValue(v, C.decimalsFor(step)));
+              return u.tremorTicks;
+            },
+            ticks: { show: false },
+            grid: { stroke: p.border, width: 1 },
+            border: { show: false },
+          },
+        ],
+        series: [
+          {},
+          ...axes.map((a) => ({
+            label: a,
+            stroke: axisColour(p, a),
+            width: 1,
+            show: state.shown.includes(a),
+            gaps: breakGaps,
+            points: { show: false },
+          })),
+        ],
+        hooks: {
+          drawClear: [drawBands],
+          drawAxes: [drawZero],
+          draw: [drawMarks, onDrawn],
+          setScale: [onScale],
+          setCursor: [onCursor],
+        },
+      };
+    }
 
-    // Move the view by half its width, and stop at the ends of the boot.
-    function pan(direction) {
-      const xs = u.data[0];
-      const first = xs[0];
-      const last = xs[xs.length - 1];
-      const { min, max } = u.scales.x;
-      const width = max - min;
-      if (width >= last - first) {
-        return;
+    function destroyCharts() {
+      for (const u of charts) {
+        u.destroy();
       }
-      const start = Math.min(Math.max(min + (direction * width) / 2, first), last - width);
-      u.setScale('x', { min: start, max: start + width });
+      charts = [];
+      boxes = [];
+      plotsEl.replaceChildren();
+      hideReadout();
+    }
+
+    function build() {
+      destroyCharts();
+      shared = { key: null, range: null };
+      const stacked = state.layout === 'stacked';
+      const groups = stacked ? state.shown.map((a) => [a]) : [C.AXES];
+      const made = [];
+      for (const axes of groups) {
+        const box = document.createElement('div');
+        box.className = 'plot';
+        box.setAttribute('role', 'img');
+        box.axes = stacked ? axes : state.shown;
+        if (stacked) {
+          const name = document.createElement('span');
+          name.className = 'plot-name';
+          name.setAttribute('aria-hidden', 'true');
+          name.textContent = axes[0];
+          box.append(name);
+        }
+        plotsEl.append(box);
+        const data = [boot.timeS, ...axes.map((a) => boot[READINGS[a]])];
+        const u = new uPlot(options(axes, stacked ? HEIGHT.stacked : HEIGHT.overlaid), data, box);
+        if (!sameView(state.view, bounds)) {
+          u.setScale('x', { min: state.view.min, max: state.view.max });
+        }
+        boxes.push(box);
+        made.push(u);
+      }
+      charts = made;
+      updateAria();
     }
 
     function onKey(event) {
-      if (event.target instanceof HTMLSelectElement) {
+      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {
         return;
       }
-      if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-        event.preventDefault();
-        pan(event.key === 'ArrowLeft' ? -1 : 1);
+      if (event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) {
+        return;
       }
+      const target = event.target;
+      if (target instanceof HTMLSelectElement || (target instanceof Element && target.closest('.md-seg'))) {
+        return;
+      }
+      event.preventDefault();
+      setViewAll(C.panView(state.view, bounds, event.key === 'ArrowLeft' ? -1 : 1), null);
     }
 
-    function onResize() {
-      u.setSize({ width: target.clientWidth, height: target.clientHeight });
-    }
+    const observer = new ResizeObserver(() => {
+      const next = plotsEl.clientWidth;
+      if (next === width || next <= 0) {
+        return;
+      }
+      width = next;
+      for (const u of charts) {
+        u.setSize({ width, height: u.height });
+      }
+      onView(state.view);
+    });
 
+    build();
     window.addEventListener('keydown', onKey);
-    window.addEventListener('resize', onResize);
+    observer.observe(body);
 
     return {
-      /** The tremor answer cells in view, in page pixels. */
-      tremorCells() {
-        const box = u.over.getBoundingClientRect();
-        const { min, max } = u.scales.x;
-        return boot.windows
-          .filter((w) => w.code === TREMOR && w.cellStartS + 1 > min && w.cellStartS < max)
-          .map((w) => {
-            const left = u.valToPos(Math.max(w.cellStartS, min), 'x');
-            const right = u.valToPos(Math.min(w.cellStartS + 1, max), 'x');
-            return { x: box.left + left, y: box.bottom - LANE_HEIGHT, width: right - left, height: LANE_HEIGHT };
-          });
+      setLayout(next) {
+        if (next !== state.layout) {
+          state.layout = next;
+          build();
+        }
       },
+      setShown(next) {
+        state.shown = [...next];
+        if (state.layout === 'stacked') {
+          build();
+          return;
+        }
+        const u = charts[0];
+        C.AXES.forEach((a, i) => {
+          const show = state.shown.includes(a);
+          if (u.series[i + 1].show !== show) {
+            u.setSeries(i + 1, { show });
+          }
+        });
+        boxes[0].axes = state.shown;
+        updateAria();
+      },
+      setView(view) {
+        setViewAll(view, null);
+      },
+      view: () => ({ ...state.view }),
+      bounds: () => ({ ...bounds }),
+      rebuild(next) {
+        state.palette = next;
+        build();
+      },
+      plotHeights: () => charts.map((u) => u.height),
+      /** Where each chart puts the view's start and end, in page pixels. */
+      plotEdges: () => charts.map(plotEdges),
+      /** The tremor lines each chart drew last, in page pixels. */
+      tremorLines: () => charts.map((u) => pageLines(u, u.tremorLines)),
+      /** The tremor shades each chart drew last, in page pixels. */
+      bands: () =>
+        charts.map((u) => {
+          const rect = u.ctx.canvas.getBoundingClientRect();
+          const ratio = uPlot.pxRatio;
+          return (u.tremorBands || []).map((b) => ({
+            startS: b.startS,
+            endS: b.endS,
+            x: rect.left + b.left / ratio,
+            width: b.width / ratio,
+            top: rect.top + b.top / ratio,
+            height: b.height / ratio,
+          }));
+        }),
+      yRanges: () => charts.map((u) => [u.scales.y.min, u.scales.y.max]),
+      yTicks: () => charts.map((u) => [...(u.tremorTicks || [])]),
       destroy() {
         window.removeEventListener('keydown', onKey);
-        window.removeEventListener('resize', onResize);
-        u.destroy();
+        observer.disconnect();
+        destroyCharts();
       },
     };
   }
 
-  window.TremorPlot = { create, SERIES, ANSWERS, SHADE };
+  window.TremorPlot = { create };
 })();

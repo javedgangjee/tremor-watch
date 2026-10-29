@@ -2,9 +2,10 @@
 
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const { sampleCells } = require('../src/lib/pixels');
+const { samplePoints, INK } = require('../src/lib/pixels');
 
-const NAVY = '#1B2E42';
+// Feature 15 checks the tremor lines against the light theme's --ink.
+const INK_LIGHT = INK.light;
 const WIDTH = 20;
 const HEIGHT = 10;
 
@@ -19,18 +20,24 @@ function bitmapWithBlock([r, g, b]) {
   return bitmap;
 }
 
-const NAVY_RGB = [0x1b, 0x2e, 0x42];
-const cellAt = (x) => ({ x, y: 1, width: 4, height: 3 });
+const INK_RGB = [0x16, 0x18, 0x1d];
 
-test('case 24: the colour at the centre of each cell', () => {
-  const navy = bitmapWithBlock(NAVY_RGB);
-  assert.deepEqual(sampleCells(navy, WIDTH, HEIGHT, 2, [cellAt(2)], NAVY), { checked: 1, matched: 1, misses: [] });
+test('case 22 of feature 15: samplePoints()', () => {
+  const ink = bitmapWithBlock(INK_RGB);
+  const points = [
+    { x: 4, y: 2 },
+    { x: 7, y: 2 },
+    { x: 20, y: 2 },
+  ];
+  const sampled = samplePoints(ink, WIDTH, HEIGHT, 2, points, INK_LIGHT);
+  assert.equal(sampled.checked, 3);
+  assert.equal(sampled.matched, 1);
+  assert.deepEqual(
+    sampled.misses.map((m) => m.found),
+    ['#FFFFFF', null],
+  );
 
-  const outside = sampleCells(navy, WIDTH, HEIGHT, 2, [cellAt(7)], NAVY);
-  assert.equal(outside.matched, 0);
-  assert.equal(outside.misses.length, 1);
-
-  const offBy = (d) => bitmapWithBlock([NAVY_RGB[0], NAVY_RGB[1], NAVY_RGB[2] + d]);
-  assert.equal(sampleCells(offBy(9), WIDTH, HEIGHT, 2, [cellAt(2)], NAVY).matched, 0);
-  assert.equal(sampleCells(offBy(8), WIDTH, HEIGHT, 2, [cellAt(2)], NAVY).matched, 1);
+  const offBy = (d) => bitmapWithBlock([INK_RGB[0], INK_RGB[1], INK_RGB[2] + d]);
+  assert.equal(samplePoints(offBy(9), WIDTH, HEIGHT, 2, [points[0]], INK_LIGHT).matched, 0);
+  assert.equal(samplePoints(offBy(8), WIDTH, HEIGHT, 2, [points[0]], INK_LIGHT).matched, 1);
 });

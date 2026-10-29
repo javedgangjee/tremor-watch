@@ -47,14 +47,16 @@ test('case 26: module limits, no port, no remote content, security settings, and
       assert.ok(!read(file).includes(word), `${file} holds ${word}`);
     }
   }
-  for (const file of filesIn('src/renderer')) {
+  // The font licences in src/renderer/fonts/ hold web addresses, so only the
+  // page's own files are checked.
+  for (const file of filesIn('src/renderer').filter((f) => /\.(html|css|js)$/.test(f))) {
     assert.ok(!/https?:/.test(read(file)), `${file} holds a web address`);
   }
 
   const csp = /http-equiv="Content-Security-Policy" content="([^"]*)"/.exec(read('src', 'renderer', 'index.html'));
   assert.equal(
     csp[1],
-    "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'",
+    "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self'; font-src 'self'; base-uri 'none'; form-action 'none'",
   );
 
   const main = read('src', 'main.js');
@@ -63,7 +65,7 @@ test('case 26: module limits, no port, no remote content, security settings, and
   }
 
   const textFiles = ['package.json', 'package-lock.json', '.npmrc', ...filesIn('src'), ...filesIn('scripts'), ...filesIn('test')];
-  for (const file of textFiles.filter((f) => !f.endsWith('.gz'))) {
+  for (const file of textFiles.filter((f) => !f.endsWith('.gz') && !f.endsWith('.woff2'))) {
     assert.ok(!/[\u2013\u2014]/.test(read(file)), `${file} holds an em dash or an en dash`);
   }
 });

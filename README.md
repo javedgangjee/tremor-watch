@@ -124,7 +124,7 @@ reference/.venv/bin/python tools/compare_session.py session.txt.gz --report repo
 
 ## View a recording
 
-`viewer/` holds a small Electron app that plots a saved recording's gyroscope readings against time, shades the windows the watch answered with tremor, and shows each window's answer in a lane under the plot. It needs Node 22, and the install needs the network once.
+`viewer/` holds a small Electron app that plots a saved recording's gyroscope readings against time and marks each stretch where the watch answered tremor. A Summary card at the right of the chart gives the file name and the boot's facts in two groups, Recording and Data quality. In a narrow window it sits under the chart. When the file holds more than one boot, a list above the chart picks the boot. It needs Node 22, and the install needs the network once.
 
 ```
 make viewer-start FILE=session.txt.gz
@@ -132,9 +132,11 @@ make viewer-start FILE=session.txt.gz
 
 `make viewer-start` installs the packages with `npm --prefix viewer ci` when they are missing or out of date, and then runs `npm --prefix viewer start`. Add `BOOT=ID` to open one boot of the file. With no FILE the app opens empty. `make viewer-smoke` runs the app in capture mode on the test recordings and checks each drawing.
 
-File > Open (Cmd+O) opens another recording. Drag across the plot to zoom in, double click to show the whole boot, and use the left and right arrow keys to move the view. `make viewer` runs the viewer's unit tests, which need no install.
+File > Open (Cmd+O) opens another recording. The x, y, and z chips show or hide each axis, and the layout control picks Overlaid, one plot of all axes, or Stacked, one plot for each axis. The stacked plots share one scale, so their y labels match, and each names its axis at its left. In every plot, a light grey shade covers each tremor episode, and black vertical lines with no text mark where it starts and ends. Tremor windows that overlap or touch join into one episode. Move the pointer over a plot to read the time, the three values, and the answer at that point. The time span control above the plot shows 10 seconds, 30 seconds, 1 minute, or the whole boot. A span as long as the boot or longer is turned off, since it would show the whole boot. The Earlier button moves the view back by half its width. Drag across a plot to zoom in, double click to show the whole boot, and use the left and right arrow keys to move the view. Every plot shares the view.
 
-The Record button runs `tools/watch_cli.py record`, which resets the watch and saves every line it writes. Press Stop to end the recording, as Ctrl-C does, and the viewer opens the new file. The viewer never opens the watch's port itself. Files go to `recordings/` at the repo root, which git leaves out, with names such as `tremor-2026-10-28-143005.txt.gz`, and a name that is taken gets `-2`. `TREMOR_RECORDINGS` names another folder, and `TREMOR_PYTHON` names the Python to run, which must hold pyserial and is the ESP-IDF Python by default. When the recording cannot start or saves no file, such as when no watch is plugged in, the line under the bar says why, and the plot stays as it was. When watch_cli.py stops with an error after it saved a file, the viewer still opens that file, and the line under the bar gives the error.
+The page follows the Mac's light or dark setting. `--theme light` or `--theme dark` after `npm --prefix viewer start --` fixes the theme, and `--layout stacked` opens the file in the stacked layout. `make viewer` runs the viewer's unit tests, which need no install.
+
+The Record button runs `tools/watch_cli.py record`, which resets the watch and saves every line it writes. Press Stop to end the recording, as Ctrl-C does, and the viewer opens the new file. The viewer never opens the watch's port itself. Files go to `recordings/` at the repo root, which git leaves out, with names such as `tremor-2026-10-28-143005.txt.gz`, and a name that is taken gets `-2`. `TREMOR_RECORDINGS` names another folder, and `TREMOR_PYTHON` names the Python to run, which must hold pyserial and is the ESP-IDF Python by default. When the recording cannot start or saves no file, such as when no watch is plugged in, a red notice under the header says why, and the plot stays as it was. When watch_cli.py stops with an error after it saved a file, the viewer still opens that file, and the notice gives the error.
 
 ## Export a recording as EDF+
 
@@ -151,7 +153,7 @@ EDFbrowser and edfio keep the gaps. MNE-Python 1.13.2 places the data records of
 
 ## Status
 
-Features 1 to 14 in `specs/roadmap.md` are built and merged, and their laptop tests pass. On the watch, the detector, the time rule, the recording, and the face states have run with the watch on a table, and firmware version 12 ran on it on 28 October 2026. The tap, the BOOT button, the tones, and the battery have not been checked on the watch yet, and the white Session and Status backgrounds have not been flashed to it. The recording viewer, the EDF export, and the record button each have a check by hand still to do, as the validation files under `specs/features/` say. Feature 15, the wrist tests, is still to come.
+Features 1 to 14 in `specs/roadmap.md` are built and merged, and their laptop tests pass. On the watch, the detector, the time rule, the recording, and the face states have run with the watch on a table, and firmware version 12 ran on it on 28 October 2026. The tap, the BOOT button, the tones, and the battery have not been checked on the watch yet, and the white Session and Status backgrounds have not been flashed to it. The recording viewer, the EDF export, and the record button each have a check by hand still to do, as the validation files under `specs/features/` say. Feature 15, the viewer redesign, and feature 16, the wrist tests, are still to come.
 
 ## Licence
 

@@ -3,7 +3,10 @@
 const path = require('node:path');
 const { ArgsError } = require('./errors');
 
-const USAGE = 'npm --prefix viewer start -- [FILE] [--boot ID] [--capture OUT.png] [--record-for SECONDS]';
+const USAGE =
+  'npm --prefix viewer start -- [FILE] [--boot ID] [--capture OUT.png] [--record-for SECONDS] [--theme system|light|dark] [--layout overlaid|stacked]';
+const THEMES = ['system', 'light', 'dark'];
+const LAYOUTS = ['overlaid', 'stacked'];
 // The longest --record-for, one day.
 const MAX_RECORD_S = 86400;
 
@@ -31,15 +34,22 @@ function recordSecondsFrom(text) {
   return seconds;
 }
 
+function choiceFrom(option, text, choices) {
+  if (!choices.includes(text)) {
+    throw new ArgsError(`${option} takes ${choices.join(', ')}, not ${text}.`);
+  }
+  return text;
+}
+
 /**
  * Read the viewer's arguments. Relative paths resolve against cwd.
  *
  * @param {string[]} argv The arguments after Electron's own.
  * @param {string} cwd The folder the command ran from.
- * @returns {{file: string | null, capture: string | null, bootId: number | null, recordFor: number | null}}
+ * @returns {{file: string | null, capture: string | null, bootId: number | null, recordFor: number | null, theme: string, layout: string}}
  */
 function parseArgs(argv, cwd) {
-  const args = { file: null, capture: null, bootId: null, recordFor: null };
+  const args = { file: null, capture: null, bootId: null, recordFor: null, theme: 'system', layout: 'overlaid' };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--capture') {
@@ -50,6 +60,12 @@ function parseArgs(argv, cwd) {
       i++;
     } else if (arg === '--record-for') {
       args.recordFor = recordSecondsFrom(optionValue(argv, i));
+      i++;
+    } else if (arg === '--theme') {
+      args.theme = choiceFrom(arg, optionValue(argv, i), THEMES);
+      i++;
+    } else if (arg === '--layout') {
+      args.layout = choiceFrom(arg, optionValue(argv, i), LAYOUTS);
       i++;
     } else if (arg.startsWith('-')) {
       throw new ArgsError(`${arg} is not an option.`);

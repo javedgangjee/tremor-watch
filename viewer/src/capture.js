@@ -9,11 +9,9 @@
 const fs = require('node:fs');
 const { performance } = require('node:perf_hooks');
 const { ipcMain } = require('electron');
-const { sampleCells } = require('./lib/pixels');
+const { samplePoints, INK } = require('./lib/pixels');
 
 const DRAW_LIMIT_MS = 60000;
-// The face's Tremor navy, LOOK_TREMOR in core/look.h.
-const NAVY = '#1B2E42';
 // The time a window shown for the fallback capture gets to paint.
 const SHOW_PAINT_MS = 500;
 
@@ -38,6 +36,23 @@ function withLimit(promise, ms) {
   return Promise.race([promise, limit]).finally(() => clearTimeout(timer));
 }
 
+// Two animation frames in the page, so a change of size has reached the screen.
+const TWO_FRAMES = 'new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))';
+
+/**
+ * Make the window as tall as the page, so the capture shows the whole page
+ * down to the bottom of the cards. Only the height changes, so nothing moves
+ * sideways and the cells of the report keep their places.
+ */
+async function fitPage(win) {
+  const pageHeight = await win.webContents.executeJavaScript('Math.ceil(document.documentElement.scrollHeight)');
+  const [width, height] = win.getContentSize();
+  if (pageHeight > height) {
+    win.setContentSize(width, pageHeight);
+  }
+  await win.webContents.executeJavaScript(TWO_FRAMES);
+}
+
 /**
  * Capture the window. On macOS a hidden window can give an empty image, so the
  * window is then shown, without focus, and captured again.
@@ -55,10 +70,32 @@ async function grab(win) {
   return { image, scaleFactor, shownWindow };
 }
 
-function checkTremorCells(win, image, scaleFactor, cells) {
+/** The colour of the tremor lines in the report's theme. */
+function tremorColour(report) {
+  return INK[report.theme] ?? INK.light;
+}
+
+/** The captured image as a bitmap, its size, and its image pixels per page pixel. */
+function imageData(win, image, scaleFactor) {
   const { width, height } = image.getSize(scaleFactor);
   const scale = width / win.getContentSize()[0];
-  return sampleCells(image.toBitmap({ scaleFactor }), width, height, scale, cells, NAVY);
+  return { bitmap: image.toBitmap({ scaleFactor }), width, height, scale };
+}
+
+// The shares of a tremor line's height at which its colour is checked.
+const LINE_POINTS = [0.25, 0.5, 0.75];
+
+/** Check three points down the middle of each tremor line of every chart. */
+function checkTremorLines(data, report, colour) {
+  const points = [];
+  for (const lines of report.tremorLines ?? []) {
+    for (const line of lines) {
+      for (const share of LINE_POINTS) {
+        points.push({ x: line.x + line.width / 2, y: line.top + line.height * share });
+      }
+    }
+  }
+  return samplePoints(data.bitmap, data.width, data.height, data.scale, points, colour);
 }
 
 function jsonPath(pngPath) {
@@ -92,6 +129,7 @@ async function runCapture({ win, args, open, isOwnPage }) {
     return 2;
   }
   const totalMs = performance.now() - started;
+  await fitPage(win);
   const { image, scaleFactor, shownWindow } = await grab(win);
   fs.writeFileSync(args.capture, image.toPNG({ scaleFactor }));
   const [pageHasRequire, pageHasProcess] = await win.webContents.executeJavaScript(
@@ -103,6 +141,8 @@ async function runCapture({ win, args, open, isOwnPage }) {
   if (failure !== null) {
     console.error(failure);
   }
+  const colour = tremorColour(report);
+  const data = message.ok ? imageData(win, image, scaleFactor) : null;
   writeJson(args.capture, {
     file,
     exitCode,
@@ -116,7 +156,9 @@ async function runCapture({ win, args, open, isOwnPage }) {
     webPreferences: win.webContents.getLastWebPreferences(),
     pageHasRequire,
     pageHasProcess,
-    tremorCellPixels: message.ok ? checkTremorCells(win, image, scaleFactor, report.tremorCells) : null,
+    theme: report.theme ?? null,
+    tremorColour: colour,
+    tremorLinePixels: message.ok ? checkTremorLines(data, report, colour) : null,
   });
   return exitCode;
 }
