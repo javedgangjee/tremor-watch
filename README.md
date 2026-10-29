@@ -16,7 +16,7 @@ The circle shows the latest state. Home keeps the time of the last tremor under 
 
 <table>
   <tr>
-    <td align="center"><img src="firmware/main/assets/screenshots/01-home-waiting.png" width="180" alt="Home screen showing Waiting"><br>Waiting</td>
+    <td align="center"><img src="firmware/main/assets/screenshots/01-home-loading.png" width="180" alt="Home screen showing Loading with a spinner"><br>Loading</td>
     <td align="center"><img src="firmware/main/assets/screenshots/02-home-tremor.png" width="180" alt="Home screen showing Tremor Detected"><br>Tremor</td>
     <td align="center"><img src="firmware/main/assets/screenshots/03-home-arm-moving.png" width="180" alt="Home screen showing Arm moving"><br>Arm moving</td>
   </tr>
@@ -27,7 +27,7 @@ The circle shows the latest state. Home keeps the time of the last tremor under 
   </tr>
 </table>
 
-Waiting shows while the detector has no answer yet, such as at the start of a session or after a gap in the readings. Arm moving means the arm moved too much for the detector to judge. Rest means the arm was still and showed no tremor.
+Loading shows with a turning spinner while the detector has no answer yet, such as at the start of a session or after a gap in the readings. Arm moving means the arm moved too much for the detector to judge. Rest means the arm was still and showed no tremor.
 
 ### Medication
 
@@ -89,7 +89,7 @@ In PADS the toolbox fires on about 4 percent of the Relaxed task's windows for h
 - The battery has not been checked. The power chip reported no battery in every run, and the watch has only run on USB power.
 - The detector is tuned against false alarms, so it undercounts tremor by design. It also judges only still time, so tremor while the arm moves is not counted.
 - On input with no noise at all, such as a stuck sensor, the 32-bit port and the 64-bit toolbox can give very different probabilities. In 4,800 such test windows the final tremor answer never differed, and on every real recording checked so far the two agree.
-- When the time rule ends a stretch, the face shows Waiting for about 6 seconds. Table runs gave about one such end an hour, because the sensor's own rate drifts by a few parts per million.
+- When the time rule ends a stretch, the face shows Loading for about 6 seconds. Table runs gave about one such end an hour, because the sensor's own rate drifts by a few parts per million.
 
 ## Repo layout
 

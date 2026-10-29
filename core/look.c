@@ -27,14 +27,14 @@
 #define WORD_2_Y (WORD_Y + FACE_LINE_28)
 
 static const look_state_t STATES[] = {
-    [FACE_TREMOR] = {true, LOOK_TREMOR, LOOK_WHITE, LOOK_ICON_TREMOR, "Tremor", "Detected"},
-    [FACE_NO_TREMOR] = {false, LOOK_REST, LOOK_TEXT, LOOK_ICON_NO_TREMOR, "Rest", NULL},
-    [FACE_ARM_MOVING] = {true, LOOK_ARM, LOOK_WHITE, LOOK_ICON_ARM_MOVING, "Arm moving", NULL},
-    [FACE_WAITING] = {false, LOOK_WAITING, LOOK_TEXT, LOOK_ICON_WAITING, "Waiting", NULL},
-    [FACE_DOSE_DUE] = {true, LOOK_DOSE, LOOK_WHITE, LOOK_ICON_DOSE_DUE, "Dose due", NULL},
+    [FACE_TREMOR] = {true, LOOK_TREMOR, LOOK_WHITE, LOOK_ICON_TREMOR, "Tremor", "Detected", false, true, false},
+    [FACE_NO_TREMOR] = {false, LOOK_REST, LOOK_TEXT, LOOK_ICON_NO_TREMOR, "Rest", NULL, false, false, false},
+    [FACE_ARM_MOVING] = {true, LOOK_ARM, LOOK_WHITE, LOOK_ICON_ARM_MOVING, "Arm moving", NULL, false, true, false},
+    [FACE_WAITING] = {false, LOOK_WAITING, LOOK_TEXT, LOOK_ICON_WAITING, "Loading", NULL, true, false, true},
+    [FACE_DOSE_DUE] = {true, LOOK_DOSE, LOOK_WHITE, LOOK_ICON_DOSE_DUE, "Dose due", NULL, false, true, false},
 };
 
-static const look_state_t LOGGED = {true, LOOK_TOOK_IT, LOOK_WHITE, LOOK_ICON_LOGGED_RING, "Logged", NULL};
+static const look_state_t LOGGED = {true, LOOK_TOOK_IT, LOOK_WHITE, LOOK_ICON_LOGGED_RING, "Logged", NULL, false, false, false};
 
 #define TEXT(x_, y_, w_, size_, smallest_, align_, colour_) \
     {(x_), (y_), (w_), FACE_LINE_##size_, LOOK_KIND_TEXT, (size_), (smallest_), (align_), (colour_)}

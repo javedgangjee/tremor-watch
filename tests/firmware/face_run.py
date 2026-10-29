@@ -77,30 +77,37 @@ BLOCK_US = 600_000_000
 BLOCKS_KEPT = 12
 HOLLOW_BELOW = 30
 
-# The circle and its colour for each face state in the firmware now.
+# The circle and its colour for each face state in the firmware now. Loading,
+# which is state 3, has had no circle since 28 October 2026.
 LOOKS = {
     0: ("fill", "1b2e42"),
     1: ("outline", "26292b"),
     2: ("fill", "2a7242"),
-    3: ("outline", "5c6265"),
+    3: ("none", "5c6265"),
     4: ("fill", "3f2559"),
 }
+# The looks before 28 October 2026, when state 3 had a grey outline.
+OUTLINE_LOOKS = {**LOOKS, 3: ("outline", "5c6265")}
 # The looks that version 11 had from feature 11 on 23 October 2026 until
 # commit 7f6b90e on 25 October 2026. Rest, which is state 1, had the filled
 # green circle, and Arm moving had the dark outline. face_log.txt.gz was
 # recorded with them.
-FIRST_LOOKS = {**LOOKS, 1: ("fill", "2a7242"), 2: ("outline", "26292b")}
+FIRST_LOOKS = {**OUTLINE_LOOKS, 1: ("fill", "2a7242"), 2: ("outline", "26292b")}
 Looks = dict[int, tuple[str, str]]
 # The looks of each firmware version, with a name for the report. Commit
 # 7f6b90e swapped the looks of states 1 and 2 and kept version 11, so a saved
-# log of version 11 may show either set. Version 9 had no face, and version
-# 12 has only the looks since 7f6b90e.
+# log of version 11 may show either set. Version 9 had no face. Version 12
+# has the looks since 7f6b90e, and state 3 lost its outline on 28 October 2026
+# with no new version, so a saved log of version 12 may show either.
 LOOKS_BY_VERSION: dict[int, list[tuple[str, Looks]]] = {
     11: [
-        ("the looks since commit 7f6b90e", LOOKS),
+        ("the looks since commit 7f6b90e", OUTLINE_LOOKS),
         ("the looks before commit 7f6b90e", FIRST_LOOKS),
     ],
-    12: [("the looks since commit 7f6b90e", LOOKS)],
+    12: [
+        ("the looks with no circle for Loading", LOOKS),
+        ("the looks with an outline for Loading", OUTLINE_LOOKS),
+    ],
 }
 KNOWN_VERSIONS = tuple(LOOKS_BY_VERSION)
 
