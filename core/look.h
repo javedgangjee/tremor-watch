@@ -148,10 +148,19 @@ typedef struct {
     const char *word;
     /* The second line of the word, or NULL for a one-line word. */
     const char *word_2;
+    /* spinner is true when a turning arc in the ink colour takes the icon's
+     * place. Only Loading has it. */
+    bool spinner;
+    /* pulse is true when a change to this look pulses the circle. Rest and
+     * Loading have no pulse. */
+    bool pulse;
+    /* bare is true when the circle has no fill and no outline, so only the
+     * icon or spinner and the word show. Only Loading is bare. */
+    bool bare;
 } look_state_t;
 
 /* look_state() gives the look of a face state, and the Waiting look for any
- * other value. */
+ * other value. Waiting shows the word "Loading" with a spinner. */
 const look_state_t *look_state(face_state_t s);
 
 /* look_logged() gives the look of the circle on the Logged view. */

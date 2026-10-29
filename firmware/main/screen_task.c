@@ -246,7 +246,7 @@ static bool send_view_line(look_screen_t shown)
     usb_send("SCREEN_VIEW at_us=%lld screen=%s face=%d circle=%s colour=%06lx time=%s due=%d next=%s "
              "last_tremor=%s share=%d blocks=%lu hollow=%s",
              (long long)esp_timer_get_time(), screen_name(now.screen), (int)now.face,
-             l->filled ? "fill" : "outline", (unsigned long)l->circle, now.time, now.due ? 1 : 0, now.next,
+             l->bare ? "none" : l->filled ? "fill" : "outline", (unsigned long)l->circle, now.time, now.due ? 1 : 0, now.next,
              now.last_tremor, now.share, (unsigned long)now.blocks, now.blocks > 0 ? now.hollow : "none");
     return true;
 }

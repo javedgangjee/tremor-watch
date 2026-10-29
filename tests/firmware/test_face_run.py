@@ -83,10 +83,12 @@ class Fields:
     hollow: str = "none"
 
 
-LOOKS = {0: ("fill", "1b2e42"), 1: ("outline", "26292b"), 2: ("fill", "2a7242"), 3: ("outline", "5c6265"),
+LOOKS = {0: ("fill", "1b2e42"), 1: ("outline", "26292b"), 2: ("fill", "2a7242"), 3: ("none", "5c6265"),
          4: ("fill", "3f2559")}
+# The looks before 28 October 2026, when Loading had a grey outline.
+OUTLINE_LOOKS = {**LOOKS, 3: ("outline", "5c6265")}
 # The looks of version 11 before commit 7f6b90e, with Rest and Arm moving the other way round.
-FIRST_LOOKS = {**LOOKS, 1: ("fill", "2a7242"), 2: ("outline", "26292b")}
+FIRST_LOOKS = {**OUTLINE_LOOKS, 1: ("fill", "2a7242"), 2: ("outline", "26292b")}
 
 
 @dataclass
@@ -362,17 +364,21 @@ def test_case_51_changed_copies(tmp_path: Path) -> None:
 
 
 def test_looks_of_each_version(tmp_path: Path) -> None:
-    """A saved log of version 11 may show either set of looks, but not a mix. A log of version 12 and a run
-    with the watch need the looks of the firmware now."""
+    """A saved log of version 11 or 12 may show either set of looks of its version, but not a mix. A run with
+    the watch needs the looks of the firmware now."""
     face_run = load("face_run", FACE_RUN)
     assert face_run.LOOKS == LOOKS
     assert face_run.FIRST_LOOKS == FIRST_LOOKS
-    assert [looks for _, looks in face_run.LOOKS_BY_VERSION[11]] == [LOOKS, FIRST_LOOKS]
+    assert face_run.OUTLINE_LOOKS == OUTLINE_LOOKS
+    assert [looks for _, looks in face_run.LOOKS_BY_VERSION[11]] == [OUTLINE_LOOKS, FIRST_LOOKS]
+    assert [looks for _, looks in face_run.LOOKS_BY_VERSION[12]] == [LOOKS, OUTLINE_LOOKS]
     assert face_run.look_sets(11, live=True) == [("the looks of the firmware now", LOOKS)]
     record_run = load("record_run", HERE / "record_run.py")
     assert record_run.FIRMWARE_VERSION in face_run.KNOWN_VERSIONS
 
     assert judge(tmp_path, make_lines(FIRST_LOOKS, version=12)) == 1
+    assert judge(tmp_path, make_lines(OUTLINE_LOOKS, version=12)) == 0
+    assert judge(tmp_path, make_lines(LOOKS, version=11)) == 1
     first = make_lines(FIRST_LOOKS, version=11)
     assert judge(tmp_path, first) == 0
     assert "the looks before commit 7f6b90e" in (tmp_path / "r.md").read_text()

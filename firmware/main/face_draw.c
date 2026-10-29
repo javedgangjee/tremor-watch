@@ -7,7 +7,8 @@
  * clicks, so a tap anywhere reaches the screen's click event. No object uses
  * a transform. The pulse, the press, and the Logged view's pop change the
  * size of a plain object around its centre, and the tick is uncovered by an
- * object that clips it.
+ * object that clips it. Loading's spinner is an LVGL spinner in the icon's
+ * box, and it turns only while it shows.
  */
 
 #include "face_draw.h"
@@ -48,6 +49,14 @@ LV_FONT_DECLARE(face_font_96)
 #define TICK_MS 1280
 /* The blocks have gaps of 4 pixels, a hollow block has a border of 3 pixels,
  * and a bar is at least 4 pixels tall. */
+/* The Loading spinner is about as wide as the clock icon's ring and has its
+ * 8 pixel stroke. Its arc goes round once a second, and its track shows the
+ * outline colour at 20 percent opacity. */
+#define SPINNER_PX 112
+#define SPINNER_WIDTH 8
+#define SPINNER_MS 1000
+#define SPINNER_SWEEP 200
+#define SPINNER_TRACK_OPA 51
 #define BLOCK_GAP 4
 #define BLOCK_BORDER 3
 #define BAR_MIN 4
@@ -64,6 +73,8 @@ typedef struct {
     lv_obj_t *icon;
     lv_obj_t *word;
     lv_obj_t *word_2;
+    /* Home only. */
+    lv_obj_t *spinner;
     /* Logged. */
     lv_obj_t *tick_clip;
     /* Medication. */
@@ -368,6 +379,29 @@ static void start_logged(void)
     lv_anim_start(&a);
 }
 
+/* spinner_at() makes the Loading spinner, centred in a square of px pixels at
+ * x, y. It starts hidden, with no animation, and takes no clicks. */
+static lv_obj_t *spinner_at(lv_obj_t *parent, int x, int y, int px)
+{
+    lv_obj_t *obj = check(lv_spinner_create(parent));
+    if (obj == NULL) {
+        return NULL;
+    }
+    lv_anim_delete(obj, NULL);
+    lv_obj_remove_style_all(obj);
+    lv_obj_remove_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_remove_flag(obj, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_pos(obj, x + (px - SPINNER_PX) / 2, y + (px - SPINNER_PX) / 2);
+    lv_obj_set_size(obj, SPINNER_PX, SPINNER_PX);
+    lv_obj_set_style_arc_width(obj, SPINNER_WIDTH, LV_PART_MAIN);
+    lv_obj_set_style_arc_width(obj, SPINNER_WIDTH, LV_PART_INDICATOR);
+    lv_obj_set_style_arc_opa(obj, SPINNER_TRACK_OPA, LV_PART_MAIN);
+    lv_obj_set_style_arc_opa(obj, LV_OPA_COVER, LV_PART_INDICATOR);
+    lv_obj_set_style_arc_rounded(obj, true, LV_PART_INDICATOR);
+    lv_obj_add_flag(obj, LV_OBJ_FLAG_HIDDEN);
+    return obj;
+}
+
 /* ---------------------------------------------------------------- build */
 
 static void on_click(lv_event_t *e);
@@ -377,7 +411,10 @@ static void style_circle(screen_objs_t *o, const look_state_t *l)
     if (o->circle == NULL) {
         return;
     }
-    if (l->filled) {
+    if (l->bare) {
+        lv_obj_set_style_bg_color(o->circle, colour(LOOK_CARD), 0);
+        lv_obj_set_style_border_width(o->circle, 0, 0);
+    } else if (l->filled) {
         lv_obj_set_style_bg_color(o->circle, colour(l->circle), 0);
         lv_obj_set_style_border_width(o->circle, 0, 0);
     } else {
@@ -388,6 +425,17 @@ static void style_circle(screen_objs_t *o, const look_state_t *l)
     if (o->icon != NULL) {
         lv_image_set_src(o->icon, ICONS[l->icon]);
         lv_obj_set_style_image_recolor(o->icon, colour(l->ink), 0);
+        lv_obj_set_flag(o->icon, LV_OBJ_FLAG_HIDDEN, l->spinner && o->spinner != NULL);
+    }
+    if (o->spinner != NULL) {
+        lv_obj_set_style_arc_color(o->spinner, colour(l->circle), LV_PART_MAIN);
+        lv_obj_set_style_arc_color(o->spinner, colour(l->ink), LV_PART_INDICATOR);
+        lv_obj_set_flag(o->spinner, LV_OBJ_FLAG_HIDDEN, !l->spinner);
+        if (l->spinner) {
+            lv_spinner_set_anim_params(o->spinner, SPINNER_MS, SPINNER_SWEEP);
+        } else {
+            lv_anim_delete(o->spinner, NULL);
+        }
     }
     if (o->word != NULL) {
         lv_obj_set_style_text_color(o->word, colour(l->ink), 0);
@@ -434,6 +482,9 @@ static void build_home(look_screen_t screen)
     }
     const look_state_t *l = screen == LOOK_LOGGED ? look_logged() : look_state(FACE_WAITING);
     o->icon = icon_at(o->root, icon->x, icon->y, icon->w, l->icon, l->ink);
+    if (screen == LOOK_HOME) {
+        o->spinner = spinner_at(o->root, icon->x, icon->y, icon->w);
+    }
     if (screen == LOOK_LOGGED) {
         o->tick_clip = plain(o->root, icon->x, icon->y, icon->w, icon->h);
         if (o->tick_clip != NULL) {
@@ -568,8 +619,13 @@ void face_draw_view(const view_t *v)
     if (!s_have_face || v->face != s_face) {
         const look_state_t *l = look_state(v->face);
         style_circle(home, l);
-        if (s_have_face) {
+        if (s_have_face && l->pulse) {
             start_pulse(home->pulse, l->circle);
+        } else if (home->pulse != NULL) {
+            /* Rest and Loading show with no pulse, and a pulse still fading
+             * from the state before stops. */
+            lv_anim_delete(home->pulse, NULL);
+            lv_obj_add_flag(home->pulse, LV_OBJ_FLAG_HIDDEN);
         }
         s_have_face = true;
         s_face = v->face;
