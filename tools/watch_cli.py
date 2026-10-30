@@ -20,6 +20,10 @@ port, and exits with code 2. A recording stops after --minutes, at Ctrl-C, or
 at SIGTERM or SIGHUP, which a closed terminal sends, and it closes the file
 whole in each case. When the port goes, as it does while the cable is out, the
 recording waits for it to come back until it stops.
+
+With no --port, the tool uses /dev/cu.usbmodem101. When that port is missing
+and exactly one /dev/cu.usbmodem* port is there, it uses that one, because
+macOS names the port after the USB socket the watch is plugged into.
 """
 from __future__ import annotations
 
@@ -38,6 +42,8 @@ from typing import Any, TextIO
 LOG = logging.getLogger("watch_cli")
 
 DEFAULT_PORT = "/dev/cu.usbmodem101"
+DEV = Path("/dev")
+PORT_PATTERN = "cu.usbmodem*"
 FIRST_LINE_S = 2.0
 ANSWER_S = 5.0
 PORT_WAIT_S = 10.0
@@ -104,6 +110,25 @@ def tone_command(on: bool) -> str:
 
 def session_command() -> str:
     return "SESSION"
+
+
+def find_port() -> str:
+    """Give DEFAULT_PORT when it is there, or else the only USB modem port.
+
+    With no USB modem port, or more than one, it gives DEFAULT_PORT, so the
+    error names the port that the tool expected.
+    """
+    if (DEV / Path(DEFAULT_PORT).name).exists():
+        return DEFAULT_PORT
+    found = sorted(DEV.glob(PORT_PATTERN))
+    if len(found) == 1:
+        port = str(found[0])
+        LOG.info("%s is missing, so the tool uses %s.", DEFAULT_PORT, port)
+        return port
+    if found:
+        LOG.warning("%s is missing and %d USB modem ports are there (%s). Pick one with --port.",
+                    DEFAULT_PORT, len(found), ", ".join(str(p) for p in found))
+    return DEFAULT_PORT
 
 
 def open_port(port: str, reset: bool) -> Any:
@@ -413,7 +438,7 @@ def run_command(port: str, command: str) -> int:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n", 1)[0])
-    parser.add_argument("--port", default=DEFAULT_PORT)
+    parser.add_argument("--port", default=None, help=f"the watch's port, {DEFAULT_PORT} or the only USB modem port when left out")
     sub = parser.add_subparsers(dest="action", required=True)
     sub.add_parser("clock", help="set the dose clock to the laptop's time")
     schedule = sub.add_parser("schedule", help="set the medicine name and dose times, or turn the schedule off")
@@ -438,6 +463,8 @@ def main(argv: list[str] | None = None) -> int:
     # ignored. Putting Python's own handler back lets Ctrl-C and kill -INT
     # stop a recording in every case.
     signal.signal(signal.SIGINT, signal.default_int_handler)
+    if args.port is None:
+        args.port = find_port()
 
     if args.action == "record":
         return record(args.port, args.out, args.minutes)

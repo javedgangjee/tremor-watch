@@ -62,3 +62,7 @@ Each item below is a choice that the build spec and the existing code leave open
 38. The tests of replay's recording input are pytest tests in tests/replay/, with a helper there that writes made-up recordings. The tests of the two tools are in tests/tools/. The tests use the three committed logs in tests/firmware/ as real input. The validate stage writes the session report of tests/firmware/record_log.txt.gz to tests/firmware/record_session.md and commits it. The agent decided this on 2026-10-23, and the user accepted it on 27 October 2026.
 
 39. core/recording_format.md gains a section on saved recordings, which gives the file form of requirement 36 and how replay reads a recording under requirements 23 and 24. specs/tech-stack.md records the two tools, the replay command for a recording, and the commands that run them. The agent decided this on 2026-10-23, and the user accepted it on 27 October 2026.
+
+## Changes the user made on 2026-10-30
+
+- With no --port, watch_cli.py uses /dev/cu.usbmodem101 when it is there. When it is missing and exactly one /dev/cu.usbmodem* port is there, the tool uses that one and says so. With none, or more than one, it keeps /dev/cu.usbmodem101, so the error names the port it expected, and with more than one it lists them and asks for --port. An explicit --port skips the search. The user chose this on 2026-10-30, after the viewer's Record button failed because the watch showed up as /dev/cu.usbmodem1101 in another USB socket. It changes requirement 33's default port.

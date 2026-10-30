@@ -44,6 +44,12 @@ HEADER = REPO / "core" / "detector_tables.h"
 UTC = timezone.utc
 
 
+@pytest.fixture(autouse=True)
+def no_real_ports(tmp_path_factory: pytest.TempPathFactory, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Point the port search at an empty folder, so a watch on this laptop's USB changes no test."""
+    monkeypatch.setattr(watch_cli, "DEV", tmp_path_factory.mktemp("dev"))
+
+
 def table_hash() -> str:
     """Give DET_MODEL_SHA256 from core/detector_tables.h."""
     found = re.search(r'#define DET_MODEL_SHA256 "([0-9a-f]{64})"', HEADER.read_text(encoding="utf-8"))
@@ -466,3 +472,33 @@ def test_21_python_rules() -> None:
         assert "except Exception" not in source, path.name
     for line in TOOL.read_text(encoding="utf-8").splitlines():
         assert not line.startswith(("import serial", "from serial")), line
+
+
+def test_22_find_port(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The default port wins, else the only USB modem port, else the default again."""
+    monkeypatch.setattr(watch_cli, "DEV", tmp_path)
+    default = Path(watch_cli.DEFAULT_PORT).name
+    assert watch_cli.find_port() == watch_cli.DEFAULT_PORT
+    (tmp_path / "cu.usbmodem1101").touch()
+    (tmp_path / "cu.Bluetooth-Incoming-Port").touch()
+    assert watch_cli.find_port() == str(tmp_path / "cu.usbmodem1101")
+    (tmp_path / "cu.usbmodem2101").touch()
+    assert watch_cli.find_port() == watch_cli.DEFAULT_PORT
+    (tmp_path / default).touch()
+    assert watch_cli.find_port() == watch_cli.DEFAULT_PORT
+
+
+def test_22_explicit_port_wins(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """--port skips the search, and no --port uses the port the search finds."""
+    monkeypatch.setattr(watch_cli, "DEV", tmp_path)
+    (tmp_path / "cu.usbmodem1101").touch()
+    used: list[str] = []
+
+    def fake_run(port: str, command: str) -> int:
+        used.append(port)
+        return 0
+
+    monkeypatch.setattr(watch_cli, "run_command", fake_run)
+    assert watch_cli.main(["tone", "off"]) == 0
+    assert watch_cli.main(["--port", "/dev/cu.other", "tone", "off"]) == 0
+    assert used == [str(tmp_path / "cu.usbmodem1101"), "/dev/cu.other"]
