@@ -166,16 +166,18 @@ def define(text: str, name: str) -> int:
 def test_case_48_committed_files() -> None:
     """The committed metrics and the options line of each font file."""
     text = METRICS.read_text(encoding="ascii")
-    for size in (28, 40, 56):
+    for size in (22, 28, 40, 56):
         widths = metrics_array(text, size)
         assert len(widths) == 95
         assert all(w > 0 for w in widths[1:])
-    widths = metrics_array(text, 96)
-    for ch in "0123456789:-":
-        assert widths[ord(ch) - 32] > 0
-    assert widths[ord("A") - 32] == 0
+    for size in (32, 96):
+        widths = metrics_array(text, size)
+        for ch in "0123456789:-":
+            assert widths[ord(ch) - 32] > 0
+        assert widths[ord("A") - 32] == 0
     assert define(text, "FACE_LINE_28") < define(text, "FACE_LINE_40") < define(text, "FACE_LINE_56")
-    ranges = {28: "0x20-0x7E", 40: "0x20-0x7E", 56: "0x20-0x7E", 96: "0x20,0x2D,0x30-0x3A"}
+    ranges = {22: "0x20-0x7E", 28: "0x20-0x7E", 32: "0x20,0x2D,0x30-0x3A", 40: "0x20-0x7E", 56: "0x20-0x7E",
+              96: "0x20,0x2D,0x30-0x3A"}
     for size, chars in ranges.items():
         font_text = (ASSETS / f"face_font_{size}.c").read_text(encoding="utf-8")
         opts = re.search(r"^ \* Opts: (.*)$", font_text, re.M)

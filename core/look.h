@@ -179,16 +179,16 @@ uint32_t look_bg(look_screen_t screen);
 const look_box_t *look_tap_box(look_screen_t screen);
 
 /* look_line_height() gives the line height of a text size, or 0 for a size
- * that is not 28, 40, 56, or 96. */
+ * that is not 22, 28, 32, 40, 56, or 96. */
 int look_line_height(int size);
 
 /* look_text_width() gives the width of a text in pixels. It gives -1 when the
- * text holds a character that the font lacks or the size is not 28, 40, 56,
- * or 96. */
+ * text holds a character that the font lacks or the size is not 22, 28, 32,
+ * 40, 56, or 96. */
 int look_text_width(const char *text, int size);
 
-/* look_fit_size() gives the largest of 96, 56, 40, and 28, from largest down
- * to smallest, at which the text fits in box_w, or 0. */
+/* look_fit_size() gives the largest of 96, 56, 40, 32, 28, and 22, from
+ * largest down to smallest, at which the text fits in box_w, or 0. */
 int look_fit_size(const char *text, int box_w, int largest, int smallest);
 
 /* look_cut() copies the text into out when it fits in box_w at size.

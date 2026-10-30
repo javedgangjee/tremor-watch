@@ -40,12 +40,20 @@ static const look_state_t LOGGED = {true, LOOK_TOOK_IT, LOOK_WHITE, LOOK_ICON_LO
     {(x_), (y_), (w_), FACE_LINE_##size_, LOOK_KIND_TEXT, (size_), (smallest_), (align_), (colour_)}
 #define SHAPE(x_, y_, w_, h_, colour_) {(x_), (y_), (w_), (h_), LOOK_KIND_SHAPE, 0, 0, LOOK_ALIGN_LEFT, (colour_)}
 #define ICON(x_, y_, px_, colour_) {(x_), (y_), (px_), (px_), LOOK_KIND_ICON, 0, 0, LOOK_ALIGN_CENTER, (colour_)}
+/* The small time and date float over Home's card in the top left corner, as
+ * in the watch face design, and leave the circle where it is. */
+#define CORNER_X 26
+#define CORNER_W 160
+#define TIME_Y 30
+#define DATE_Y 64
 #define STATUS_ROW(i) [LOOK_ITEM_STATUS_1 + (i)] = TEXT(34, 64 + 42 * (i), 342, 28, 28, LOOK_ALIGN_LEFT, LOOK_TEXT)
 
 /* The Home layout, which the Logged view shares. The circle and its icon
  * and word take their colours from look_state(). */
 #define HOME_ITEMS                                                                      \
     [LOOK_ITEM_CARD] = SHAPE(0, 0, LOOK_W, LOOK_H, LOOK_CARD),                          \
+    [LOOK_ITEM_TIME] = TEXT(CORNER_X, TIME_Y, CORNER_W, 32, 32, LOOK_ALIGN_LEFT, LOOK_TEXT), \
+    [LOOK_ITEM_DATE] = TEXT(CORNER_X, DATE_Y, CORNER_W, 22, 22, LOOK_ALIGN_LEFT, LOOK_TEXT2), \
     [LOOK_ITEM_CIRCLE] = SHAPE(CIRCLE_X, CIRCLE_Y, LOOK_CIRCLE, LOOK_CIRCLE, 0),        \
     [LOOK_ITEM_CIRCLE_ICON] = ICON(CIRCLE_CX - LOOK_CIRCLE_ICON_PX / 2, ICON_Y, LOOK_CIRCLE_ICON_PX, 0), \
     [LOOK_ITEM_CIRCLE_WORD] = TEXT(CIRCLE_CX - WORD_W / 2, WORD_Y, WORD_W, 28, 28, LOOK_ALIGN_CENTER, 0), \
@@ -139,8 +147,12 @@ const look_box_t *look_tap_box(look_screen_t screen)
 static const uint8_t *widths_of(int size)
 {
     switch (size) {
+    case 22:
+        return face_adv_22;
     case 28:
         return face_adv_28;
+    case 32:
+        return face_adv_32;
     case 40:
         return face_adv_40;
     case 56:
@@ -155,8 +167,12 @@ static const uint8_t *widths_of(int size)
 int look_line_height(int size)
 {
     switch (size) {
+    case 22:
+        return FACE_LINE_22;
     case 28:
         return FACE_LINE_28;
+    case 32:
+        return FACE_LINE_32;
     case 40:
         return FACE_LINE_40;
     case 56:
@@ -193,7 +209,7 @@ int look_text_width(const char *text, int size)
 
 int look_fit_size(const char *text, int box_w, int largest, int smallest)
 {
-    static const int SIZES[] = {96, 56, 40, 28};
+    static const int SIZES[] = {96, 56, 40, 32, 28, 22};
     for (size_t i = 0; i < sizeof SIZES / sizeof SIZES[0]; i++) {
         int size = SIZES[i];
         if (size > largest || size < smallest) {

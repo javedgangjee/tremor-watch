@@ -14,7 +14,9 @@ set(TASK_SOURCES
     tone_out.c
 )
 set(ASSET_SOURCES
+    assets/face_font_22.c
     assets/face_font_28.c
+    assets/face_font_32.c
     assets/face_font_40.c
     assets/face_font_56.c
     assets/face_font_96.c

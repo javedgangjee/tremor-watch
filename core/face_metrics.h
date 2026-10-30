@@ -12,14 +12,28 @@
 #define FACE_FIRST_CHAR 0x20
 #define FACE_LAST_CHAR 0x7E
 
+#define FACE_LINE_22 22
+#define FACE_BASE_22 5
 #define FACE_LINE_28 30
 #define FACE_BASE_28 7
+#define FACE_LINE_32 22
+#define FACE_BASE_32 0
 #define FACE_LINE_40 39
 #define FACE_BASE_40 9
 #define FACE_LINE_56 57
 #define FACE_BASE_56 13
 #define FACE_LINE_96 70
 #define FACE_BASE_96 1
+
+/* The advance widths at 22 pixels, where 0 marks a character the font lacks. */
+static const uint8_t face_adv_22[95] = {
+    4, 5, 10, 16, 13, 17, 15, 6, 9, 9, 10, 13, 6, 10, 6, 11,
+    15, 8, 13, 13, 15, 13, 13, 13, 13, 14, 6, 6, 13, 13, 13, 12,
+    17, 16, 15, 16, 16, 14, 14, 17, 16, 6, 14, 15, 14, 19, 17, 18,
+    15, 18, 15, 14, 14, 16, 16, 21, 15, 16, 14, 9, 11, 9, 13, 11,
+    13, 12, 14, 12, 14, 13, 10, 14, 13, 5, 5, 13, 5, 20, 13, 14,
+    14, 14, 9, 11, 9, 13, 13, 17, 12, 13, 11, 9, 7, 9, 13,
+};
 
 /* The advance widths at 28 pixels, where 0 marks a character the font lacks. */
 static const uint8_t face_adv_28[95] = {
@@ -29,6 +43,16 @@ static const uint8_t face_adv_28[95] = {
     19, 23, 19, 18, 18, 20, 21, 26, 20, 20, 17, 11, 15, 11, 16, 14,
     17, 16, 18, 15, 18, 16, 12, 18, 17, 7, 7, 16, 7, 25, 17, 17,
     18, 18, 11, 14, 12, 17, 16, 22, 16, 16, 14, 12, 9, 12, 17,
+};
+
+/* The advance widths at 32 pixels, where 0 marks a character the font lacks. */
+static const uint8_t face_adv_32[95] = {
+    6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15, 0, 0,
+    22, 11, 19, 19, 22, 19, 19, 19, 19, 20, 8, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 };
 
 /* The advance widths at 40 pixels, where 0 marks a character the font lacks. */

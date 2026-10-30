@@ -7,10 +7,10 @@ fonts/Proportional/RedHatDisplay/ttf/RedHatDisplay-Bold.ttf of that commit has
 the SHA-256 hash bac4990e2845c796ad0cfc47c3121b09df9285858ba841f7eab8bcdea87b74f1,
 and the tool stops when the font file has another hash.
 
-lv_font_conv 1.5.3 converts the font through npx at 28, 40, 56, and 96 pixels,
-with 4 bits a pixel, no compression, and no kerning. The tool reads each output's
-line height, base line, and advance widths, and it writes core/face_metrics.h,
-so the laptop can measure a text as LVGL 9.5.0 does.
+lv_font_conv 1.5.3 converts the font through npx at 22, 28, 32, 40, 56, and 96
+pixels, with 4 bits a pixel, no compression, and no kerning. The tool reads each
+output's line height, base line, and advance widths, and it writes
+core/face_metrics.h, so the laptop can measure a text as LVGL 9.5.0 does.
 
 The icons come from Lucide 0.469.0. The tool draws each one from its path data
 with numpy as an 8-bit alpha image, so LVGL can colour it, and writes them as C
@@ -53,10 +53,13 @@ FONT_CONV = ["npx", "--yes", "lv_font_conv@1.5.3"]
 FONT_IN_RUN = "firmware/main/assets/RedHatDisplay-Bold.ttf"
 OUT_IN_RUN = "firmware/main/assets"
 
-# Each size and its range of characters. The 96 pixel font holds only what
-# the time needs.
+# Each size and its range of characters. The 32 and 96 pixel fonts hold only
+# what the time needs. The 22 and 32 pixel fonts give Home's small date and
+# time in the top left corner.
 FONT_RANGES: dict[int, str] = {
+    22: "0x20-0x7E",
     28: "0x20-0x7E",
+    32: "0x20,0x2D,0x30-0x3A",
     40: "0x20-0x7E",
     56: "0x20-0x7E",
     96: "0x20,0x2D,0x30-0x3A",

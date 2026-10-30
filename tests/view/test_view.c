@@ -87,6 +87,8 @@ static void fits_cut(const view_cut_t *c, look_screen_t screen, look_item_t item
  * look_fit_size() picks, or after look_cut(). */
 static void check_fits(void)
 {
+    fits(view.time, LOOK_HOME, LOOK_ITEM_TIME);
+    fits(view.date, LOOK_HOME, LOOK_ITEM_DATE);
     fits(view.last_tremor, LOOK_HOME, LOOK_ITEM_LINE);
     fits(look_state(view.face)->word, LOOK_HOME, LOOK_ITEM_CIRCLE_WORD);
     if (look_state(view.face)->word_2 != NULL) {

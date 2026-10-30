@@ -183,11 +183,14 @@ static void test_4_text_sizes(void)
             if (b == NULL || b->kind != LOOK_KIND_TEXT) {
                 continue;
             }
-            TEST_ASSERT_TRUE(b->size == 28 || b->size == 40 || b->size == 56 || b->size == 96);
-            TEST_ASSERT_TRUE(b->smallest >= 28 && b->smallest <= b->size);
+            TEST_ASSERT_TRUE(b->size == 22 || b->size == 28 || b->size == 32 || b->size == 40 || b->size == 56 ||
+                             b->size == 96);
+            TEST_ASSERT_TRUE(b->smallest >= 22 && b->smallest <= b->size);
             TEST_ASSERT_EQUAL_INT(look_line_height(b->size), b->h);
         }
     }
+    TEST_ASSERT_EQUAL_INT(32, look_box(LOOK_HOME, LOOK_ITEM_TIME)->size);
+    TEST_ASSERT_EQUAL_INT(22, look_box(LOOK_HOME, LOOK_ITEM_DATE)->size);
 }
 
 /* in_shape() is true when the point lies in the 410 by 502 rectangle with
@@ -413,6 +416,12 @@ static void test_12_longest_texts(void)
     int line_w = look_box(LOOK_HOME, LOOK_ITEM_LINE)->w;
     TEST_ASSERT_TRUE(look_text_width("Last tremor 23:59", 28) <= line_w);
     TEST_ASSERT_TRUE(look_text_width("Last tremor none", 28) <= line_w);
+    int time_w = look_box(LOOK_HOME, LOOK_ITEM_TIME)->w;
+    TEST_ASSERT_TRUE(look_text_width("23:59", 32) >= 0 && look_text_width("23:59", 32) <= time_w);
+    TEST_ASSERT_TRUE(look_text_width("--:--", 32) >= 0 && look_text_width("--:--", 32) <= time_w);
+    int date_w = look_box(LOOK_HOME, LOOK_ITEM_DATE)->w;
+    TEST_ASSERT_TRUE(look_text_width("Wed 30 Sep", 22) >= 0 && look_text_width("Wed 30 Sep", 22) <= date_w);
+    TEST_ASSERT_TRUE(look_text_width("--- -- ---", 22) >= 0 && look_text_width("--- -- ---", 22) <= date_w);
 }
 
 static void test_13_backgrounds(void)

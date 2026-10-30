@@ -24,7 +24,9 @@
 #include "tasks.h"
 #include "tone_out.h"
 
+LV_FONT_DECLARE(face_font_22)
 LV_FONT_DECLARE(face_font_28)
+LV_FONT_DECLARE(face_font_32)
 LV_FONT_DECLARE(face_font_40)
 LV_FONT_DECLARE(face_font_56)
 LV_FONT_DECLARE(face_font_96)
@@ -125,6 +127,10 @@ static lv_color_t colour(uint32_t rgb)
 static const lv_font_t *font_of(int size)
 {
     switch (size) {
+    case 22:
+        return &face_font_22;
+    case 32:
+        return &face_font_32;
     case 40:
         return &face_font_40;
     case 56:
@@ -466,8 +472,6 @@ static void build_home(look_screen_t screen)
     screen_objs_t *o = &s_objs[screen];
     const look_box_t *c = look_box(screen, LOOK_ITEM_CIRCLE);
     const look_box_t *icon = look_box(screen, LOOK_ITEM_CIRCLE_ICON);
-    /* These screens have no row of time and date, so o->time and o->date
-     * stay NULL and set_text() skips them. */
     o->pulse = plain(o->root, c->x, c->y, c->w, c->h);
     if (o->pulse != NULL) {
         lv_obj_set_style_radius(o->pulse, LV_RADIUS_CIRCLE, 0);
@@ -495,6 +499,9 @@ static void build_home(look_screen_t screen)
     o->word_2 = label_box(o->root, screen, LOOK_ITEM_CIRCLE_WORD_2);
     style_circle(o, l);
     o->line = label_box(o->root, screen, LOOK_ITEM_LINE);
+    /* The time and date are made last, so they lie on top of the card. */
+    o->time = label_box(o->root, screen, LOOK_ITEM_TIME);
+    o->date = label_box(o->root, screen, LOOK_ITEM_DATE);
 }
 
 static void build_medication(void)
