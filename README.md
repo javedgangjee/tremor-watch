@@ -4,7 +4,7 @@ Tremor log runs a published Parkinson's tremor detector on a watch by itself. Ev
 
 **This is not a medical device.** It is not for diagnosis or treatment, and it gives no basis for dose decisions. Do not rely on its dose reminders.
 
-This is a portfolio project. The detector is used as published and is never retrained. It has been checked on public recordings and on the watch lying on a table. It has not been tested on a person with tremor, and the wrist tests are still to come.
+This is a portfolio project. The detector is used as published and is never retrained. It has been checked on public recordings and on the watch lying on a table. It has not been tested on a person with tremor. The wrist tests are shelved, and only a demo session with the builder wearing the watch is planned.
 
 ## The face
 
@@ -153,7 +153,7 @@ EDFbrowser and edfio keep the gaps. MNE-Python 1.13.2 places the data records of
 
 ## Status
 
-Features 1 to 14 in `specs/roadmap.md` are built and merged, and their laptop tests pass. On the watch, the detector, the time rule, the recording, and the face states have run with the watch on a table, and firmware version 12 ran on it on 28 October 2026. The tap, the BOOT button, the tones, and the battery have not been checked on the watch yet, and the white Session and Status backgrounds have not been flashed to it. The recording viewer, the EDF export, and the record button each have a check by hand still to do, as the validation files under `specs/features/` say. Feature 15, the viewer redesign, and feature 16, the wrist tests, are still to come.
+Features 1 to 15 in `specs/roadmap.md` are built and merged, and their laptop tests pass. On the watch, the detector, the time rule, the recording, and the face states have run with the watch on a table, and firmware version 12 ran on it on 28 October 2026. The tap, the BOOT button, the tones, and the battery have not been checked on the watch yet, and the white Session and Status backgrounds have not been flashed to it. The recording viewer, the EDF export, and the record button each have a check by hand still to do, as the validation files under `specs/features/` say. Feature 16, the demo and the deliverables, is still to come. The wrist tests that the build spec asks for before the demo are shelved, as the roadmap says.
 
 ## Licence
 

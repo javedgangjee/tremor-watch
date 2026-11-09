@@ -105,10 +105,15 @@ This file records each change to Tremor log that a person who reads or runs the 
 - Feature 14 saves the viewer's recordings in recordings/ at the repo root, which git leaves out. TREMOR_RECORDINGS names another folder, and TREMOR_PYTHON names another Python.
 - Feature 14 adds `--record-for SECONDS` to capture mode, 14 recorder tests that run a fake watch_cli.py, and two smoke cases.
 - Feature 14 shows a 60-second recording from the watch through the viewer, with the clock set after the B line and 55 windows drawn.
+- Feature 15 restyles the viewer to the design in context/viewer-design/ with its colour, type, and spacing tokens, the Red Hat Display, Libre Franklin, and IBM Plex Mono fonts, and a light and a dark theme that follow the Mac's setting.
+- Feature 15 adds a chip for each gyroscope axis that shows or hides it, an Overlaid or Stacked layout control, a hover readout of the time, the three values, and the answer, a time span control of 10 seconds, 30 seconds, 1 minute, or All with an Earlier button, and start and end lines for each tremor episode.
+- Feature 15 splits the Summary into Recording and Data quality rows in a right-hand column, and adds `--theme system|light|dark` and `--layout overlaid|stacked` to the viewer's command line.
 
 ### Changed
 
-- The older entries below name the wrist tests as feature 12. The recording viewer became feature 12 on 27 October 2026, the EDF export became feature 13 and the Record button feature 14 on 28 October 2026, and the wrist tests are now feature 15.
+- The roadmap entry for feature 16 now shelves the build spec's steps 20 to 22, which are the PADS tasks on the wrist, the everyday tasks, and the timed shakes, and the screen check in daylight, and it drops the write-up, by the user's decision on 9 November 2026. The results table keeps the three PADS columns only, and the results page gives no everyday task count and no measured response time. README.md and specs/mission.md say the same.
+- Feature 15 followed the user's v2 viewer design of 29 October 2026, which drops the legend, the Answer row, the window selection, and the title block of the first design, and the build spec's viewer paragraph covers it.
+- The older entries below name the wrist tests as feature 12. The recording viewer became feature 12 on 27 October 2026, the EDF export became feature 13 and the Record button feature 14 on 28 October 2026, and the wrist tests became feature 16. On 9 November 2026 feature 16 was renamed demo and deliverables.
 - On 24 and 25 October 2026 the user had Home's top row of time, date, and battery removed, had the Home circle centred, swapped the Rest and Arm moving looks, and renamed No tremor to Rest. The Tremor circle now reads "Tremor Detected" on two lines.
 - On 28 October 2026 the user had the Session and Status backgrounds made pure white #FFFFFF through look_bg() in core/look.c, against the build spec's faintly warm background, and the README's Session and Status screenshots were drawn again. The change has not been flashed to the watch yet.
 
