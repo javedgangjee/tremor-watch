@@ -43,7 +43,7 @@ A tap anywhere on Home opens Medication. The lower half is one large "Took it" b
 
 ### Session and Status
 
-Session shows the share of still time with tremor in this session. Each bar below it covers 10 minutes, with the oldest bar's start time on the left and now on the right, and a hollow bar had under two minutes of still time. Status shows the battery charge and voltage and the time since the watch started. For the last answer it shows the sensor rate, the number of the time rule's stretch, and how long the detector took. Recording reads On while a laptop is taking the watch's lines. The last two rows give the firmware version and the start of the detector tables' hash. Both screens use a plain white background.
+Session shows the share of still time with tremor in this session, with one bar for each 10 minutes. Status shows the battery, the time since the watch started, and the sensor rate and detector time for the last answer. Its last two rows give the firmware version and the start of the detector tables' hash.
 
 <table>
   <tr>
@@ -54,6 +54,13 @@ Session shows the share of still time with tremor in this session. Each bar belo
 
 The BOOT button cycles through the screens. Every tap target covers at least a third of the screen, and the face uses no swipes or long presses.
 
+## The recording viewer
+
+`viewer/` holds a small Electron app that plots a saved recording's gyroscope readings against time and shades each stretch where the watch answered tremor. Its Record button saves a new recording from the watch.
+
+<img src="viewer/assets/viewer-stacked.png" alt="The recording viewer in the stacked layout, with one shaded tremor episode across the x, y, and z plots and the Summary card at the right">
+
+The screenshot shows a 40-second recording saved from the watch. The shaking in it did not come from a person with Parkinson's. `viewer/README.md` covers the controls.
 
 ## How it works
 
@@ -122,34 +129,14 @@ To record a session from the watch and check it against the toolbox, after the C
 reference/.venv/bin/python tools/compare_session.py session.txt.gz --report report.md
 ```
 
-## View a recording
-
-`viewer/` holds a small Electron app that plots a saved recording's gyroscope readings against time and marks each stretch where the watch answered tremor. A Summary card at the right of the chart gives the file name and the boot's facts in two groups, Recording and Data quality. In a narrow window it sits under the chart. When the file holds more than one boot, a list above the chart picks the boot. It needs Node 22, and the install needs the network once.
+To open a recording in the viewer, which needs Node 22, or to export it as EDF+ for other biosignal programs:
 
 ```
 make viewer-start FILE=session.txt.gz
+make edf FILE=session.txt.gz
 ```
 
-`make viewer-start` installs the packages with `npm --prefix viewer ci` when they are missing or out of date, and then runs `npm --prefix viewer start`. Add `BOOT=ID` to open one boot of the file. With no FILE the app opens empty. `make viewer-smoke` runs the app in capture mode on the test recordings and checks each drawing.
-
-File > Open (Cmd+O) opens another recording. The x, y, and z chips show or hide each axis, and the layout control picks Overlaid, one plot of all axes, or Stacked, one plot for each axis. The stacked plots share one scale, so their y labels match, and each names its axis at its left. In every plot, a light grey shade covers each tremor episode, and black vertical lines with no text mark where it starts and ends. Tremor windows that overlap or touch join into one episode. Move the pointer over a plot to read the time, the three values, and the answer at that point. The time span control above the plot shows 10 seconds, 30 seconds, 1 minute, or the whole boot. A span as long as the boot or longer is turned off, since it would show the whole boot. The Earlier button moves the view back by half its width. Drag across a plot to zoom in, double click to show the whole boot, and use the left and right arrow keys to move the view. Every plot shares the view.
-
-The page follows the Mac's light or dark setting. `--theme light` or `--theme dark` after `npm --prefix viewer start --` fixes the theme, and `--layout stacked` opens the file in the stacked layout. `make viewer` runs the viewer's unit tests, which need no install.
-
-The Record button runs `tools/watch_cli.py record`, which resets the watch and saves every line it writes. Press Stop to end the recording, as Ctrl-C does, and the viewer opens the new file. The viewer never opens the watch's port itself. Files go to `recordings/` at the repo root, which git leaves out, with names such as `tremor-2026-10-28-143005.txt.gz`, and a name that is taken gets `-2`. `TREMOR_RECORDINGS` names another folder, and `TREMOR_PYTHON` names the Python to run, which must hold pyserial and is the ESP-IDF Python by default. When the recording cannot start or saves no file, such as when no watch is plugged in, a red notice under the header says why, and the plot stays as it was. When watch_cli.py stops with an error after it saved a file, the viewer still opens that file, and the notice gives the error.
-
-## Export a recording as EDF+
-
-`tools/export_edf.py` writes a saved recording as EDF+ files that other biosignal programs can open. It reads saved files only and never opens the watch's port. Run it from the repo root after the C build.
-
-```
-reference/.venv/bin/python tools/export_edf.py session.txt.gz [--out-dir DIR] [--boot ID]
-make edf FILE=session.txt.gz [OUT_DIR=DIR] [BOOT=ID]
-```
-
-It writes one file for each boot, named after the recording and the boot ID, so `session.txt.gz` with boot 2565193163 gives `session_2565193163.edf` beside the recording or in DIR. It never writes over a file. Each file holds the 100 Hz gyroscope samples that the detector used, in degrees per second, with each window's answer, each face change, each dose, and each stretch start as annotations. The boot's clock gives the start date and time, and a boot with no clock gets the EDF+ placeholders. A gap between stretches stays a gap, so such a file is discontinuous EDF+D.
-
-EDFbrowser and edfio keep the gaps. MNE-Python 1.13.2 places the data records of an EDF+D file back to back, so its times after a gap are wrong, and it drops annotations past the end of the joined data. A boot with no gap gives a continuous EDF+C file, which every reader places correctly.
+`viewer/README.md` and `tools/README.md` give the details.
 
 ## Status
 
