@@ -6,6 +6,12 @@ Tremor log runs a published Parkinson's tremor detector on a watch by itself. Ev
 
 This is a portfolio project. The detector is used as published and is never retrained. It has been checked on public recordings and on the watch lying on a table. It has not been tested on a person with tremor. The wrist tests are shelved, and only a demo session with the builder wearing the watch is planned.
 
+## Video
+
+<a href="firmware/main/assets/video/watch-shake.mp4"><img src="firmware/main/assets/video/watch-shake.jpg" width="480" alt="The watch lying on a table on USB power, with the face showing Tremor Detected"></a>
+
+Click the picture to open the 15-second video. The builder holds the watch on USB power and shakes it by hand, and the face changes from Arm moving to Tremor Detected. The shaking did not come from a person with Parkinson's. In the video the camera gives the screen a pink tint.
+
 ## The face
 
 These screenshots were drawn on the laptop with `firmware/main/face_draw.c` and LVGL 9.5 from a made-up session, then placed in a drawing of the watch case at its real scale.
@@ -103,7 +109,7 @@ In PADS the toolbox fires on about 4 percent of the Relaxed task's windows for h
 | Folder | What it holds |
 | --- | --- |
 | `core/` | The shared C library: the detector, the converter, the state rules, and the replay program. It builds on the laptop and on the watch. |
-| `firmware/` | The ESP-IDF project for the watch. `firmware/main/` holds the five tasks and the face. `firmware/detector_check/` runs the saved windows on the chip, `firmware/bringup/` measured the sensor rate, and `firmware/components/` holds XPowersLib for the power chip. |
+| `firmware/` | The ESP-IDF project for the watch. `firmware/main/` holds the five tasks, the face, and the README's screenshots and video. `firmware/detector_check/` runs the saved windows on the chip, `firmware/bringup/` measured the sensor rate, and `firmware/components/` holds XPowersLib for the power chip. |
 | `reference/` | The Python toolbox that the C port must match, and the PADS results. |
 | `viewer/` | The recording viewer, a small Electron app that shows a saved recording. It can also record from the watch through `tools/watch_cli.py`. |
 | `tools/` | Generators for the detector tables and face assets, the watch command tool, the session check, and the EDF+ export. |
