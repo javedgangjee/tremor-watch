@@ -88,11 +88,10 @@ This file records each change to Tremor log that a person who reads or runs the 
 - The README now shows the face screens, drawn on the laptop with face_draw.c and LVGL and placed in a drawing of the watch case.
 - LICENSE puts the project's own code under MIT, and THIRD_PARTY.md lists every part from another project with its licence. reference/results/LICENSE.md says the PADS results are under CC BY-NC-SA 4.0.
 - `make python` runs the Python tests, and `make full` runs `make check` and then `make python`.
-- .github/workflows/check.yml runs the laptop build and tests, the model hash check, the Python tests, and the firmware build on every push.
 - Feature 12 adds the recording viewer in viewer/, a small Electron 44.7.1 app with uPlot 1.6.32 that plots a saved recording's gyroscope readings against time, shades the windows the watch answered with tremor, and shows each window's answer in a lane under the plot.
 - Feature 12 lets the viewer pick one boot of a file, zoom in by dragging, show the whole boot with a double click, and move the view with the arrow keys. A file it cannot read gets one plain message and no plot.
 - Feature 12 adds a capture mode, `npm --prefix viewer start -- FILE --capture OUT.png`, which draws a file with no person and saves the image and a JSON report of what it drew.
-- Feature 12 adds 26 viewer unit tests in viewer/test/, which need no installed packages, and `make check` and the CI workflow now run them through `make viewer`.
+- Feature 12 adds 26 viewer unit tests in viewer/test/, which need no installed packages, and `make check` now runs them through `make viewer`.
 - Feature 12 adds viewer/scripts/smoke.js, which runs the real viewer in capture mode on a made-up recording with tremor windows, the committed logs, a bad file, and a two hour recording, and `make viewer-smoke` runs it.
 - Feature 12 adds `make viewer-start`, which opens the viewer and first installs its packages when they are missing or out of date.
 - Feature 12 shows that the viewer draws a two hour made-up recording in about 0.36 seconds, and that it places every W line of a 3-minute recording from the watch.
